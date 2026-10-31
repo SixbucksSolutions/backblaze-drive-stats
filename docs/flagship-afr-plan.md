@@ -370,12 +370,23 @@ saved 17.17% of daily Parquet bytes with unchanged observations and numeric
 summaries. `drive-stats/current-cache.json` identifies the preferred `cache-v2`
 generation; legacy objects and recovery references remain intact.
 
-Terry approved #0033–#0040 while explicitly retaining their RFR lanes. The next
-source queue is #0050–#0055 (2020 Q2 through 2019 Q1), alongside eligible #0017
-evidence/integration work. No production matrix or cumulative-history claim has
-been changed by this processing/storage handoff.
+Terry initially approved #0033–#0040 while retaining their RFR lanes, then
+approved and moved all preceding RFR cards to Completed. The
+[next ten-quarter source workset](ten-quarter-origin-backfill.md) now reaches
+2018 Q1: eight complete additions and two explicit partial recoveries. Preferred
+processing coverage totals 34 quarters, 31 complete and three partial. Within
+the searched window ALN604 has complete 2018 Q2 absence, first observation on
+2018-07-12, 79 identities in 2018 Q3, 1,279 in 2018 Q4 and its first qualifying
+quarter in 2019 Q1 (4,876). This does not prove global inception.
 
-The provisional quarter queue reaches 2019 Q1. Continue earlier if necessary to
+The owner expanded the objective to accurate first >=2,000 starts for every
+2026 Q2 AFR analysis model and clarified **ten source quarters per turn**.
+Reviewed #0063 research identifies ST12000NM0007, ST8000DM002 and ST8000NM0055
+as the older-source frontier. Source cards #0064–#0073 (2017 Q4 through 2015 Q3)
+are Ready for Work only. #0017/#0063 retain production cohort/history integration
+and correction of unjustified completeness claims; no production matrix changed.
+
+The original provisional quarter queue reached 2019 Q1. The initial rule was to
 find a fully covered quarter with zero HUH721212ALN604 observations across its
 evidenced aliases. Record first appearance and first >=2,000-drive quarter
 separately. Missing coverage is unknown; a single known-zero quarter meets the
@@ -445,6 +456,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r025**; r001–r024 are retained as history. Planned workers
+assignment revision is **r026**; r001–r025 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

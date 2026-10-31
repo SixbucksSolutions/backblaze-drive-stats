@@ -10,7 +10,7 @@ The owner accepted the 2026 Q1 pilot (#0027), 2025 Q4 audit (#0028), B2 setup
 (#0056) and first cache migration (#0057). The next four quarter cards
 (#0029–#0032) have completed ingestion, independent artifact review and durable
 retention; see the [measured recovery report](parallel-quarter-benchmark.md).
-All seven loaded quarters from 2024 Q4 through 2026 Q2 have verified processing
+Those seven quarters from 2024 Q4 through 2026 Q2 have verified processing
 caches retained in B2. The reference model remains above threshold at the oldest
 loaded quarter; its origin and cumulative-history completeness are unverified.
 
@@ -35,11 +35,23 @@ The preferred `drive-stats/cache-v2` catalog covers 24 quarters from 2020 Q3
 through 2026 Q2, with 23 complete and the same explicit 2022 Q4 partial quarter.
 Use `data/preferred-cache-v2/` for current local analysis; the legacy generation
 is preserved. The exact reference model has 10,849 observed identities in 2020 Q3.
-Next are #0050–#0055, 2020 Q2 through 2019 Q1, and eligible #0017 integration.
+That handoff was followed by #0050–#0055, 2020 Q2 through 2019 Q1, and eligible
+#0017 integration.
 
-Continue backward until a complete quarter has zero observations of exact model
-HUH721212ALN604, extending the queue earlier if needed. Record first observation
-and first >=2,000-drive quarter separately. The old workbook compresses retained
+The subsequent [ten-quarter search](ten-quarter-origin-backfill.md), including
+four required 2018 extensions, now reaches 2018 Q1. The preferred catalog has
+34 quarters: 31 complete and three explicit partials. Exact ALN604 is absent in
+complete 2018 Q2, first observed on 2018-07-12 and first reaches 2,000 identities
+in 2019 Q1 within this searched window. Global inception remains unproved.
+The owner expanded the target to every 2026 Q2 AFR model and capped source work
+at ten quarters per turn. #0063 records the reviewed cohort/frontier research;
+the next ten source cards #0064–#0073 cover 2017 Q4 through 2015 Q3 and are queued
+only. #0017/#0063 remain active; no new production matrix is published.
+
+The initial bounded search required a complete quarter with zero observations
+of exact HUH721212ALN604. Complete 2018 Q2 now meets that stopping rule; broader
+all-model eligibility research continues under #0063. Keep first observation
+and first >=2,000-drive quarter separate. The old workbook compresses retained
 positions and does not establish its calendar anchor. One zero quarter is a
 bounded search endpoint, not proof against older deployments or reentry.
 
@@ -132,9 +144,10 @@ complete historical fleet coverage. #0022's language quality gates precede furth
   defaults and historical references in the #0017 contract amendment. A UI-only
   filter cannot remove the current generator's older-cohort history obligations.
 - Work backward in bounded batches. Verified processing coverage now reaches
-  2020 Q3, with the explicit 2022 Q4 source gap retained. The next six initially
-  queued cards (#0050–#0055) cover 2020 Q2 through 2019 Q1. Recheck lane,
-  prerequisite, source and resource gates before launch; cap worksets at ten.
+  2018 Q1, retaining explicit 2018 Q1, 2019 Q2 and 2022 Q4 source gaps.
+  The next ten queued cards (#0064–#0073) cover 2017 Q4 through 2015 Q3.
+  Recheck lane, prerequisite, source and resource gates before launch; cap
+  source execution at ten quarters per turn.
 - Establish each candidate's anchor and pre-eligibility exposure honestly. The
   first loaded qualifying quarter is not proof of the original anchor, and an
   earlier zero quarter does not exclude an older deployment followed by reentry.

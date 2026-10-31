@@ -1,6 +1,6 @@
 # Quarterly ETL staffing and initial fanout
 
-Current policy: the owner capped backfill batches at **10 quarters**, replacing
+Current policy: the owner capped source work at **10 quarters per turn**, replacing
 the earlier doubling plan. The [eight-quarter capacity check](eight-quarter-benchmark.md)
 measured eight overlapping cold summaries at 21.77 GiB sampled worker working set
 with 14.62 GiB sampled minimum available RAM. Native heavy-phase admission remains
@@ -12,8 +12,15 @@ completed the next ten-item workset. Source admission allowed eight CPU phases
 and seven heavy summaries, reserving capacity for the repack. The nine source
 pipelines completed in 105.77 seconds with 14.34 GiB sampled worker working set
 and 22.05 GiB minimum available system RAM. This does not establish ten-heavy
-capacity. All 24 loaded quarters now have a verified preferred `cache-v2` view,
-including the unchanged explicit 2022 Q4 coverage gap.
+capacity. At that prior handoff, 24 loaded quarters had a verified preferred
+`cache-v2` view, including the explicit 2022 Q4 coverage gap.
+
+The [next ten source quarters](ten-quarter-origin-backfill.md) ran as six- and
+four-pipeline groups. Original worker envelopes were 69.08 and 56.29 seconds;
+each group stopped one genuine source defect and subsequently received a
+separate explicit partial recovery. These timings are not ten full-quarter
+successes, a controlled speedup or ten-heavy capacity evidence. The next ten
+source cards stay Ready for Work for a later turn.
 
 The [completed four-quarter recovery benchmark](parallel-quarter-benchmark.md)
 supersedes this initial sizing proposal. Four audits overlapped with a sampled
