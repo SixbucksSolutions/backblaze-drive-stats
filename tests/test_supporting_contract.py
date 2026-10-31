@@ -1,9 +1,10 @@
 """Tiny aggregate golden cases for the proposed supporting-history contract."""
-from copy import deepcopy
+
 import json
-from pathlib import Path
-import unittest
 import tempfile
+import unittest
+from copy import deepcopy
+from pathlib import Path
 
 from jsonschema import ValidationError
 
@@ -14,13 +15,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class SupportingContractTests(unittest.TestCase):
     def setUp(self):
-        self.fixture = json.loads((ROOT / "fixtures/supporting/synthetic-history.json").read_text(encoding="utf-8"))
+        self.fixture = json.loads(
+            (ROOT / "fixtures/supporting/synthetic-history.json").read_text(encoding="utf-8")
+        )
 
     def test_golden_scopes_counts_units_and_coverage(self):
         validate_supporting(self.fixture)
         first, second, missing, incomplete, zero, unknown_capacity = self.fixture["quarters"]
         selected, full = first["scopes"]
-        self.assertEqual(selected["totals"], {"driveCount": 2500, "newDrives": 2500, "capacityTb": 38000})
+        self.assertEqual(
+            selected["totals"], {"driveCount": 2500, "newDrives": 2500, "capacityTb": 38000}
+        )
         self.assertEqual(selected["models"][1]["measures"]["driveCount"], 500)
         self.assertEqual(full["totals"]["capacityTb"], 38040)
         self.assertEqual(second["scopes"][0]["capacityDeltaTb"], 16000)
@@ -37,14 +42,20 @@ class SupportingContractTests(unittest.TestCase):
             lambda f: f["quarters"][0]["scopes"][0]["totals"].update(driveCount=2000),
             lambda f: f["quarters"][0]["scopes"][0]["manufacturers"][0].update(populationShare=0.5),
             lambda f: f["quarters"][1]["scopes"][1].update(knownLocationShare=1),
-            lambda f: f["quarters"][4]["scopes"][0].update(capacityDeltaTb=-54000, capacityDeltaReason=None),
+            lambda f: f["quarters"][4]["scopes"][0].update(
+                capacityDeltaTb=-54000, capacityDeltaReason=None
+            ),
             lambda f: f["quarters"].pop(2),
             lambda f: f["quarters"][2]["scopes"][0]["totals"].update(driveCount=0),
-            lambda f: f["quarters"][0]["scopes"][0]["models"].append(deepcopy(f["quarters"][0]["scopes"][0]["models"][0])),
+            lambda f: f["quarters"][0]["scopes"][0]["models"].append(
+                deepcopy(f["quarters"][0]["scopes"][0]["models"][0])
+            ),
             lambda f: f["provenance"].update(historyStart="2024-04-01"),
             lambda f: f["provenance"].update(historyStart="2023-10-01"),
             lambda f: f["provenance"].update(historyStart="2024-01-02"),
-            lambda f: f["provenance"].update(sourceUrl="https://user:secret@example.com/data?token=secret"),
+            lambda f: f["provenance"].update(
+                sourceUrl="https://user:secret@example.com/data?token=secret"
+            ),
         ]
         for mutate in mutations:
             with self.subTest(mutation=mutations.index(mutate)):
@@ -64,6 +75,7 @@ class SupportingContractTests(unittest.TestCase):
 
     def test_integer_valued_float_counts_also_reconcile_exactly(self):
         malformed = deepcopy(self.fixture)
+
         def scale(value):
             if isinstance(value, dict):
                 for key, item in value.items():
@@ -74,6 +86,7 @@ class SupportingContractTests(unittest.TestCase):
             elif isinstance(value, list):
                 for item in value:
                     scale(item)
+
         scale(malformed)
         malformed["quarters"][0]["scopes"][0]["totals"]["driveCount"] += 1
         with self.assertRaisesRegex(ValueError, "model total mismatch"):
@@ -98,7 +111,9 @@ class SupportingContractTests(unittest.TestCase):
 
     def test_seed_plus_discovery_cohort_is_explicit_and_not_silently_filtered(self):
         self.assertEqual(self.fixture["provenance"]["seedAsOfQuarter"], "2025-Q4")
-        self.assertEqual(self.fixture["provenance"]["discoveryRule"], "all_source_hdd_complete_quarter_ge_2000")
+        self.assertEqual(
+            self.fixture["provenance"]["discoveryRule"], "all_source_hdd_complete_quarter_ge_2000"
+        )
         malformed = deepcopy(self.fixture)
         malformed["provenance"]["selectedModelIds"].remove("SAMPLE-HDD-B")
         with self.assertRaisesRegex(ValueError, "outside resolved discovery cohort"):

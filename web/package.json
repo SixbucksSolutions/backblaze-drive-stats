@@ -15,10 +15,17 @@
     "check:fonts": "node scripts/check-font-assets.mjs",
     "test": "node --experimental-strip-types --test src/data.test.ts src/matrix-data.test.ts src/matrix-contrast.test.ts src/matrix-display.test.ts src/font-ready.test.ts src/matrix-scroll.test.ts src/matrix-selection.test.ts",
     "build": "npm run check && npm run check:data && npm run check:fonts && vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "lint": "oxlint --type-aware --deny-warnings src && oxlint --deny-warnings scripts",
+    "format:check": "prettier --config .prettierrc.json --check src scripts index.html package.json package-lock.json tsconfig.json .oxlintrc.json .prettierrc.json ../.github",
+    "format": "prettier --config .prettierrc.json --write src scripts index.html package.json package-lock.json tsconfig.json .oxlintrc.json .prettierrc.json ../.github",
+    "quality": "npm run check && npm run lint && npm run format:check"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "oxlint": "1.90.0",
+    "oxlint-tsgolint": "7.0.2005",
+    "prettier": "3.9.10",
     "typescript": "~7.0.2",
     "vite": "^8.3.5"
   }

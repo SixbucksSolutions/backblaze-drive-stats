@@ -70,10 +70,40 @@ Backblaze's [history of the dataset](https://www.backblaze.com/blog/10-stories-f
 dates its first snapshot to April 10, 2013. The opening quarter is therefore
 partial. Do not infer complete quarters from an advertised file count.
 
-## Proposed bounded sequence
+## Current execution priority
 
-**RECOMMENDED: approve a small earliest-source/coverage audit before authorizing
-the full historical build.** After #0015/#0016 acceptance, inspect the 2013 annual
+Owner clarification on 2026-10-31 supersedes the former 2013-first starting order:
+work **newest to oldest**, delivering current NAS purchase comparisons before
+complete historical fleet coverage. #0022's language quality gates precede further
+#0017 implementation. Broader oldest-source fleet exploration is backlog #0023.
+
+- Reuse the retained newest-quarter cache first. Regex matches are positive
+  interest hints, not proof that an exact model is still manufactured or buyable.
+  Keep production/availability evidence separate from observed fleet deployment.
+- Preserve all-source discovery, including unfamiliar qualifying HDDs/vendors,
+  without forcing every legacy model into the first purchase-focused publication.
+- Separate discovery inventory, the fixed published analysis cohort, purchase
+  defaults and historical references in the #0017 contract amendment. A UI-only
+  filter cannot remove the current generator's older-cohort history obligations.
+- Work backward in bounded batches, with 2026 Q1 the next proposed source after
+  the retained 2026 Q2 cache. Its catalog estimate is 1.3 GB ZIP / 12.02 GB CSV;
+  transfer limits and actual resources must be scoped before that batch executes.
+- Establish each candidate's anchor and pre-eligibility exposure honestly. The
+  first loaded qualifying quarter is not proof of the original anchor, and an
+  earlier zero quarter does not exclude an older deployment followed by reentry.
+  Incomplete search/history must stay explicit; it cannot certify production
+  cumulative AFR or silently restart the relative-age timeline.
+- Extend only as far as the purchase cohort's validated history requires for the
+  actionable release. Full-fleet/oldest-date completeness remains a later goal.
+
+No new archive has been transferred in the current inventory/planning pass. The
+prior cache measurements below remain evidence; the old source-order proposal is
+retained as superseded context.
+
+## Earlier bounded-sequence proposal (starting order superseded)
+
+The earlier proposal was a small earliest-source/coverage audit before authorizing
+the full historical build. After #0015/#0016 acceptance, inspect the 2013 annual
 archive (advertised 81.2 MB) and reuse the existing current cache. This establishes
 the first actual source dates, early populations, media/role inventory and which
 models the expanded discovery cohort makes relevant. It does not yet publish a
@@ -93,7 +123,7 @@ pre-eligibility exposure. Annual archives must be projected once, then reference
 by quarter-specific receipts pointing to the same daily Parquet files. The
 generator accepts such receipts; no duplicate daily files are needed.
 
-Proposed local execution envelope for separate approval:
+Earlier broad local execution envelope, still subject to separate approval:
 
 - Reserve **100 GB additional local disk** for the catalog-sized ZIP set,
   projected partitions, summaries and interrupted staging. This is an execution

@@ -1,19 +1,19 @@
 """Tiny archive tests; no public downloads or retained raw CSV files."""
+
 import hashlib
 import json
-from pathlib import Path
 import stat
 import tempfile
 import unittest
 import warnings
 import zipfile
+from pathlib import Path
 
 import polars as pl
 import pyarrow.parquet as pq
 
-from prepare_quarter_zip import prepare
 from parquet_profile import PROFILE_ID
-
+from prepare_quarter_zip import prepare
 
 HEADER = "date,serial_number,model,capacity_bytes,failure,smart_1_raw\n"
 ROW = "2026-04-01,private-serial,ST1000,1000000000000,0,999\n"
@@ -37,18 +37,33 @@ class ZipImportTests(unittest.TestCase):
     def test_projection_private_outputs_and_provenance(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            archive = self.make_zip(root, [("quarter/2026-04-01.csv", HEADER + ROW), ("README.txt", "ignore")])
+            archive = self.make_zip(
+                root, [("quarter/2026-04-01.csv", HEADER + ROW), ("README.txt", "ignore")]
+            )
             metadata = prepare(archive, root / "out", source_url="https://example.org/data.zip")
             frame = pl.read_parquet(root / "out/2026-04-01.parquet")
-            self.assertEqual(frame.columns, ["date", "serial_number", "model", "capacity_bytes", "failure", "datacenter"])
+            self.assertEqual(
+                frame.columns,
+                ["date", "serial_number", "model", "capacity_bytes", "failure", "datacenter"],
+            )
             self.assertEqual(frame.schema["date"], pl.Date)
             self.assertEqual(frame["serial_number"].to_list(), ["private-serial"])
             self.assertEqual(frame["datacenter"].to_list(), [None])
-            self.assertEqual(metadata["sourceZipSha256"], hashlib.sha256(archive.read_bytes()).hexdigest())
-            self.assertEqual((metadata["fileCount"], metadata["rowCount"], metadata["datacenterAvailable"]), (1, 1, False))
+            self.assertEqual(
+                metadata["sourceZipSha256"], hashlib.sha256(archive.read_bytes()).hexdigest()
+            )
+            self.assertEqual(
+                (metadata["fileCount"], metadata["rowCount"], metadata["datacenterAvailable"]),
+                (1, 1, False),
+            )
             self.assertEqual(metadata["dates"], ["2026-04-01"])
             self.assertEqual(metadata["parquetProfile"], PROFILE_ID)
-            self.assertEqual(pq.read_metadata(root/"out/2026-04-01.parquet").metadata[b"backblaze.parquet_profile"].decode(), PROFILE_ID)
+            self.assertEqual(
+                pq.read_metadata(root / "out/2026-04-01.parquet")
+                .metadata[b"backblaze.parquet_profile"]
+                .decode(),
+                PROFILE_ID,
+            )
             receipt = (root / "out/import-metadata.json").read_text()
             self.assertEqual(json.loads(receipt), metadata)
             self.assertNotIn("private-serial", receipt)
@@ -57,17 +72,36 @@ class ZipImportTests(unittest.TestCase):
     def test_datacenter_only_when_explicitly_present(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            archive = self.make_zip(root, [("2026-04-01.csv", HEADER.rstrip() + ",datacenter,vault_id\n" + ROW.rstrip() + ",iad1,17\n")])
+            archive = self.make_zip(
+                root,
+                [
+                    (
+                        "2026-04-01.csv",
+                        HEADER.rstrip() + ",datacenter,vault_id\n" + ROW.rstrip() + ",iad1,17\n",
+                    )
+                ],
+            )
             metadata = prepare(archive, root / "out")
             self.assertTrue(metadata["datacenterAvailable"])
-            self.assertEqual(pl.read_parquet(root / "out/2026-04-01.parquet")["datacenter"].to_list(), ["iad1"])
-            archive = self.make_zip(root, [("2026-04-01.csv", HEADER.rstrip() + ",vault_id\n" + ROW.rstrip() + ",17\n")])
+            self.assertEqual(
+                pl.read_parquet(root / "out/2026-04-01.parquet")["datacenter"].to_list(), ["iad1"]
+            )
+            archive = self.make_zip(
+                root, [("2026-04-01.csv", HEADER.rstrip() + ",vault_id\n" + ROW.rstrip() + ",17\n")]
+            )
             prepare(archive, root / "out", overwrite=True)
-            self.assertEqual(pl.read_parquet(root / "out/2026-04-01.parquet")["datacenter"].to_list(), [None])
+            self.assertEqual(
+                pl.read_parquet(root / "out/2026-04-01.parquet")["datacenter"].to_list(), [None]
+            )
 
     def test_rejects_unsafe_and_duplicate_daily_members(self):
-        for names in [("../2026-04-01.csv",), ("/2026-04-01.csv",), ("x\\2026-04-01.csv",),
-                      ("2026-04-01.csv", "other/2026-04-01.csv"), ("2026-04-01.csv", "2026-04-01.csv")]:
+        for names in [
+            ("../2026-04-01.csv",),
+            ("/2026-04-01.csv",),
+            ("x\\2026-04-01.csv",),
+            ("2026-04-01.csv", "other/2026-04-01.csv"),
+            ("2026-04-01.csv", "2026-04-01.csv"),
+        ]:
             with self.subTest(names=names), tempfile.TemporaryDirectory() as folder:
                 root = Path(folder)
                 archive = self.make_zip(root, [(name, HEADER + ROW) for name in names])
@@ -81,13 +115,23 @@ class ZipImportTests(unittest.TestCase):
             link = zipfile.ZipInfo("link/2026-04-01.csv")
             link.create_system = 3
             link.external_attr = (stat.S_IFLNK | 0o777) << 16
-            archive = self.make_zip(root, [("2026-04-01.csv", HEADER + ROW),
-                ("__MACOSX/2026-04-01.csv", "bad"), (".hidden/2026-04-01.csv", "bad"), (link, "target")])
+            archive = self.make_zip(
+                root,
+                [
+                    ("2026-04-01.csv", HEADER + ROW),
+                    ("__MACOSX/2026-04-01.csv", "bad"),
+                    (".hidden/2026-04-01.csv", "bad"),
+                    (link, "target"),
+                ],
+            )
             self.assertEqual(prepare(archive, root / "out")["fileCount"], 1)
 
     def test_rejects_required_headers_wrong_dates_and_invalid_values_privately(self):
-        contents = ["date,serial_number\n2026-04-01,private-serial\n", HEADER + ROW.replace("2026-04-01", "2026-04-02"),
-                    HEADER + ROW.replace("1000000000000", "private-invalid-number")]
+        contents = [
+            "date,serial_number\n2026-04-01,private-serial\n",
+            HEADER + ROW.replace("2026-04-01", "2026-04-02"),
+            HEADER + ROW.replace("1000000000000", "private-invalid-number"),
+        ]
         for content in contents:
             with self.subTest(content=content[:10]), tempfile.TemporaryDirectory() as folder:
                 root = Path(folder)
@@ -126,7 +170,11 @@ class ZipImportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             archive = self.make_zip(root, [("2026-04-01.csv", HEADER + ROW)])
-            for url in ["http://example.org/file", "https://user:pass@example.org/file", "file:///source.zip"]:
+            for url in [
+                "http://example.org/file",
+                "https://user:pass@example.org/file",
+                "file:///source.zip",
+            ]:
                 with self.assertRaisesRegex(ValueError, "HTTPS"):
                     prepare(archive, root / "out", source_url=url)
             (root / "out").mkdir()

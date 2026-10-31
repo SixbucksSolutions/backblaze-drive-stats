@@ -1,7 +1,7 @@
 [project]
 name = "backblaze-drive-stats-analysis"
 version = "0.1.0"
-description = "Add your description here"
+description = "Offline analysis and static data generation for Backblaze Drive Stats."
 readme = "README.md"
 requires-python = ">=3.15"
 dependencies = [
@@ -14,3 +14,19 @@ dependencies = [
     "xlsxwriter>=3.3.1",
     "jsonschema>=4.26.0",
 ]
+
+[project.optional-dependencies]
+postgres = [
+    "psycopg2-binary>=2.9.13",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.414",
+    "ruff>=0.17.3",
+    "types-jsonschema>=4.26.0.20261006",
+    "types-psycopg2>=2.9.21.20261030",
+]
+
+[tool.uv]
+required-version = ">=0.13.6,<0.14"

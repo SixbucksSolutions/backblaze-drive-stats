@@ -1,10 +1,11 @@
 """Source-preservation regressions for the disposable local benchmark CLI."""
-from datetime import date
-from pathlib import Path
+
 import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import date
+from pathlib import Path
 
 import polars as pl
 
@@ -13,13 +14,22 @@ SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "benchmark_parquet_prof
 
 class BenchmarkSourcePreservationTests(unittest.TestCase):
     def write_source(self, path):
-        pl.DataFrame({"date": [date(2026, 4, 1)], "model": ["sample"],
-                      "serial_number": ["disposable"]}).write_parquet(path)
+        pl.DataFrame(
+            {"date": [date(2026, 4, 1)], "model": ["sample"], "serial_number": ["disposable"]}
+        ).write_parquet(path)
         return path.read_bytes()
 
     def run_cli(self, sources, output, shared=False):
-        args = [sys.executable, str(SCRIPT), "--output-dir", str(output),
-                "--repeats", "1", "--row-group-size", "3"]
+        args = [
+            sys.executable,
+            str(SCRIPT),
+            "--output-dir",
+            str(output),
+            "--repeats",
+            "1",
+            "--row-group-size",
+            "3",
+        ]
         for source in sources:
             args += ["--input", str(source)]
         if shared:
@@ -32,6 +42,7 @@ class BenchmarkSourcePreservationTests(unittest.TestCase):
             source = output / name
             original = self.write_source(source)
             sources = [source]
+            earlier, earlier_original = source, original
             if second_source:
                 earlier = output / "unrelated-first-input.parquet"
                 earlier_original = self.write_source(earlier)
@@ -67,7 +78,7 @@ class BenchmarkSourcePreservationTests(unittest.TestCase):
             alias = root / "source-alias.parquet"
             try:
                 alias.symlink_to(source)
-            except (OSError, NotImplementedError):
+            except OSError, NotImplementedError:
                 self.skipTest("File symlinks unavailable for this Windows account")
             result = self.run_cli([alias], output, shared=True)
             self.assertNotEqual(result.returncode, 0)

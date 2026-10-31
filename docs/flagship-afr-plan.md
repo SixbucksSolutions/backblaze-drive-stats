@@ -298,6 +298,15 @@ from partially overwritten files or silently rebase colors to a visible subset.
 
 ## Data path and resource gate
 
+Owner clarification on 2026-10-31 sets the order **newest to oldest** and prioritizes
+actionable comparisons of purchase-relevant, still-produced models. The regex seed
+is a starting interest signal; neither a match nor continued deployment proves
+current manufacturing or availability. Keep all-source discovery and old reference
+models, while separating their cache/inventory scope from the first purchase-focused
+published cohort. Complete fleet history back to the oldest source is later backlog
+work (#0023), not a prerequisite for the actionable release. The prior 2013-first
+audit recommendation is superseded. Language quality gates (#0022) come first.
+
 The current local 2026 Q2 data cannot supply the complete flagship history. The
 XLSX files provide visual/golden fixtures, but omit the calendar/exposure metadata
 needed to reconstruct a trustworthy production matrix from them alone.
@@ -376,6 +385,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r018**; r001–r017 are retained as history. Planned workers
+assignment revision is **r019**; r001–r018 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

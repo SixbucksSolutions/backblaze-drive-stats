@@ -1,0 +1,79 @@
+name: Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONUTF8: '1'
+      POLARS_MAX_THREADS: '4'
+      UV_NO_PROGRESS: '1'
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: web/.node-version
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install pinned uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: '0.13.6'
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install pinned Python and locked development environment
+        run: |
+          uv python install
+          uv lock --check
+          uv sync --frozen --extra postgres
+      - name: Install locked web dependencies
+        working-directory: web
+        run: npm ci
+      - name: Python lint
+        run: uv run --frozen --no-sync ruff check .
+      - name: Python formatting
+        run: uv run --frozen --no-sync ruff format --check .
+      - name: Python types
+        run: uv run --frozen --no-sync pyright --warnings
+      - name: Python behavior and regression tests
+        run: uv run --frozen --no-sync python -m unittest discover -s tests
+      - name: TypeScript, typed lint and web formatting
+        working-directory: web
+        run: npm run quality
+      - name: Web behavior and regression tests
+        working-directory: web
+        run: npm test
+      - name: Production build, published-data and font checks
+        working-directory: web
+        run: npm run build
+      - name: Verify real Python and TypeScript language-service queries
+        run: |
+          mkdir -p data/staging/ci-language-services
+          uv run --frozen --no-sync python tools/code_intel.py symbols drive_model_names.py --timeout 60 > data/staging/ci-language-services/python.json
+          uv run --frozen --no-sync python tools/code_intel.py symbols web/src/matrix-data.ts --timeout 60 > data/staging/ci-language-services/typescript.json
+          uv run --frozen --no-sync python -c 'import json; from pathlib import Path; root = Path("data/staging/ci-language-services"); assert all(json.loads((root / f"{language}.json").read_text()) for language in ("python", "typescript"))'

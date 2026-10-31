@@ -1,14 +1,22 @@
 """Offline golden checks; optional byte parity when ignored XLSXs are present."""
-from decimal import Decimal
+
 import hashlib
 import json
-from pathlib import Path
 import statistics
 import tempfile
 import unittest
+from decimal import Decimal
+from pathlib import Path
 
 from tools.extract_workbook_fixtures import (
-    METRICS, SOURCES, build, extract, percentile, range_cells, revisions, serialized,
+    METRICS,
+    SOURCES,
+    build,
+    extract,
+    percentile,
+    range_cells,
+    revisions,
+    serialized,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,8 +28,12 @@ def load(name):
 
 
 def cells(snapshot):
-    return {address: raw for model in snapshot["models"] for row in model["rows"]
-            for address, raw in row["cells"]}
+    return {
+        address: raw
+        for model in snapshot["models"]
+        for row in model["rows"]
+        for address, raw in row["cells"]
+    }
 
 
 class WorkbookFixturesTests(unittest.TestCase):
@@ -29,7 +41,9 @@ class WorkbookFixturesTests(unittest.TestCase):
         self.snapshots = [load(f"{snapshot}.json") for snapshot in SOURCES]
 
     def test_complete_model_values_and_unknown_blanks(self):
-        for snapshot, retained_count, height in zip(self.snapshots, (307, 325), (27, 28)):
+        for snapshot, retained_count, height in zip(
+            self.snapshots, (307, 325), (27, 28), strict=False
+        ):
             self.assertEqual(snapshot["metrics"], METRICS)
             self.assertEqual(len(snapshot["models"]), 19)
             self.assertEqual(snapshot["source"]["sha256"], SOURCES[snapshot["snapshot"]])
@@ -74,7 +88,9 @@ class WorkbookFixturesTests(unittest.TestCase):
                     if row["status"] != "retained":
                         continue
                     afr, delta, count, count_delta, *_ = [raw for _, raw in row["cells"]]
-                    self.assertLessEqual(abs(Decimal(afr) - prior_afr - Decimal(delta)), Decimal("1e-14"))
+                    self.assertLessEqual(
+                        abs(Decimal(afr) - prior_afr - Decimal(delta)), Decimal("1e-14")
+                    )
                     self.assertEqual(int(count) - prior_count, int(count_delta))
                     prior_afr, prior_count = Decimal(afr), int(count)
 
@@ -91,11 +107,17 @@ class WorkbookFixturesTests(unittest.TestCase):
         for snapshot in self.snapshots:
             values = cells(snapshot)
             self.assertEqual(len(snapshot["color_rules"]), 7)
-            for metric_index, (rule, (types, colors)) in enumerate(zip(snapshot["color_rules"], expected_rules)):
+            for metric_index, (rule, (types, colors)) in enumerate(
+                zip(snapshot["color_rules"], expected_rules, strict=False)
+            ):
                 self.assertEqual(rule["metric"], METRICS[metric_index])
                 self.assertEqual(len(rule["scope"]), 19)
                 addresses = [a for ref in rule["scope"] for a in range_cells(ref)]
-                expected_addresses = [row["cells"][metric_index][0] for model in snapshot["models"] for row in model["rows"]]
+                expected_addresses = [
+                    row["cells"][metric_index][0]
+                    for model in snapshot["models"]
+                    for row in model["rows"]
+                ]
                 self.assertEqual(addresses, expected_addresses)
                 numeric = [Decimal(values[a]) for a in addresses if values[a] is not None]
                 self.assertEqual(Decimal(rule["minimum"]), min(numeric))
@@ -106,8 +128,11 @@ class WorkbookFixturesTests(unittest.TestCase):
                 self.assertEqual([s["type"] for s in rule["stops"]], types)
                 self.assertEqual([s["css_color"] for s in rule["stops"]], colors)
                 for stop in rule["stops"]:
-                    expected = {"min": min(numeric), "max": max(numeric),
-                                "percentile": statistics.median(numeric)}.get(stop["type"], Decimal(stop["raw_value"]))
+                    expected = {
+                        "min": min(numeric),
+                        "max": max(numeric),
+                        "percentile": statistics.median(numeric),
+                    }.get(stop["type"], Decimal(stop["raw_value"]))
                     self.assertEqual(Decimal(stop["resolved_value"]), expected)
             new_low = snapshot["color_rules"][4]["stops"][0]
             self.assertEqual(new_low["raw_argb"], "FFFFFFFFF")
@@ -131,10 +156,16 @@ class WorkbookFixturesTests(unittest.TestCase):
         lookup = {r["cell"]: (r["before"], r["after"]) for r in expected["changes"]}
         self.assertEqual(lookup["CN6"], ("4", "3"))
         self.assertEqual(lookup["BL21"], ("16", "30"))
-        old_lengths = {m["model"]: sum(r["status"] == "retained" for r in m["rows"]) for m in self.snapshots[0]["models"]}
+        old_lengths = {
+            m["model"]: sum(r["status"] == "retained" for r in m["rows"])
+            for m in self.snapshots[0]["models"]
+        }
         for model in self.snapshots[1]["models"]:
             expected_growth = 0 if model["model"] == "ST12000NM0007" else 1
-            self.assertEqual(sum(r["status"] == "retained" for r in model["rows"]), old_lengths[model["model"]] + expected_growth)
+            self.assertEqual(
+                sum(r["status"] == "retained" for r in model["rows"]),
+                old_lengths[model["model"]] + expected_growth,
+            )
 
     def test_eight_owner_stories_nine_models_and_critical_cells(self):
         stories = load("owner-stories.json")["stories"]
@@ -145,7 +176,9 @@ class WorkbookFixturesTests(unittest.TestCase):
             for evidence in story["evidence"]:
                 snapshot = next(s for s in self.snapshots if s["snapshot"] == evidence["snapshot"])
                 model = next(m for m in snapshot["models"] if m["model"] == evidence["model"])
-                self.assertEqual(evidence["retained_rows"], sum(r["status"] == "retained" for r in model["rows"]))
+                self.assertEqual(
+                    evidence["retained_rows"], sum(r["status"] == "retained" for r in model["rows"])
+                )
         q3, q4 = map(cells, self.snapshots)
         self.assertEqual(q3["C6"], "2.005727880425647")
         self.assertEqual(q3["AZ6"], "3.570438723771948")
@@ -171,12 +204,19 @@ class WorkbookFixturesTests(unittest.TestCase):
 
     def test_optional_local_source_parity_and_unchanged_hashes(self):
         source_dir = ROOT / "data/references"
-        if not all((source_dir / f"{snapshot}_quarterly_afr.xlsx").exists() for snapshot in SOURCES):
+        if not all(
+            (source_dir / f"{snapshot}_quarterly_afr.xlsx").exists() for snapshot in SOURCES
+        ):
             self.skipTest("Ignored owner XLSXs absent; offline fixture checks still run")
         for filename, value in build(source_dir).items():
             self.assertEqual(serialized(value).encode("utf-8"), (FIXTURES / filename).read_bytes())
         for snapshot, expected in SOURCES.items():
-            self.assertEqual(hashlib.sha256((source_dir / f"{snapshot}_quarterly_afr.xlsx").read_bytes()).hexdigest(), expected)
+            self.assertEqual(
+                hashlib.sha256(
+                    (source_dir / f"{snapshot}_quarterly_afr.xlsx").read_bytes()
+                ).hexdigest(),
+                expected,
+            )
 
 
 if __name__ == "__main__":

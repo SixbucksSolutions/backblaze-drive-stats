@@ -1,9 +1,10 @@
 """Small synthetic tests; never fetch or process the public dataset."""
-from datetime import date, timedelta
+
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from datetime import date, timedelta
+from pathlib import Path
 
 import polars as pl
 
@@ -14,16 +15,57 @@ def fixture() -> pl.DataFrame:
     rows = []
     day = date(2024, 1, 1)
     while day <= date(2024, 6, 30):
-        rows.append({"date": day, "serial_number": "private-A", "model": "ST1000", "capacity_bytes": 10**12, "failure": 0, "datacenter": "iad1"})
+        rows.append(
+            {
+                "date": day,
+                "serial_number": "private-A",
+                "model": "ST1000",
+                "capacity_bytes": 10**12,
+                "failure": 0,
+                "datacenter": "iad1",
+            }
+        )
         day += timedelta(days=1)
-    rows.extend([
-        {"date": date(2024, 3, 30), "serial_number": "private-B", "model": "Seagate ST1000", "capacity_bytes": -1, "failure": 0, "datacenter": "ams1"},
-        {"date": date(2024, 3, 31), "serial_number": "private-B", "model": "ST1000", "capacity_bytes": 10**12, "failure": 1, "datacenter": "iad1"},
-        {"date": date(2024, 4, 1), "serial_number": "private-C", "model": "TOSHIBA MG01", "capacity_bytes": 2*10**12, "failure": 1, "datacenter": None},
-    ])
+    rows.extend(
+        [
+            {
+                "date": date(2024, 3, 30),
+                "serial_number": "private-B",
+                "model": "Seagate ST1000",
+                "capacity_bytes": -1,
+                "failure": 0,
+                "datacenter": "ams1",
+            },
+            {
+                "date": date(2024, 3, 31),
+                "serial_number": "private-B",
+                "model": "ST1000",
+                "capacity_bytes": 10**12,
+                "failure": 1,
+                "datacenter": "iad1",
+            },
+            {
+                "date": date(2024, 4, 1),
+                "serial_number": "private-C",
+                "model": "TOSHIBA MG01",
+                "capacity_bytes": 2 * 10**12,
+                "failure": 1,
+                "datacenter": None,
+            },
+        ]
+    )
     # Future observations must not alter Q1/Q2 capacity or last-seen metrics.
     for offset in range(200):
-        rows.append({"date": date(2024, 7, 1) + timedelta(days=offset), "serial_number": "private-A", "model": "ST1000", "capacity_bytes": 9*10**12, "failure": 0, "datacenter": "iad1"})
+        rows.append(
+            {
+                "date": date(2024, 7, 1) + timedelta(days=offset),
+                "serial_number": "private-A",
+                "model": "ST1000",
+                "capacity_bytes": 9 * 10**12,
+                "failure": 0,
+                "datacenter": "iad1",
+            }
+        )
     return pl.DataFrame(rows)
 
 
@@ -33,10 +75,14 @@ class ExportTests(unittest.TestCase):
         q1 = build_bundle(source, "2024-Q1", kind="sample")
         model = q1["models"][0]
         self.assertEqual((model["driveCount"], model["driveDays"], model["failures"]), (2, 93, 1))
-        self.assertEqual((model["capacityTb"], model["newDrives"], model["lastObservedDrives"]), (1, 2, 0))
+        self.assertEqual(
+            (model["capacityTb"], model["newDrives"], model["lastObservedDrives"]), (1, 2, 0)
+        )
         self.assertAlmostEqual(model["quarterlyAfr"], 36500 / 93)
         self.assertEqual(q1["provenance"]["coverageEnd"], "2024-03-31")
-        self.assertEqual(q1["capacityByDatacenter"], [{"datacenter": "IAD1", "capacityTb": 2.0, "driveCount": 2}])
+        self.assertEqual(
+            q1["capacityByDatacenter"], [{"datacenter": "IAD1", "capacityTb": 2.0, "driveCount": 2}]
+        )
         q2 = build_bundle(source, "2024-Q2")
         self.assertEqual(sum(m["driveCount"] for m in q2["models"]), 2)
         self.assertEqual(sum(d["driveCount"] for d in q2["capacityByDatacenter"]), 2)
@@ -52,13 +98,21 @@ class ExportTests(unittest.TestCase):
             root = Path(folder)
             parquet = root / "source.parquet"
             fixture().write_parquet(parquet)
-            self.assertEqual(export(pl.scan_parquet(parquet), "2024-Q2", root / "out", kind="sample"), ["2024-Q1", "2024-Q2"])
+            self.assertEqual(
+                export(pl.scan_parquet(parquet), "2024-Q2", root / "out", kind="sample"),
+                ["2024-Q1", "2024-Q2"],
+            )
             manifest = json.loads((root / "out/index.json").read_text())
             self.assertEqual(manifest["schemaVersion"], 1)
-            self.assertEqual(manifest["quarters"][0], {"quarter": "2024-Q2", "label": "2024 Q2", "url": "2024-Q2.json", "kind": "sample"})
+            self.assertEqual(
+                manifest["quarters"][0],
+                {"quarter": "2024-Q2", "label": "2024 Q2", "url": "2024-Q2.json", "kind": "sample"},
+            )
             q1 = json.loads((root / "out/2024-Q1.json").read_text())
             notes = " ".join(q1["provenance"]["notes"])
-            self.assertIn("all supplied source models are included, including boot drives if present", notes)
+            self.assertIn(
+                "all supplied source models are included, including boot drives if present", notes
+            )
             self.assertIn("not asserted to match the eligibility criteria", notes)
             self.assertIn("newDrives includes the initial observed fleet", notes)
             for path in (root / "out").glob("*.json"):
@@ -107,7 +161,9 @@ class ExportTests(unittest.TestCase):
             export(fixture().lazy(), "2024-Q2", root, from_quarter="2024-Q2", patterns=["ST1000"])
             bundle = json.loads((root / "2024-Q2.json").read_text())
             notes = " ".join(bundle["provenance"]["notes"])
-            self.assertIn('Model-selection regex filters applied to source model names: ["ST1000"]', notes)
+            self.assertIn(
+                'Model-selection regex filters applied to source model names: ["ST1000"]', notes
+            )
             self.assertNotIn("No model-selection filters", notes)
             self.assertNotIn("Supplied history starts in this reporting quarter", notes)
             self.assertFalse((root / "2024-Q1.json").exists())
@@ -119,11 +175,22 @@ class ExportTests(unittest.TestCase):
     def test_capacity_tie_missing_datacenter_and_string_dates(self):
         rows = []
         for offset in range(91):
-            for serial, capacity in [("a", 10**12), ("b", 2*10**12)]:
-                rows.append({"date": (date(2024, 1, 1) + timedelta(days=offset)).isoformat(), "model": "ST1000", "serial_number": serial, "capacity_bytes": capacity, "failure": 0})
+            for serial, capacity in [("a", 10**12), ("b", 2 * 10**12)]:
+                rows.append(
+                    {
+                        "date": (date(2024, 1, 1) + timedelta(days=offset)).isoformat(),
+                        "model": "ST1000",
+                        "serial_number": serial,
+                        "capacity_bytes": capacity,
+                        "failure": 0,
+                    }
+                )
         bundle = build_bundle(prepare_source(pl.DataFrame(rows).lazy()), "2024-Q1")
         self.assertEqual(bundle["models"][0]["capacityTb"], 1)
-        self.assertEqual(bundle["capacityByDatacenter"], [{"datacenter": "Unknown", "capacityTb": 2.0, "driveCount": 2}])
+        self.assertEqual(
+            bundle["capacityByDatacenter"],
+            [{"datacenter": "Unknown", "capacityTb": 2.0, "driveCount": 2}],
+        )
 
     def test_future_invalid_records_do_not_block_prior_cutoff(self):
         frame = fixture().with_columns(pl.col("failure").cast(pl.String))
@@ -142,13 +209,18 @@ class ExportTests(unittest.TestCase):
         for cutoff in ["2024-Q1", "2024-Q2"]:
             calls = []
 
-            def record_batch(batch):
+            def record_batch(batch, calls=calls):
                 calls.append(1)
                 return batch
 
             frame = fixture()
-            source = frame.lazy().map_batches(record_batch, schema=frame.schema,
-                predicate_pushdown=False, projection_pushdown=False, slice_pushdown=False)
+            source = frame.lazy().map_batches(
+                record_batch,
+                schema=frame.schema,
+                predicate_pushdown=False,
+                projection_pushdown=False,
+                slice_pushdown=False,
+            )
             with tempfile.TemporaryDirectory() as folder:
                 export(source, cutoff, Path(folder))
             counts.append(len(calls))

@@ -30,6 +30,12 @@ uv run --frozen python --version
 uv run --frozen python -m unittest discover -s tests
 ```
 
+uv owns the project environment in `.venv`. For the complete development gate,
+including the optional legacy PostgreSQL importer's dependencies, use
+`uv sync --frozen --extra postgres` and the commands in the
+[quality policy](code-quality.md). Ruff and Pyright are locked development tools;
+Pyright also supplies the Python language server used by `tools/code_intel.py`.
+
 The first installation needs network access. On the verified Windows/Python 3.15
 installation, uv built the locked PyIceberg and zstandard source distributions
 locally. The native zstandard build needs a compatible compiler, such as the
@@ -59,7 +65,7 @@ details. Raw data, caches and staging outputs remain local and ignored by Git.
 ```powershell
 uv lock --upgrade
 uv sync --frozen
-uv export --frozen --format requirements-txt --no-hashes --output-file requirements.txt
+uv export --frozen --format requirements-txt --no-hashes --no-dev --output-file requirements.txt
 uv run --frozen python -m unittest discover -s tests
 ```
 

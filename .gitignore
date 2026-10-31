@@ -4,6 +4,7 @@
 *.parquet
 __pycache__/
 .venv/
+.ruff_cache/
 *.xlsx
 *_state.json
 web/node_modules/

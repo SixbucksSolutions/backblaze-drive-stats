@@ -34,6 +34,15 @@ The software and original project analysis are [MIT licensed](LICENSE). Backblaz
 source data, name, branding and other third-party material retain their own rights
 and usage terms. This is an independent project. See [data sources and attribution](DATA_SOURCES.md).
 
+## Development quality
+
+Python uses **uv + Ruff + Pyright**. The frontend uses **strict TypeScript 7,
+type-aware Oxlint and Prettier**. GitHub Actions checks both platforms, tests,
+production data/font integrity and real Python/TypeScript language-service queries.
+See the [quality policy and commands](docs/code-quality.md) for the selected rules,
+coverage, justified exceptions and update process. [AGENTS.md](AGENTS.md) documents
+the same workflow for coding agents; `.venv` is managed by uv.
+
 ## Quarterly website
 
 The `web/` directory contains a TypeScript 7 static explorer for all six quarterly

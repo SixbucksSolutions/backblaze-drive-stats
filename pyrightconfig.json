@@ -1,0 +1,28 @@
+{
+  "include": [
+    "*.py",
+    "tests",
+    "tools",
+    "fixtures"
+  ],
+  "exclude": [
+    "data",
+    ".venv",
+    "web"
+  ],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.15",
+  "typeCheckingMode": "standard",
+  "strict": [
+    "drive_model_names.py",
+    "etl_pipeline.py",
+    "matrix_types.py"
+  ],
+  "reportUnnecessaryTypeIgnoreComment": "error",
+  "reportUnnecessaryComparison": "error",
+  "reportUnnecessaryCast": "error",
+  "reportAssertAlwaysTrue": "error",
+  "reportIncompatibleMethodOverride": "error",
+  "reportIncompatibleVariableOverride": "error"
+}

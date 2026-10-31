@@ -16,20 +16,40 @@ class ScrollElement extends EventTarget {
   properties = new Map<string, string>();
   style = {
     getPropertyValue: (name: string) => this.properties.get(name) ?? '',
-    setProperty: (name: string, value: string) => { this.properties.set(name, value); },
+    setProperty: (name: string, value: string) => {
+      this.properties.set(name, value);
+    },
   };
-  get scrollLeft() { return this.left; }
-  set scrollLeft(value: number) { this.leftWrites++; this.left = value; }
-  get scrollTop() { return this.top; }
-  set scrollTop(value: number) { this.topWrites++; this.top = value; }
-  querySelector(selector: string) { return this.children.get(selector) ?? null; }
-  querySelectorAll() { return []; }
-  emitScroll() { this.dispatchEvent(new Event('scroll')); }
+  get scrollLeft() {
+    return this.left;
+  }
+  set scrollLeft(value: number) {
+    this.leftWrites++;
+    this.left = value;
+  }
+  get scrollTop() {
+    return this.top;
+  }
+  set scrollTop(value: number) {
+    this.topWrites++;
+    this.top = value;
+  }
+  querySelector(selector: string) {
+    return this.children.get(selector) ?? null;
+  }
+  querySelectorAll() {
+    return [];
+  }
+  emitScroll() {
+    this.dispatchEvent(new Event('scroll'));
+  }
 }
 
-test('native rail animation survives viewport echoes; viewport input and cleanup still work', () => {
-  const pane = new ScrollElement(), viewport = new ScrollElement();
-  const horizontal = new ScrollElement(), vertical = new ScrollElement();
+await test('native rail animation survives viewport echoes; viewport input and cleanup still work', () => {
+  const pane = new ScrollElement(),
+    viewport = new ScrollElement();
+  const horizontal = new ScrollElement(),
+    vertical = new ScrollElement();
   pane.children.set('.matrix-scroll', viewport);
   pane.children.set('.matrix-hscroll', horizontal);
   pane.children.set('.matrix-vscroll', vertical);
@@ -39,7 +59,9 @@ test('native rail animation survives viewport echoes; viewport input and cleanup
   const globals = {
     ResizeObserver: class {
       observe() {}
-      disconnect() { disconnected = true; }
+      disconnect() {
+        disconnected = true;
+      }
     },
     window: new EventTarget(),
     document: { fonts: Object.assign(new EventTarget(), { ready: new Promise(() => {}) }) },
@@ -100,8 +122,11 @@ test('native rail animation survives viewport echoes; viewport input and cleanup
   } finally {
     dispose?.();
     for (const [name, descriptor] of previous) {
-      if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-      else Reflect.deleteProperty(globalThis, name);
+      if (descriptor) {
+        Object.defineProperty(globalThis, name, descriptor);
+      } else {
+        Reflect.deleteProperty(globalThis, name);
+      }
     }
   }
 });

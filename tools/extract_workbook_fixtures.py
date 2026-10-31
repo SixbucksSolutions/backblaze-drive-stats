@@ -3,16 +3,17 @@
 Only standard ZIP/XML support is needed, including for unsupported color rules.
 Numeric XML lexemes are strings so binary float conversion cannot lose precision.
 """
+
 from __future__ import annotations
 
 import argparse
-from decimal import Decimal, localcontext
 import hashlib
 import json
-from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 import zipfile
+from decimal import Decimal, localcontext
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
@@ -68,6 +69,20 @@ def decimal_text(value: Decimal) -> str:
     return text.rstrip("0").rstrip(".") if "." in text else text
 
 
+def required_element(element: ET.Element, path: str) -> ET.Element:
+    found = element.find(path, NS)
+    if found is None:
+        raise ValueError(f"Missing workbook element: {path}")
+    return found
+
+
+def required_attribute(element: ET.Element, name: str) -> str:
+    value = element.get(name)
+    if value is None:
+        raise ValueError(f"Missing workbook attribute: {name}")
+    return value
+
+
 def extract(path: Path, snapshot: str) -> dict:
     source_bytes = path.read_bytes()
     digest = hashlib.sha256(source_bytes).hexdigest()
@@ -75,11 +90,13 @@ def extract(path: Path, snapshot: str) -> dict:
         raise ValueError(f"Source hash mismatch for {snapshot}; refusing new baseline")
     with zipfile.ZipFile(path) as archive:
         sheet = ET.fromstring(archive.read("xl/worksheets/sheet1.xml"))
-        strings = ["".join(si.itertext()) for si in
-                   ET.fromstring(archive.read("xl/sharedStrings.xml")).findall("m:si", NS)]
+        strings = [
+            "".join(si.itertext())
+            for si in ET.fromstring(archive.read("xl/sharedStrings.xml")).findall("m:si", NS)
+        ]
     cells = {cell.attrib["r"]: cell for cell in sheet.findall(".//m:sheetData/m:row/m:c", NS)}
 
-    def value(address):
+    def value(address: str) -> str | None:
         cell = cells.get(address)
         if cell is None:
             return None
@@ -88,7 +105,17 @@ def extract(path: Path, snapshot: str) -> dict:
         raw = cell.findtext("m:v", namespaces=NS)
         return strings[int(raw)] if cell.get("t") == "s" and raw is not None else raw
 
-    end_row = int(re.search(r"[0-9]+$", sheet.find("m:dimension", NS).get("ref"))[0])
+    def required_value(address: str) -> str:
+        raw = value(address)
+        if raw is None:
+            raise ValueError(f"Missing workbook value: {address}")
+        return raw
+
+    dimension = required_attribute(required_element(sheet, "m:dimension"), "ref")
+    dimension_end = re.search(r"[0-9]+$", dimension)
+    if dimension_end is None:
+        raise ValueError("Invalid workbook dimension")
+    end_row = int(dimension_end[0])
     models = []
     for index, start in enumerate(range(3, 136, 7)):
         model = value(f"{column(start)}3")
@@ -108,95 +135,174 @@ def extract(path: Path, snapshot: str) -> dict:
             for raw in raw_values:
                 if raw is not None and not Decimal(raw).is_finite():
                     raise ValueError("Non-finite value")
-            rows.append({
-                "sheet_row": row, "display_ordinal": row - 5,
-                "retained_ordinal": row - 5 if populated else None,
-                "display_year": int(value(f"A{row}") or ((row - 6) // 4 + 1)),
-                "display_quarter": int(value(f"B{row}")),
-                "status": "retained" if populated else "trailing_blank_unknown",
-                "calendar_quarter": None, "exposure_drive_days": None,
-                "cells": list(map(list, zip(coordinates, raw_values))),
-            })
-        models.append({"model": model, "vendor": "Seagate" if index < 6 else
-                       "Toshiba" if index < 12 else "WDC/HGST",
-                       "header_cell": f"{column(start)}3", "rows": rows})
+            rows.append(
+                {
+                    "sheet_row": row,
+                    "display_ordinal": row - 5,
+                    "retained_ordinal": row - 5 if populated else None,
+                    "display_year": int(value(f"A{row}") or ((row - 6) // 4 + 1)),
+                    "display_quarter": int(required_value(f"B{row}")),
+                    "status": "retained" if populated else "trailing_blank_unknown",
+                    "calendar_quarter": None,
+                    "exposure_drive_days": None,
+                    "cells": list(map(list, zip(coordinates, raw_values, strict=False))),
+                }
+            )
+        models.append(
+            {
+                "model": model,
+                "vendor": "Seagate" if index < 6 else "Toshiba" if index < 12 else "WDC/HGST",
+                "header_cell": f"{column(start)}3",
+                "rows": rows,
+            }
+        )
 
     rules = []
     for scope in sheet.findall("m:conditionalFormatting", NS):
-        rule = scope.find("m:cfRule", NS)
-        priority = int(rule.get("priority"))
+        rule = required_element(scope, "m:cfRule")
+        priority = int(required_attribute(rule, "priority"))
         metric = METRICS[priority - 1]
-        references = scope.get("sqref").split()
+        references = required_attribute(scope, "sqref").split()
         addresses = [address for ref in references for address in range_cells(ref)]
-        numbers = [Decimal(value(address)) for address in addresses if value(address) is not None]
-        scale = rule.find("m:colorScale", NS)
+        numbers = [Decimal(raw) for address in addresses if (raw := value(address)) is not None]
+        scale = required_element(rule, "m:colorScale")
         stops = []
-        for threshold, color in zip(scale.findall("m:cfvo", NS), scale.findall("m:color", NS)):
-            kind = threshold.get("type")
+        for threshold, color in zip(
+            scale.findall("m:cfvo", NS), scale.findall("m:color", NS), strict=False
+        ):
+            kind = required_attribute(threshold, "type")
             raw = threshold.get("val")
             resolved = {"min": min(numbers), "max": max(numbers)}.get(kind)
             if kind == "num":
-                resolved = Decimal(raw)
+                resolved = Decimal(required_attribute(threshold, "val"))
             elif kind == "percentile":
-                resolved = percentile(numbers, Decimal(raw))
+                resolved = percentile(numbers, Decimal(required_attribute(threshold, "val")))
             if resolved is None:
                 raise ValueError(f"Unsupported color threshold: {kind}")
-            argb = color.get("rgb")
+            argb = required_attribute(color, "rgb")
             normalize = metric == "new" and argb == "FFFFFFFFF"
             if not normalize and not re.fullmatch(r"[0-9A-F]{8}", argb):
                 raise ValueError(f"Unexpected color: {argb}")
-            stops.append({"type": kind, "raw_value": raw,
-                          "resolved_value": decimal_text(resolved), "raw_argb": argb,
-                          "css_color": "#FFFFFF" if normalize else f"#{argb[2:]}",
-                          "normalization": "owner_screenshot_intended_white" if normalize else None})
-        rules.append({"metric": metric, "priority": priority, "type": rule.get("type"),
-                      "scope": references, "scope_kind": "all_19_models_all_display_rows",
-                      "numeric_count": len(numbers), "blank_count": len(addresses) - len(numbers),
-                      "minimum": decimal_text(min(numbers)),
-                      "median": decimal_text(percentile(numbers, Decimal(50))),
-                      "maximum": decimal_text(max(numbers)), "stops": stops})
+            stops.append(
+                {
+                    "type": kind,
+                    "raw_value": raw,
+                    "resolved_value": decimal_text(resolved),
+                    "raw_argb": argb,
+                    "css_color": "#FFFFFF" if normalize else f"#{argb[2:]}",
+                    "normalization": "owner_screenshot_intended_white" if normalize else None,
+                }
+            )
+        rules.append(
+            {
+                "metric": metric,
+                "priority": priority,
+                "type": rule.get("type"),
+                "scope": references,
+                "scope_kind": "all_19_models_all_display_rows",
+                "numeric_count": len(numbers),
+                "blank_count": len(addresses) - len(numbers),
+                "minimum": decimal_text(min(numbers)),
+                "median": decimal_text(percentile(numbers, Decimal(50))),
+                "maximum": decimal_text(max(numbers)),
+                "stops": stops,
+            }
+        )
     if len(rules) != 7:
         raise ValueError("Expected seven shared color rules")
-    return {"schema": "workbook-reference-fixture/v1", "snapshot": snapshot,
-            "purpose": "reference_only_not_production_matrix",
-            "source": {"file": path.name, "sha256": digest, "bytes": len(source_bytes),
-                       "url": "https://s3.us-east-2.amazonaws.com/backblaze-drive-stats.sixbuckssolutions.com/afr_data/"
-                       + snapshot.lower().replace("-", "") + "_quarterly_afr.xlsx",
-                       "label": f"Owner-supplied {snapshot} reference snapshot; cutoff inferred from label only"},
-            "sheet": "Sheet1", "dimension": sheet.find("m:dimension", NS).get("ref"),
-            "pane": sheet.find("m:sheetViews/m:sheetView/m:pane", NS).attrib,
-            "metrics": METRICS, "numeric_encoding": "exact_OOXML_v_text",
-            "calendar_mapping": "unknown", "exposure": "unknown",
-            "trailing_blank_meaning": "unknown; does not establish threshold exit or future quarter",
-            "models": models, "color_rules": rules}
+    return {
+        "schema": "workbook-reference-fixture/v1",
+        "snapshot": snapshot,
+        "purpose": "reference_only_not_production_matrix",
+        "source": {
+            "file": path.name,
+            "sha256": digest,
+            "bytes": len(source_bytes),
+            "url": "https://s3.us-east-2.amazonaws.com/backblaze-drive-stats.sixbuckssolutions.com/afr_data/"
+            + snapshot.lower().replace("-", "")
+            + "_quarterly_afr.xlsx",
+            "label": f"Owner-supplied {snapshot} reference snapshot; cutoff inferred from label only",
+        },
+        "sheet": "Sheet1",
+        "dimension": dimension,
+        "pane": required_element(sheet, "m:sheetViews/m:sheetView/m:pane").attrib,
+        "metrics": METRICS,
+        "numeric_encoding": "exact_OOXML_v_text",
+        "calendar_mapping": "unknown",
+        "exposure": "unknown",
+        "trailing_blank_meaning": "unknown; does not establish threshold exit or future quarter",
+        "models": models,
+        "color_rules": rules,
+    }
 
 
 def revisions(before: dict, after: dict) -> dict:
     changes = []
-    for old_model, new_model in zip(before["models"], after["models"]):
+    for old_model, new_model in zip(before["models"], after["models"], strict=False):
         if old_model["model"] != new_model["model"]:
             raise ValueError("Model block order changed")
-        for old, new in zip(old_model["rows"], new_model["rows"]):
+        for old, new in zip(old_model["rows"], new_model["rows"], strict=False):
             if old["status"] != "retained" or new["status"] != "retained":
                 continue
-            for metric, old_cell, new_cell in zip(METRICS, old["cells"], new["cells"]):
+            for metric, old_cell, new_cell in zip(
+                METRICS, old["cells"], new["cells"], strict=False
+            ):
                 if Decimal(old_cell[1]) != Decimal(new_cell[1]):
-                    changes.append({"model": old_model["model"], "retained_ordinal": old["retained_ordinal"],
-                                    "cell": old_cell[0], "metric": metric,
-                                    "before": old_cell[1], "after": new_cell[1]})
-    return {"schema": "workbook-reference-revisions/v1", "before": before["snapshot"],
-            "after": after["snapshot"], "changes": changes}
+                    changes.append(
+                        {
+                            "model": old_model["model"],
+                            "retained_ordinal": old["retained_ordinal"],
+                            "cell": old_cell[0],
+                            "metric": metric,
+                            "before": old_cell[1],
+                            "after": new_cell[1],
+                        }
+                    )
+    return {
+        "schema": "workbook-reference-revisions/v1",
+        "before": before["snapshot"],
+        "after": after["snapshot"],
+        "changes": changes,
+    }
 
 
 STORIES = [
     ("warning", ["ST12000NM0007"], "Rising AFR, large retirement waves and shrinking population"),
-    ("promising", ["WUH721816ALE6L4"], "Low AFR, growing population and quiet departure columns; short history"),
-    ("mature_good", ["HUH721212ALN604"], "Long stable history before late deterioration; preserve age context"),
-    ("early_spike", ["MG08ACA16TA", "MG08ACA16TE"], "Early high AFR settling near 1%; pre-eligibility contribution unknown"),
-    ("favorable", ["ST16000NM001G"], "Owner-favorable comparison; historical shopping availability is not fleet data"),
-    ("early_deterioration", ["ST24000NM002H"], "Rising AFR during growing deployment before retirement waves"),
-    ("rollout_plateau", ["HUH721212ALE604"], "New falls after ordinal 5 while Count plateaus near 13000"),
-    ("sustained_rollout", ["WUH722222ALE6L4"], "Continuing bulk additions and Count above 44000; motive unknown"),
+    (
+        "promising",
+        ["WUH721816ALE6L4"],
+        "Low AFR, growing population and quiet departure columns; short history",
+    ),
+    (
+        "mature_good",
+        ["HUH721212ALN604"],
+        "Long stable history before late deterioration; preserve age context",
+    ),
+    (
+        "early_spike",
+        ["MG08ACA16TA", "MG08ACA16TE"],
+        "Early high AFR settling near 1%; pre-eligibility contribution unknown",
+    ),
+    (
+        "favorable",
+        ["ST16000NM001G"],
+        "Owner-favorable comparison; historical shopping availability is not fleet data",
+    ),
+    (
+        "early_deterioration",
+        ["ST24000NM002H"],
+        "Rising AFR during growing deployment before retirement waves",
+    ),
+    (
+        "rollout_plateau",
+        ["HUH721212ALE604"],
+        "New falls after ordinal 5 while Count plateaus near 13000",
+    ),
+    (
+        "sustained_rollout",
+        ["WUH722222ALE6L4"],
+        "Continuing bulk additions and Count above 44000; motive unknown",
+    ),
 ]
 
 
@@ -208,17 +314,30 @@ def owner_stories(snapshots: list[dict]) -> dict:
             for model in snapshot["models"]:
                 if model["model"] in models:
                     rows = [row for row in model["rows"] if row["status"] == "retained"]
-                    evidence.append({"snapshot": snapshot["snapshot"], "model": model["model"],
-                                     "fixture": f"{snapshot['snapshot']}.json", "retained_rows": len(rows),
-                                     "range": f"{rows[0]['cells'][0][0]}:{rows[-1]['cells'][-1][0]}"})
-        stories.append({"id": key, "models": models, "owner_reading": reading, "evidence": evidence})
-    return {"schema": "workbook-owner-stories/v1", "source": "docs/flagship-afr-plan.md#reference-evidence-and-acceptance-stories",
-            "interpretation": "Owner reading cases, not purchase rankings, causal findings or current assessments",
-            "stories": stories}
+                    evidence.append(
+                        {
+                            "snapshot": snapshot["snapshot"],
+                            "model": model["model"],
+                            "fixture": f"{snapshot['snapshot']}.json",
+                            "retained_rows": len(rows),
+                            "range": f"{rows[0]['cells'][0][0]}:{rows[-1]['cells'][-1][0]}",
+                        }
+                    )
+        stories.append(
+            {"id": key, "models": models, "owner_reading": reading, "evidence": evidence}
+        )
+    return {
+        "schema": "workbook-owner-stories/v1",
+        "source": "docs/flagship-afr-plan.md#reference-evidence-and-acceptance-stories",
+        "interpretation": "Owner reading cases, not purchase rankings, causal findings or current assessments",
+        "stories": stories,
+    }
 
 
 def build(source_dir: Path) -> dict[str, dict]:
-    snapshots = [extract(source_dir / f"{snapshot}_quarterly_afr.xlsx", snapshot) for snapshot in SOURCES]
+    snapshots = [
+        extract(source_dir / f"{snapshot}_quarterly_afr.xlsx", snapshot) for snapshot in SOURCES
+    ]
     result = {f"{snapshot['snapshot']}.json": snapshot for snapshot in snapshots}
     result["revisions.json"] = revisions(*snapshots)
     result["owner-stories.json"] = owner_stories(snapshots)
@@ -233,7 +352,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-dir", type=Path, default=ROOT / "data/references")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "fixtures/workbooks")
-    parser.add_argument("--check", action="store_true", help="Verify committed bytes without writing")
+    parser.add_argument(
+        "--check", action="store_true", help="Verify committed bytes without writing"
+    )
     args = parser.parse_args()
     outputs = build(args.source_dir)
     if not args.check:
