@@ -1,0 +1,17 @@
+Drive Stats font credits
+
+Inter 4.1
+Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter).
+Created by Rasmus Andersson and project contributors.
+Official source: https://github.com/rsms/inter/tree/v4.1
+SIL Open Font License 1.1: Inter-OFL-4.1.txt (full license in this directory).
+
+JetBrains Mono 2.304
+Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono).
+Typeface design by Philipp Nurullin, with JetBrains and project contributors.
+Official source: https://github.com/JetBrains/JetBrainsMono/tree/v2.304
+SIL Open Font License 1.1: JetBrainsMono-OFL-2.304.txt (full license in this directory).
+
+The bundled font files are unmodified. provenance.json records original download
+URLs and SHA-256 hashes. Font licenses remain separate from the project's MIT
+software license. Third-party names do not imply endorsement.

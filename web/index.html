@@ -1,14 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="app-pending">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#183c40" />
     <meta name="description" content="Explore Backblaze drive reliability, deployments, fleet composition, and capacity by quarter." />
     <title>Drive Stats — Quarterly explorer</title>
+    <link rel="preload" href="%BASE_URL%fonts/InterVariable-4.1.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="%BASE_URL%fonts/JetBrainsMono-Regular-2.304.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="%BASE_URL%fonts/JetBrainsMono-SemiBold-2.304.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/src/fonts.css" />
+    <style>html{background:#f5f6f2;--font-ui:system-ui,-apple-system,'Segoe UI',sans-serif;--font-table:ui-monospace,'Cascadia Mono',Consolas,monospace}.app-pending #app{visibility:hidden}body{margin:0}</style>
   </head>
   <body>
     <div id="app"></div>
+    <noscript><p>This data explorer needs JavaScript to load its reports.</p></noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 import './style.css';
+import { waitForFonts, waitForPresentation, withStartupDeadline } from './font-ready.ts';
 import { csv, groupManufacturers, parseBundle, parseManifest, summarize } from './data.ts';
 import type { Bundle, Manifest, Model, Quarter } from './data.ts';
 
@@ -58,7 +59,7 @@ function render() {
     <aside class="source-credit" aria-label="Data attribution"><span><strong>Source dataset published by <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze</a>.</strong> Explore their <a href="https://www.backblaze.com/blog/category/hard-drive-stats/" target="_blank" rel="noreferrer">official Drive Stats reports</a>.</span><span>Independent analysis by <a href="https://github.com/SixbucksSolutions" target="_blank" rel="noreferrer">SixbucksSolutions</a>. <a href="https://github.com/SixbucksSolutions/backblaze-drive-stats/blob/main/DATA_SOURCES.md" target="_blank" rel="noreferrer">Sources and ownership ↗</a></span></aside>
     ${sample ? '<div class="sample-banner"><span class="sample-tag">SAMPLE DATA</span><span>Development preview using illustrative numbers. These are not Backblaze results.</span></div>' : bundle && !loading && !loadError ? `<div class="coverage-banner"><span class="sample-tag">SOURCE COVERAGE</span><span><strong>${populationLabel}</strong> History begins ${escape(bundle.provenance.coverageStart)}. Cumulative AFR and first-observed counts use this available window; the initial fleet is included.</span></div>` : ''}
     <div id="report" aria-busy="${loading}">${loading ? '<div class="state-panel" role="status"><span class="spinner"></span>Loading quarter data…</div>' : loadError ? `<div class="state-panel error" role="alert"><h2>We couldn’t load this quarter.</h2><p>${escape(loadError)}</p><button id="retry" class="button">Try again</button></div>` : report()}</div>
-    <footer>Data source: <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze Drive Stats ↗</a><span>Independent explorer · ${bundle && !loading && !loadError ? escape(bundle.period.start + ' → ' + bundle.period.end) : 'Quarterly observations'}</span></footer></div></main></div>`;
+    <footer>Data source: <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze Drive Stats ↗</a><span>Independent explorer · ${bundle && !loading && !loadError ? escape(bundle.period.start + ' → ' + bundle.period.end) : 'Quarterly observations'}</span><a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a></footer></div></main></div>`;
   bindEvents();
   const methodology = document.querySelector<HTMLDetailsElement>('#methodology');
   if (methodology) methodology.open = methodologyOpen;
@@ -188,7 +189,7 @@ async function getJson(url: string, signal?: AbortSignal) {
   if (!response.ok) throw new Error(`Data file returned HTTP ${response.status}.`);
   return response.json() as Promise<unknown>;
 }
-async function loadQuarter(quarter: Quarter) {
+async function loadQuarter(quarter: Quarter, startupSignal?: AbortSignal) {
   const id = ++requestId;
   controller?.abort();
   controller = new AbortController();
@@ -201,7 +202,8 @@ async function loadQuarter(quarter: Quarter) {
   try {
     const entry = manifest.quarters.find(item => item.quarter === quarter);
     if (!entry) throw new Error('This quarter is not in the available data index.');
-    const loaded = cache.get(quarter) ?? parseBundle(await getJson(`${import.meta.env.BASE_URL}data/${entry.url}`, controller.signal), quarter, entry.kind);
+    const signal = startupSignal ? AbortSignal.any([controller.signal, startupSignal]) : controller.signal;
+    const loaded = cache.get(quarter) ?? parseBundle(await getJson(`${import.meta.env.BASE_URL}data/${entry.url}`, signal), quarter, entry.kind);
     if (id !== requestId) return;
     cache.set(quarter, loaded);
     bundle = loaded;
@@ -212,24 +214,33 @@ async function loadQuarter(quarter: Quarter) {
   }
   if (id === requestId) { loading = false; render(); }
 }
-async function init() {
+async function init(startupSignal?: AbortSignal) {
   loading = true;
   loadError = '';
   render();
   try {
-    manifest = parseManifest(await getJson(`${import.meta.env.BASE_URL}data/index.json`));
+    manifest = parseManifest(await getJson(`${import.meta.env.BASE_URL}data/index.json`, startupSignal));
     manifest.quarters.sort((a, b) => b.quarter.localeCompare(a.quarter));
     const requested = params.get('quarter');
     const quarter = manifest.quarters.find(entry => entry.quarter === requested)?.quarter ?? manifest.quarters[0]!.quarter;
-    await loadQuarter(quarter);
+    await loadQuarter(quarter, startupSignal);
   } catch (error) {
     loading = false;
     loadError = error instanceof Error ? error.message : 'Unexpected data error.';
     render();
   }
 }
-if (params.get('view') === 'matrix') {
-  void import('./matrix.ts').then(module => module.initMatrix());
-} else {
-  void init();
+async function start() {
+  const startup = new AbortController();
+  const rendering = withStartupDeadline(() => params.get('view') === 'matrix'
+    ? import('./matrix.ts').then(module => { startup.signal.throwIfAborted(); return module.initMatrix(startup.signal); })
+    : init(startup.signal), startup);
+  const readiness = await waitForPresentation(waitForFonts(document.fonts), rendering);
+  document.documentElement.dataset.fontMode = readiness.fontMode;
+  if (readiness.renderFailed || startup.signal.aborted) app.innerHTML = '<section class="state-panel error" role="alert"><h1>Unable to open the explorer</h1><p>Loading did not complete. Reload the page to try again.</p></section>';
+  // Let selected-font metrics and the completed initial DOM settle before reveal.
+  await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  document.documentElement.dataset.appReady = 'true';
+  document.documentElement.classList.remove('app-pending');
 }
+void start();

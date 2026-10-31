@@ -83,10 +83,11 @@ sRGB colors. After the original scale interpolates its color, the presentation
 fill is mixed toward white only as far as needed for **at least 7.1:1 with black
 text**, leaving a margin above the enhanced 7:1 requirement. Already sufficient
 fills stay unchanged. The reported cell now uses `#FF6161` with `#000000`, about
-**7.13:1**, and numeric text is 13 px/600 weight. Its value remains 2.006%.
+**7.13:1**, and numeric text is now 14 px/600 weight. Its value remains 2.006%.
 
-The same deterministic presentation mapping applies to cells, legend chips and
-vendor headers; filtering/pinning cannot rebase it. Source palettes, raw fixture
+The same deterministic presentation mapping applies to numeric cells and legend
+chips; filtering/pinning cannot rebase it. Brand headers use the exact category
+colors described below. Source palettes, raw fixture
 colors, numeric domains, thresholds and values are retained unchanged. This is
 an explicitly owner-requested accessibility adjustment to rendering, not a new
 AFR calculation or a rewrite of the workbook evidence. The legend identifies the
@@ -113,3 +114,51 @@ Standards used: [WCAG 2.2 text contrast AA](https://www.w3.org/WAI/WCAG22/Unders
 [non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)
 and [use of color](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html).
 Saved local browser evidence: `data/staging/ui-0015/contrast/`.
+
+## Typography, stable rendering and grouped years
+
+Owner feedback on 2026-10-31 added these presentation requirements:
+
+- Self-hosted Inter for interface text and model names; JetBrains Mono for
+  numerical matrix cells. Numbers use 14 px/600 weight, fixed character-width
+  fields and a reserved sign position for AFR delta. All seven metric columns
+  and their headers are centered. Field widths use the full snapshot and remain
+  stable when filtering or pinning.
+- AFR cells show `2.006` under **Value %**, without repeating the percent sign.
+  Inspector values and accessible cell descriptions retain explicit units.
+- Vendor colors continue through model headers. Exact fills are Seagate
+  `#6EBE49`, WDC/HGST `#005195` and Toshiba `#CC0000`. Black or white text is
+  selected for the stronger contrast; these category headers meet normal-text
+  AA, while numeric heatmap cells retain the separate 7.1:1 target. Seagate uses
+  black text because white on that green would have insufficient contrast.
+- Model names center across their seven columns; pin controls are positioned
+  separately. Sticky label insets keep names visible beside the frozen age
+  columns on narrow screens.
+- Each relative year has one extended cell covering its quarter row group,
+  with its number aligned beside Q1. Internal quarter lines stop at the Year
+  column. Final partial years span only their actual rows; horizon rules remain.
+
+The initial interface stays hidden until fonts and first-route rendering settle,
+then becomes visible after two animation frames. Fonts are preloaded from the
+same origin; no external font connection or preconnect is needed. After five
+seconds or a font failure, a permanent system-font fallback prevents a later
+font swap. A 15-second startup deadline reveals an error if rendering stalls;
+late startup work is prevented from overwriting that error.
+
+Matrix interactions reconcile retained DOM nodes instead of replacing the whole
+interface. Search focus/caret, disclosure state and scroll containers survive
+updates. This reduces avoidable flicker; it does not claim virtualization or
+eliminate all browser painting. Font licenses, attribution and unmodified source
+hashes are recorded in [COPYRIGHTS.md](../COPYRIGHTS.md) and distributed with the
+font assets. The production build verifies those assets.
+
+Browser verification confirmed custom fonts, Inter model names, Mono numbers,
+percent-free AFR cells with explicit accessible units, centered metric fields,
+and Q1-aligned year numbers (within one pixel). The 2025 Q3 final year spans three
+rows. Search kept its caret through filtering, and the model picker stayed open
+through checkbox changes. Computed WD model colors matched the pinned palette.
+At a 390 px viewport, initial and final model names remained visible beside the
+frozen age columns. Desktop evidence is in
+`data/staging/ui-0015/typography/desktop-final.png`. Unit checks cover late font
+completion, fallback, stalled startup and partial year grouping; these do not
+replace a full-site accessibility or performance audit.

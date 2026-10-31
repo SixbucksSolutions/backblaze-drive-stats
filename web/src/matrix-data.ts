@@ -53,5 +53,5 @@ export function visibleModels(snapshot: MatrixSnapshot, vendor: string, search: 
   const order = ['Seagate', 'Toshiba', 'WDC/HGST'];
   return candidates.sort((a, b) => Number(pinned.has(b.id)) - Number(pinned.has(a.id)) || (order.includes(a.vendor) ? order.indexOf(a.vendor) : 3) - (order.includes(b.vendor) ? order.indexOf(b.vendor) : 3) || a.vendor.localeCompare(b.vendor) || a.name.localeCompare(b.name));
 }
-export function formatMetric(value: number | null, metric: Metric) { return value === null ? '—' : metric === 'afr' ? `${value.toFixed(3)}%` : metric === 'afrDelta' ? `${value.toFixed(3)}` : value.toLocaleString('en-US'); }
+export function formatMetric(value: number | null, metric: Metric) { return value === null ? '—' : metric === 'afr' || metric === 'afrDelta' ? value.toFixed(3) : value.toLocaleString('en-US'); }
 export function axisExtent(snapshot: MatrixSnapshot, guide: number) { return Math.max(24, snapshot.extent, guide); }

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { adaptProduction, adaptWorkbook, interpolate, metrics } from './matrix-data.ts';
 import { contrastRatio, HEATMAP_CONTRAST_TARGET, heatmapPaint, relativeLuminance } from './matrix-contrast.ts';
+import { vendorPaint, VENDOR_COLORS } from './matrix-brand.ts';
 
 function fixture(path: string) {
   return JSON.parse(readFileSync(fileURLToPath(new URL(`../../fixtures/${path}`, import.meta.url)), 'utf8'));
@@ -59,4 +60,13 @@ test('invalid or translucent colors are refused instead of claiming contrast aga
   for (const invalid of ['red', '#0000', '#FFFFFF00', 'rgba(0,0,0,.5)', '#GGGGGG']) {
     assert.throws(() => heatmapPaint(invalid));
   }
+});
+test('brand header fills stay exact with AA-or-better text, independently of the data heatmap', () => {
+  assert.equal(vendorPaint('Seagate').background, '#6EBE49');
+  assert.equal(vendorPaint('WDC/HGST').background, '#005195');
+  assert.equal(vendorPaint('Toshiba').background, '#CC0000');
+  assert.equal(vendorPaint('Seagate').foreground, '#000000');
+  assert.equal(vendorPaint('WDC/HGST').foreground, '#FFFFFF');
+  for (const vendor of [...Object.keys(VENDOR_COLORS), 'XYZ']) assert.ok(vendorPaint(vendor).contrast >= 4.5);
+  assert.ok(heatmapPaint('#FF0000').contrast >= 7.1);
 });

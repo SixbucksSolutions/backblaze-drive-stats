@@ -1,0 +1,49 @@
+{
+  "assets": [
+    {
+      "file": "InterVariable-4.1.woff2",
+      "family": "Inter",
+      "version": "4.1",
+      "sourceUrl": "https://raw.githubusercontent.com/rsms/inter/v4.1/docs/font-files/InterVariable.woff2",
+      "sha256": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
+      "sizeBytes": 352240,
+      "modified": false
+    },
+    {
+      "file": "Inter-OFL-4.1.txt",
+      "family": "Inter",
+      "version": "4.1",
+      "sourceUrl": "https://raw.githubusercontent.com/rsms/inter/v4.1/LICENSE.txt",
+      "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+      "sizeBytes": 4380,
+      "modified": false
+    },
+    {
+      "file": "JetBrainsMono-Regular-2.304.woff2",
+      "family": "JetBrains Mono",
+      "version": "2.304",
+      "sourceUrl": "https://raw.githubusercontent.com/JetBrains/JetBrainsMono/v2.304/fonts/webfonts/JetBrainsMono-Regular.woff2",
+      "sha256": "a9cb1cd82332b23a47e3a1239d25d13c86d16c4220695e34b243effa999f45f2",
+      "sizeBytes": 92164,
+      "modified": false
+    },
+    {
+      "file": "JetBrainsMono-SemiBold-2.304.woff2",
+      "family": "JetBrains Mono",
+      "version": "2.304",
+      "sourceUrl": "https://raw.githubusercontent.com/JetBrains/JetBrainsMono/v2.304/fonts/webfonts/JetBrainsMono-SemiBold.woff2",
+      "sha256": "918edad542a1da608fd2ba8daebaff9ac802309103fe760eed465b8b4e47faf1",
+      "sizeBytes": 94472,
+      "modified": false
+    },
+    {
+      "file": "JetBrainsMono-OFL-2.304.txt",
+      "family": "JetBrains Mono",
+      "version": "2.304",
+      "sourceUrl": "https://raw.githubusercontent.com/JetBrains/JetBrainsMono/v2.304/OFL.txt",
+      "sha256": "30f0c136e3c88e422d0791acd97238870f9054a9729bc34cf2ff0d4ed8cac4ad",
+      "sizeBytes": 4399,
+      "modified": false
+    }
+  ]
+}
