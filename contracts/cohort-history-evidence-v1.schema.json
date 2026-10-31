@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sixbucks.solutions/contracts/cohort-history-evidence-v1.schema.json",
+  "title": "Proposed additive cohort/history evidence v1 (not a production matrix)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifactType",
+    "contractVersion",
+    "evidenceKind",
+    "notice",
+    "scope",
+    "models"
+  ],
+  "properties": {
+    "artifactType": {
+      "const": "cohort_history_evidence"
+    },
+    "contractVersion": {
+      "const": "1.0.0"
+    },
+    "evidenceKind": {
+      "enum": [
+        "synthetic",
+        "source_backed"
+      ]
+    },
+    "notice": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "historyStart",
+        "throughQuarter",
+        "sourceDomainEvidenceRefs",
+        "discoveryRule",
+        "sourceInventoryEvidenceRefs",
+        "minimumPopulation",
+        "cohortVersion",
+        "cohortDecisionEvidenceRefs",
+        "analysisModelIds",
+        "purchaseDefaultModelIds",
+        "historicalReferenceModelIds"
+      ],
+      "properties": {
+        "historyStart": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "throughQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "sourceDomainEvidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "discoveryRule": {
+          "const": "all_supplied_models_before_selection"
+        },
+        "sourceInventoryEvidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "minimumPopulation": {
+          "const": 2000
+        },
+        "cohortVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cohortDecisionEvidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "analysisModelIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "purchaseDefaultModelIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "historicalReferenceModelIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "modelId",
+          "vendor",
+          "modelNumber",
+          "rawAliases",
+          "mediaClass",
+          "classificationEvidenceRefs",
+          "seedMatch",
+          "marketplaceClaims",
+          "history"
+        ],
+        "properties": {
+          "modelId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "vendor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "modelNumber": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rawAliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "mediaClass": {
+            "enum": [
+              "hdd",
+              "non_hdd",
+              "unclassified"
+            ]
+          },
+          "classificationEvidenceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "seedMatch": {
+            "type": "boolean"
+          },
+          "marketplaceClaims": {
+            "const": "not_assessed"
+          },
+          "history": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "evidenceVersion",
+              "boundary",
+              "quarters",
+              "firstObservedInLoadedHistory",
+              "firstQualifyingInLoadedHistory",
+              "verifiedAnchor",
+              "anchorSearchComplete",
+              "cumulativeHistoryComplete",
+              "knownExposure",
+              "limitations",
+              "verifiedWindowAnchor",
+              "windowHistoryComplete"
+            ],
+            "properties": {
+              "evidenceVersion": {
+                "const": "model-history-evidence-v1"
+              },
+              "boundary": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "quarter",
+                  "evidenceRefs"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "dataset_start",
+                      "bounded_zero",
+                      "unresolved"
+                    ]
+                  },
+                  "quarter": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-Q[1-4]$"
+                  },
+                  "evidenceRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "uniqueItems": true
+                  }
+                }
+              },
+              "quarters": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "quarter",
+                    "coverage",
+                    "count",
+                    "failures",
+                    "driveDays",
+                    "evidenceRefs"
+                  ],
+                  "properties": {
+                    "quarter": {
+                      "type": "string",
+                      "pattern": "^[0-9]{4}-Q[1-4]$"
+                    },
+                    "coverage": {
+                      "enum": [
+                        "complete",
+                        "missing",
+                        "incomplete"
+                      ]
+                    },
+                    "count": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "failures": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "driveDays": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "evidenceRefs": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "uniqueItems": true
+                    }
+                  }
+                }
+              },
+              "firstObservedInLoadedHistory": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-Q[1-4]$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "firstQualifyingInLoadedHistory": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-Q[1-4]$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verifiedAnchor": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-Q[1-4]$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "anchorSearchComplete": {
+                "type": "boolean"
+              },
+              "cumulativeHistoryComplete": {
+                "type": "boolean"
+              },
+              "knownExposure": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "failures",
+                  "driveDays"
+                ],
+                "properties": {
+                  "failures": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "driveDays": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              },
+              "limitations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              },
+              "verifiedWindowAnchor": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-Q[1-4]$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "windowHistoryComplete": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

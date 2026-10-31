@@ -326,6 +326,15 @@ cards and one newest-first pilot. #0027 imported and verified 2026 Q1 within its
 2 GiB source/10 GiB additional-disk envelope. See the [pilot result](quarter-pilot.md).
 No paid compute, broad historical fanout or production publication is implied.
 
+The owner accepted #0027 and B2 setup #0056, then cleared the next turn:
+2025 Q4 #0028, the Q1/Q2 durable cache copy #0057 and the additive
+[cohort/history evidence proposal](cohort-history-evidence.md) within #0017.
+Q4's [audit](quarter-2025-Q4.md) and the [B2 recovery proof](b2-cache-migration.md)
+are recorded separately. Existing production cohort/history behavior is unchanged
+by the additive proposal. The owner also approved a next-batch exception to the
+three-card limit for a four-quarter benchmark (#0029–#0032); see the
+[resource/staffing recommendation](backfill-throughput.md).
+
 The provisional quarter queue reaches 2019 Q1. Continue earlier if necessary to
 find a fully covered quarter with zero HUH721212ALN604 observations across its
 evidenced aliases. Record first appearance and first >=2,000-drive quarter
@@ -396,6 +405,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r021**; r001–r020 are retained as history. Planned workers
+assignment revision is **r022**; r001–r021 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

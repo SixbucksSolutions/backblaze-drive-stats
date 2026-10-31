@@ -9,8 +9,11 @@ full backfill.
 The owner approved newest-first quarter cards and a single-quarter pilot.
 #0027 has imported and verified 2026 Q1; see the [measurements and acceptance
 audit](quarter-pilot.md). #0028–#0055 queue 2025 Q4 through the provisional
-2019 Q1 floor behind pilot acceptance. Wider parallel execution awaits the
-owner's next direction. No older-quarter archive was downloaded for the pilot.
+2019 Q1 floor. The owner accepted that pilot and B2 setup #0056, cleared the next
+turn, and 2025 Q4 #0028 has now been audited. He subsequently authorized a
+four-quarter next-batch benchmark (#0029–#0032), an explicit exception to the
+usual three-card limit. No additional quarter from that benchmark started in
+the current turn.
 
 Continue backward until a complete quarter has zero observations of exact model
 HUH721212ALN604, extending the queue earlier if needed. Record first observation
@@ -19,8 +22,10 @@ positions and does not establish its calendar anchor. One zero quarter is a
 bounded search endpoint, not proof against older deployments or reentry.
 
 #0056 verified the owner's private B2 connection with a small object and
-SHA-256 roundtrip. Parquet migration has not run; completed object manifests
-and byte totals must precede it. Local sources remain intact.
+SHA-256 roundtrip. #0057 then [copied and restored](b2-cache-migration.md) 192
+completed Q1/Q2 cache objects by reviewed manifest. Local sources remain intact.
+The additive [cohort/history evidence proposal](cohort-history-evidence.md)
+does not yet change production selection or history claims.
 
 ## Measured local verification
 
@@ -105,9 +110,9 @@ complete historical fleet coverage. #0022's language quality gates precede furth
   defaults and historical references in the #0017 contract amendment. A UI-only
   filter cannot remove the current generator's older-cohort history obligations.
 - Work backward in bounded batches. The 2026 Q1 pilot is verified after the
-  retained 2026 Q2 cache; 2025 Q4 (#0028) is next, pending pilot acceptance and
-  the owner's next execution direction. Recheck transfer limits and resources
-  before the next batch starts.
+  retained 2026 Q2 cache; 2025 Q4 (#0028) is also verified. The next authorized
+  benchmark covers 2025 Q3, Q2, Q1 and 2024 Q4. Recheck transfer limits and
+  resources before starting it.
 - Establish each candidate's anchor and pre-eligibility exposure honestly. The
   first loaded qualifying quarter is not proof of the original anchor, and an
   earlier zero quarter does not exclude an older deployment followed by reentry.

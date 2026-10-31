@@ -3,7 +3,9 @@
 Implemented for #0016 using local storage first. On 2026-10-31, #0056 verified
 the adapter against the owner's private Backblaze B2 bucket with a dedicated,
 bucket- and prefix-restricted application key supplied outside the repository.
-Bulk cache migration remains separate from this connection check.
+The subsequent [first durable cache migration](b2-cache-migration.md) copied and
+restored 192 completed Q1/Q2 objects by verified manifest. That completed copy
+remains separate from the initial connection check below.
 
 ## Real service verification
 

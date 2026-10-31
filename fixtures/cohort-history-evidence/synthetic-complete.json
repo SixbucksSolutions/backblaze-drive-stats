@@ -1,0 +1,304 @@
+{
+  "artifactType": "cohort_history_evidence",
+  "contractVersion": "1.0.0",
+  "evidenceKind": "synthetic",
+  "notice": "SYNTHETIC TEST DATA. No real source or model evidence.",
+  "scope": {
+    "historyStart": "2024-Q1",
+    "throughQuarter": "2024-Q3",
+    "sourceDomainEvidenceRefs": [
+      "synthetic-domain"
+    ],
+    "discoveryRule": "all_supplied_models_before_selection",
+    "sourceInventoryEvidenceRefs": [
+      "synthetic-all-source-inventory"
+    ],
+    "minimumPopulation": 2000,
+    "cohortVersion": "synthetic-cohort-r1",
+    "cohortDecisionEvidenceRefs": [
+      "synthetic-scope-decision"
+    ],
+    "analysisModelIds": [
+      "OFF-SEED-HDD",
+      "REFERENCE-HDD"
+    ],
+    "purchaseDefaultModelIds": [
+      "OFF-SEED-HDD"
+    ],
+    "historicalReferenceModelIds": [
+      "REFERENCE-HDD"
+    ]
+  },
+  "models": [
+    {
+      "modelId": "OFF-SEED-HDD",
+      "vendor": "Fictional",
+      "modelNumber": "OFF-SEED-HDD",
+      "rawAliases": [
+        "OFF-SEED-HDD"
+      ],
+      "mediaClass": "hdd",
+      "classificationEvidenceRefs": [
+        "synthetic-media"
+      ],
+      "seedMatch": false,
+      "marketplaceClaims": "not_assessed",
+      "history": {
+        "evidenceVersion": "model-history-evidence-v1",
+        "boundary": {
+          "kind": "dataset_start",
+          "quarter": "2024-Q1",
+          "evidenceRefs": [
+            "synthetic-domain-start"
+          ]
+        },
+        "quarters": [
+          {
+            "quarter": "2024-Q1",
+            "coverage": "complete",
+            "count": 100,
+            "failures": 0,
+            "driveDays": 1000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q1"
+            ]
+          },
+          {
+            "quarter": "2024-Q2",
+            "coverage": "complete",
+            "count": 2000,
+            "failures": 0,
+            "driveDays": 20000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q2"
+            ]
+          },
+          {
+            "quarter": "2024-Q3",
+            "coverage": "complete",
+            "count": 1500,
+            "failures": 0,
+            "driveDays": 15000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q3"
+            ]
+          }
+        ],
+        "firstObservedInLoadedHistory": "2024-Q1",
+        "firstQualifyingInLoadedHistory": "2024-Q2",
+        "verifiedAnchor": "2024-Q2",
+        "anchorSearchComplete": true,
+        "cumulativeHistoryComplete": true,
+        "knownExposure": {
+          "failures": 0,
+          "driveDays": 36000
+        },
+        "limitations": [],
+        "verifiedWindowAnchor": "2024-Q2",
+        "windowHistoryComplete": true
+      }
+    },
+    {
+      "modelId": "REFERENCE-HDD",
+      "vendor": "Fictional",
+      "modelNumber": "REFERENCE-HDD",
+      "rawAliases": [
+        "REFERENCE-HDD"
+      ],
+      "mediaClass": "hdd",
+      "classificationEvidenceRefs": [
+        "synthetic-media"
+      ],
+      "seedMatch": true,
+      "marketplaceClaims": "not_assessed",
+      "history": {
+        "evidenceVersion": "model-history-evidence-v1",
+        "boundary": {
+          "kind": "dataset_start",
+          "quarter": "2024-Q1",
+          "evidenceRefs": [
+            "synthetic-domain-start"
+          ]
+        },
+        "quarters": [
+          {
+            "quarter": "2024-Q1",
+            "coverage": "complete",
+            "count": 2000,
+            "failures": 0,
+            "driveDays": 20000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q1"
+            ]
+          },
+          {
+            "quarter": "2024-Q2",
+            "coverage": "complete",
+            "count": 0,
+            "failures": 0,
+            "driveDays": 0,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q2"
+            ]
+          },
+          {
+            "quarter": "2024-Q3",
+            "coverage": "complete",
+            "count": 2100,
+            "failures": 0,
+            "driveDays": 21000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q3"
+            ]
+          }
+        ],
+        "firstObservedInLoadedHistory": "2024-Q1",
+        "firstQualifyingInLoadedHistory": "2024-Q1",
+        "verifiedAnchor": "2024-Q1",
+        "anchorSearchComplete": true,
+        "cumulativeHistoryComplete": true,
+        "knownExposure": {
+          "failures": 0,
+          "driveDays": 41000
+        },
+        "limitations": [],
+        "verifiedWindowAnchor": "2024-Q1",
+        "windowHistoryComplete": true
+      }
+    },
+    {
+      "modelId": "EXCLUDED-SSD",
+      "vendor": "Fictional",
+      "modelNumber": "EXCLUDED-SSD",
+      "rawAliases": [
+        "EXCLUDED-SSD"
+      ],
+      "mediaClass": "non_hdd",
+      "classificationEvidenceRefs": [
+        "synthetic-media"
+      ],
+      "seedMatch": false,
+      "marketplaceClaims": "not_assessed",
+      "history": {
+        "evidenceVersion": "model-history-evidence-v1",
+        "boundary": {
+          "kind": "dataset_start",
+          "quarter": "2024-Q1",
+          "evidenceRefs": [
+            "synthetic-domain-start"
+          ]
+        },
+        "quarters": [
+          {
+            "quarter": "2024-Q1",
+            "coverage": "complete",
+            "count": 3000,
+            "failures": 0,
+            "driveDays": 30000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q1"
+            ]
+          },
+          {
+            "quarter": "2024-Q2",
+            "coverage": "complete",
+            "count": 3000,
+            "failures": 0,
+            "driveDays": 30000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q2"
+            ]
+          },
+          {
+            "quarter": "2024-Q3",
+            "coverage": "complete",
+            "count": 3000,
+            "failures": 0,
+            "driveDays": 30000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q3"
+            ]
+          }
+        ],
+        "firstObservedInLoadedHistory": "2024-Q1",
+        "firstQualifyingInLoadedHistory": "2024-Q1",
+        "verifiedAnchor": "2024-Q1",
+        "anchorSearchComplete": true,
+        "cumulativeHistoryComplete": true,
+        "knownExposure": {
+          "failures": 0,
+          "driveDays": 90000
+        },
+        "limitations": [],
+        "verifiedWindowAnchor": "2024-Q1",
+        "windowHistoryComplete": true
+      }
+    },
+    {
+      "modelId": "UNKNOWN",
+      "vendor": "Fictional",
+      "modelNumber": "UNKNOWN",
+      "rawAliases": [
+        "UNKNOWN"
+      ],
+      "mediaClass": "unclassified",
+      "classificationEvidenceRefs": [],
+      "seedMatch": false,
+      "marketplaceClaims": "not_assessed",
+      "history": {
+        "evidenceVersion": "model-history-evidence-v1",
+        "boundary": {
+          "kind": "dataset_start",
+          "quarter": "2024-Q1",
+          "evidenceRefs": [
+            "synthetic-domain-start"
+          ]
+        },
+        "quarters": [
+          {
+            "quarter": "2024-Q1",
+            "coverage": "complete",
+            "count": 0,
+            "failures": 0,
+            "driveDays": 0,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q1"
+            ]
+          },
+          {
+            "quarter": "2024-Q2",
+            "coverage": "complete",
+            "count": 2500,
+            "failures": 0,
+            "driveDays": 25000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q2"
+            ]
+          },
+          {
+            "quarter": "2024-Q3",
+            "coverage": "complete",
+            "count": 2500,
+            "failures": 0,
+            "driveDays": 25000,
+            "evidenceRefs": [
+              "synthetic-receipt-2024-Q3"
+            ]
+          }
+        ],
+        "firstObservedInLoadedHistory": "2024-Q2",
+        "firstQualifyingInLoadedHistory": "2024-Q2",
+        "verifiedAnchor": "2024-Q2",
+        "anchorSearchComplete": true,
+        "cumulativeHistoryComplete": true,
+        "knownExposure": {
+          "failures": 0,
+          "driveDays": 50000
+        },
+        "limitations": [],
+        "verifiedWindowAnchor": "2024-Q2",
+        "windowHistoryComplete": true
+      }
+    }
+  ]
+}
