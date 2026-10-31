@@ -1,5 +1,10 @@
 # Four-quarter ETL and recovery benchmark
 
+This is the earlier four-quarter experiment. The
+[eight-quarter report](eight-quarter-benchmark.md) records the subsequent source
+gap, capacity check and current 10-quarter cap; older scaling decisions below are
+historical rather than current launch instructions.
+
 The owner approved a four-card exception for 2025 Q3, 2025 Q2, 2025 Q1 and
 2024 Q4 (#0029–#0032). The previously accepted 2026 Q2, 2026 Q1 and 2025 Q4
 caches were preserved. Existing projection, Parquet profile, summary and audit

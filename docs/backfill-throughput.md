@@ -1,5 +1,12 @@
 # Quarterly ETL staffing and initial fanout
 
+Current policy: the owner capped backfill batches at **10 quarters**, replacing
+the earlier doubling plan. The [eight-quarter capacity check](eight-quarter-benchmark.md)
+measured eight overlapping cold summaries at 21.77 GiB sampled worker working set
+with 14.62 GiB sampled minimum available RAM. Native heavy-phase admission remains
+memory-aware; more queued quarters do not automatically get simultaneous heavy
+summaries. The six-direct-agent/depth-one ceiling is unchanged.
+
 The [completed four-quarter recovery benchmark](parallel-quarter-benchmark.md)
 supersedes this initial sizing proposal. Four audits overlapped with a sampled
 13.01 GiB worker working-set peak and a sampled minimum of 21.39 GiB RAM available. The owner

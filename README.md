@@ -33,6 +33,8 @@ The next [2025 Q4 audit](docs/quarter-2025-Q4.md), [durable Q1/Q2 B2 copy](docs/
 and additive [cohort/history evidence proposal](docs/cohort-history-evidence.md) document current work.
 The [four-quarter benchmark and recovery](docs/parallel-quarter-benchmark.md) extends verified private history
 through 2024 Q4 and records the next owner-approved eight-quarter scaling step.
+The [eight-quarter batch](docs/eight-quarter-benchmark.md) extends retained observations through 2022 Q4,
+records a verified one-day source gap, and measures eight simultaneous cold summaries.
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's

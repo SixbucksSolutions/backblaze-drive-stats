@@ -7,6 +7,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
+from threading import Barrier, Event
 from unittest.mock import patch
 
 from history_storage import (
@@ -177,6 +178,112 @@ class FakeB2:
 
 
 class HistoryStorageTests(unittest.TestCase):
+    def test_parallel_objects_overlap_and_local_readback_remains_isolated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = LocalObjectStore(root / "source")
+            target = LocalObjectStore(root / "target")
+            keys = [f"quarter/{index}/object" for index in range(6)]
+            for key in keys:
+                source.write(key, key.encode())
+            manifest = build_transfer_manifest(source.root, keys)
+            real_read = source.read
+            barrier = Barrier(3, timeout=10)
+
+            def overlapping_read(key):
+                barrier.wait()
+                return real_read(key)
+
+            with patch.object(source, "read", side_effect=overlapping_read):
+                receipt = transfer_verified(source, target, manifest, max_workers=3)
+            self.assertEqual(receipt["copied"], len(keys))
+            self.assertEqual(receipt["verified"], len(keys))
+            self.assertEqual(build_transfer_manifest(target.root, keys), manifest)
+            resumed = transfer_verified(source, target, manifest, max_workers=3)
+            self.assertEqual(resumed["reused"], len(keys))
+            self.assertEqual(resumed["manifestSha256"], receipt["manifestSha256"])
+            self.assertEqual(build_transfer_manifest(source.root, keys), manifest)
+            self.assertFalse(list(target.root.rglob(".pending-*")))
+
+    def test_parallel_failure_drains_started_workers_and_resume_verifies_objects(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = LocalObjectStore(root / "source")
+            target = LocalObjectStore(root / "target")
+            for key in ("a", "b", "c"):
+                source.write(key, key.encode())
+            manifest = build_transfer_manifest(source.root, ["a", "b", "c"])
+            started = Barrier(2, timeout=10)
+            failed = Event()
+            release = Event()
+            finished = Event()
+            real_write = target.write
+
+            def interrupted_write(key, data):
+                started.wait()
+                if key == "a":
+                    failed.set()
+                    raise OSError("simulated worker interruption")
+                if not release.wait(10):
+                    raise AssertionError("Test did not release the started worker")
+                real_write(key, data)
+                finished.set()
+
+            def run_transfer():
+                try:
+                    transfer_verified(source, target, manifest, max_workers=2)
+                except OSError:
+                    self.assertTrue(finished.is_set(), "Started worker outlived transfer")
+                    raise
+
+            with patch.object(target, "write", side_effect=interrupted_write):
+                with ThreadPoolExecutor(1) as coordinator:
+                    result = coordinator.submit(run_transfer)
+                    try:
+                        self.assertTrue(failed.wait(10))
+                    finally:
+                        release.set()
+                    with self.assertRaisesRegex(OSError, "simulated worker"):
+                        result.result(timeout=10)
+            self.assertFalse(target.path("c").exists())
+            self.assertFalse(list(target.root.rglob(".pending-*")))
+            receipt = transfer_verified(source, target, manifest, max_workers=2)
+            self.assertEqual((receipt["copied"], receipt["reused"]), (2, 1))
+            self.assertEqual(build_transfer_manifest(target.root, ["a", "b", "c"]), manifest)
+            self.assertEqual(build_transfer_manifest(source.root, ["a", "b", "c"]), manifest)
+
+    def test_parallel_manifest_and_worker_validation_precedes_all_io(self):
+        valid = {"path": "a", "sizeBytes": 1, "sha256": digest(b"a")}
+        bad_rows = (
+            [valid, {**valid, "path": "A"}],
+            [valid, {**valid, "path": "../escape"}],
+            [valid, {**valid, "sha256": None}],
+            [valid, {**valid, "sizeBytes": True}],
+            [valid, {**valid, "path": "a/child"}],
+            [valid, None],
+        )
+        remote = B2ObjectStore(FakeB2(), "owner-test-cache", "prefix")
+        with patch.object(remote.client, "get_object") as read:
+            with patch.object(remote.client, "put_object") as write:
+                for rows in bad_rows:
+                    with self.subTest(rows=rows), self.assertRaises(ValueError):
+                        transfer_verified(
+                            remote,
+                            remote,
+                            {"schemaVersion": 1, "kind": "private-history-cache", "files": rows},
+                            max_workers=8,
+                        )
+                for workers in (0, 17, True):
+                    with self.subTest(workers=workers), self.assertRaises(ValueError):
+                        transfer_verified(
+                            remote,
+                            remote,
+                            {"schemaVersion": 1, "kind": "private-history-cache", "files": [valid]},
+                            max_workers=workers,
+                        )
+                read.assert_not_called()
+                write.assert_not_called()
+
     def test_round_trip_resume_corruption_and_relative_identity(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

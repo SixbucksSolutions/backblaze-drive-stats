@@ -346,6 +346,21 @@ history permit. Keep the six-direct-agent/depth-one ceiling and budget native
 threads separately from language-model agents. The prior four-card exception is
 superseded by that quarter-backfill scaling direction.
 
+The next eight-card batch #0033–#0040 has completed seven full-quarter audits and
+a reviewed 91/92-day partial recovery for 2022 Q4. The December 10-named source
+contains December 11 observations; dates were not relabeled or imputed. The
+[batch/capacity report](eight-quarter-benchmark.md) preserves that source issue,
+retention evidence and measured eight-heavy-summary capacity. Current loaded
+history reaches 2022 Q4 with that explicit one-day gap, and the reference model
+is present. No original anchor or cumulative-history completeness is certified.
+
+The owner then capped backfill at **10 quarters per batch**, replacing doubling.
+The owner also requested a lossless 2026 Q2 repack (#0058). Prioritize it plus
+nine historical quarter cards #0041–#0049 (2022 Q3 through 2020 Q3); #0050 carries
+forward. Keep six direct agents/depth one
+and memory-aware heavy-phase admission; do not equate queued quarters with
+unlimited simultaneous memory allocations. Normal source/resource gates remain.
+
 The provisional quarter queue reaches 2019 Q1. Continue earlier if necessary to
 find a fully covered quarter with zero HUH721212ALN604 observations across its
 evidenced aliases. Record first appearance and first >=2,000-drive quarter
@@ -416,6 +431,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r023**; r001–r022 are retained as history. Planned workers
+assignment revision is **r024**; r001–r023 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

@@ -20,6 +20,15 @@ agent/depth-one ceiling and budget native threads across processes. The remainin
 initial quarter queue extends to the provisional 2019 Q1 floor; extend it only
 as the reference-model boundary and actual production history needs require.
 
+The subsequent [eight-quarter ingestion and capacity check](eight-quarter-benchmark.md)
+retains 2024 Q3 through 2022 Q4. Seven quarters are complete; the reviewed 2022 Q4
+cache contains 91 valid days with December 10 explicitly unavailable. All 15
+loaded quarter caches are retained in B2, with that incomplete coverage preserved.
+The reference model is present in the oldest valid observations; the backward
+search continues. The owner replaced doubling with a 10-quarter batch cap.
+The next capped workset prioritizes lossless Q2 repack #0058 plus #0041–#0049
+(2022 Q3 through 2020 Q3); #0050 carries forward. Live resource gates still apply.
+
 Continue backward until a complete quarter has zero observations of exact model
 HUH721212ALN604, extending the queue earlier if needed. Record first observation
 and first >=2,000-drive quarter separately. The old workbook compresses retained

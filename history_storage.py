@@ -7,9 +7,11 @@ import json
 import os
 import re
 import tempfile
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
+from threading import Event
 
 from jsonschema import FormatChecker
 
@@ -158,13 +160,15 @@ def build_transfer_manifest(root: Path, relative_paths: list[str]) -> dict:
     return {"schemaVersion": 1, "kind": "private-history-cache", "files": files}
 
 
-def transfer_verified(source, target, manifest: dict) -> dict:
+def transfer_verified(source, target, manifest: dict, *, max_workers: int = 1) -> dict:
     """Resume at verified object boundaries, never regenerate source partitions.
 
     Failed in-flight objects are retried in full. Explicit manifests, not remote
     listings or write counts, define completion. Returns counts without prose or
     private paths. A failure does not return a successful receipt.
     """
+    if type(max_workers) is not int or not 1 <= max_workers <= 16:
+        raise ValueError("Transfer workers must be an integer from 1 through 16")
     if manifest.get("schemaVersion") != 1 or manifest.get("kind") != "private-history-cache":
         raise ValueError("Unsupported cache transfer manifest")
     files = manifest.get("files")
@@ -172,17 +176,38 @@ def transfer_verified(source, target, manifest: dict) -> dict:
         raise ValueError("Transfer manifest needs explicit object records")
     seen = set()
     for row in files:
+        if not isinstance(row, dict) or not isinstance(row.get("path"), str):
+            raise ValueError("Invalid transfer object record")
         key = object_key(row["path"])
         if (
             key.casefold() in seen
             or type(row.get("sizeBytes")) is not int
             or row["sizeBytes"] < 0
+            or not isinstance(row.get("sha256"), str)
             or not re.fullmatch(r"[0-9a-f]{64}", row.get("sha256", ""))
         ):
             raise ValueError("Invalid transfer object record")
         seen.add(key.casefold())
+    if any(
+        "/".join(key.split("/")[:index]) in seen
+        for key in seen
+        for index in range(1, len(key.split("/")))
+    ):
+        raise ValueError("Transfer object paths must be independent")
+    manifest_sha256 = digest(json_bytes(manifest))
     copied = reused = 0
-    for row in files:
+    stopped = Event()
+
+    def transfer_object(row):
+        if stopped.is_set():
+            return None
+        try:
+            return copy_object(row)
+        except BaseException:
+            stopped.set()
+            raise
+
+    def copy_object(row):
         data = source.read(row["path"])
         if len(data) != row["sizeBytes"] or digest(data) != row["sha256"]:
             raise ValueError("Source cache object does not match the transfer manifest")
@@ -195,18 +220,45 @@ def transfer_verified(source, target, manifest: dict) -> dict:
             and len(existing) == row["sizeBytes"]
             and digest(existing) == row["sha256"]
         ):
-            reused += 1
-            continue
+            return False
+        del existing
         target.write(row["path"], data)
-        copied += 1
+        del data
         verified = target.read(row["path"])
         if len(verified) != row["sizeBytes"] or digest(verified) != row["sha256"]:
             raise ValueError("Transferred cache object failed content verification")
+        return True
+
+    # Keep only one submitted object per worker; never queue the entire manifest.
+    # The context waits for started workers even when a peer fails or is cancelled.
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        rows = iter(files)
+        pending = {
+            executor.submit(transfer_object, row)
+            for row in (next(rows, None) for _ in range(max_workers))
+            if row is not None
+        }
+        try:
+            while pending:
+                completed, pending = wait(pending, return_when=FIRST_COMPLETED)
+                for future in completed:
+                    result = future.result()
+                    copied += result is True
+                    reused += result is False
+                if not stopped.is_set():
+                    for _ in completed:
+                        row = next(rows, None)
+                        if row is not None:
+                            pending.add(executor.submit(transfer_object, row))
+        finally:
+            stopped.set()
+            for future in pending:
+                future.cancel()
     return {
         "copied": copied,
         "reused": reused,
         "verified": len(files),
-        "manifestSha256": digest(json_bytes(manifest)),
+        "manifestSha256": manifest_sha256,
     }
 
 

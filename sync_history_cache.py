@@ -48,6 +48,7 @@ def main():
     parser.add_argument("--prefix", required=True)
     parser.add_argument("--endpoint", required=True)
     parser.add_argument("--region", required=True)
+    parser.add_argument("--workers", type=int, choices=range(1, 17), default=1)
     args = parser.parse_args()
     # Validate bucket/prefix before constructing a remote client.
     remote = B2ObjectStore(None, args.bucket, args.prefix)
@@ -55,9 +56,9 @@ def main():
     local = LocalObjectStore(args.local_root)
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
     result = (
-        transfer_verified(local, remote, manifest)
+        transfer_verified(local, remote, manifest, max_workers=args.workers)
         if args.direction == "push"
-        else transfer_verified(remote, local, manifest)
+        else transfer_verified(remote, local, manifest, max_workers=args.workers)
     )
     print(json.dumps(result))
 

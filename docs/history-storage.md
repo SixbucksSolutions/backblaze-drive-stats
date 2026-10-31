@@ -10,7 +10,7 @@ remains separate from the initial connection check below.
 The [four-quarter backfill retention](parallel-quarter-benchmark.md) then added
 477 verified processing objects for 2024 Q4 through 2025 Q4, including the
 previously accepted 2025 Q4 cache. Readback, zero-write reuse and a separate-root
-restore succeeded. All seven loaded quarters now have durable projected data,
+restore succeeded. Those seven quarters have durable projected data,
 receipts and retained summaries. Raw ZIPs remain outside these processing copies.
 
 ## Real service verification
@@ -73,13 +73,23 @@ successful completion receipt is returned. Retrying the same manifest reuses
 completed verified objects; the interrupted object is copied again in full.
 Resume granularity is **one object**, not byte ranges or multipart uploads.
 
-An object is limited to 128 MiB by default. Transfers hold one object in memory;
-this supports the intended daily projections/summaries, not arbitrary huge ZIPs.
-The Python API allows a deliberately chosen larger bound. One writer per target
-prefix is required. Remote writes are object-atomic transport operations; this
-adapter does not claim a distributed lock, a cross-object transaction, or a B2
-conditional-write capability. Do not use a destination cache until the entire
-manifest verifies. The generator separately rechecks summary/source manifests.
+An object is limited to 128 MiB by default. `transfer_verified(..., max_workers=8)`
+or CLI `--workers 8` opts into bounded transfers across independent object keys;
+the default remains one worker, with an allowed range of 1–16. The full manifest
+is validated before object I/O, including case aliases and parent/child conflicts.
+Each worker handles one object at a time, retaining bounded source/comparison
+buffers rather than loading the manifest's contents together. This supports daily
+projections/summaries, not arbitrary huge ZIPs; the API allows a deliberately
+chosen larger object bound. A failure stops pending work and waits for started
+workers before raising, without a completion receipt; verified partial objects
+remain resumable. One coordinator process must own each target prefix. Its threads
+share a pre-created low-level Boto3 client, following the
+[client thread-safety caveats](https://docs.aws.amazon.com/boto3/latest/guide/clients.html#multithreading-or-multiprocessing-with-clients):
+no shared client metadata/event mutation or cross-process sharing. Remote writes
+are object-atomic transport operations; this adapter does not claim a distributed
+lock, a cross-object transaction, or a B2 conditional-write capability. Do not use a
+destination cache until the entire manifest verifies. The generator separately
+rechecks summary/source manifests.
 
 The explicit CLI is `sync_history_cache.py push|pull` with `--local-root`,
 `--manifest`, `--bucket`, `--prefix`, `--endpoint`, and `--region`. These are private
@@ -95,6 +105,26 @@ Backblaze documents the relevant API in its
 [application-key guide](https://www.backblaze.com/docs/cloud-storage-s3-compatible-app-keys).
 Service compatibility, permissions and real round-trip verification must be
 tested in the owner-supplied prefix before remote migration is accepted.
+
+## Interpreting retained storage sizes
+
+The original 2026 Q2 daily projection predates the enriched writer. Its six-column
+Parquet uses Zstandard but lacks the newer model/serial/date clustering; it was
+preserved as an unchanged baseline. The 2026 Q1 folder is about 176.5 MB versus
+222.4 MB for Q2, while their observation counts differ by only about 4.5%.
+A controlled single-day check of 345,738 Q2 rows reduced 2,378,871 bytes to
+1,978,999 bytes (16.8%) with the enriched layout and exact logical-row parity.
+The original file stayed unchanged. This is one-day evidence, not a forecast of
+the full quarter's repacked size.
+
+The Q2 **summary** folder has a separate explanation: both its original
+2,747,932-byte summary variant and enriched 2,552,689-byte variant were retained,
+totaling 5,300,621 bytes. Q1 has one 2,512,007-byte enriched variant. The generator
+selects one verified candidate, preferring the current profile; it does not add
+the versions together. Retaining migration evidence is not duplicate exposure.
+Referenced objects must remain available to their existing recovery manifests.
+The owner requested a full-quarter lossless repack in #0058 after this batch;
+its measured result and preferred-cache publication are pending that task.
 
 ## Immutable aggregate publication
 
