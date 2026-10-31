@@ -1,6 +1,6 @@
 # Flagship AFR comparison plan
 
-Plan #0013, revision 3 (r003), 2026-10-30. This specifies the primary comparison product;
+Plan #0013, revision 4 (r004), 2026-10-30. This specifies the primary comparison product;
 it does not start its implementation or authorize a historical backfill. The
 existing calendar-quarter explorer remains a supporting view. Python + Polars is
 the owner's selected generator stack.
@@ -309,6 +309,29 @@ Do not expand the fetch solely to reproduce the owner's contextual stories or
 populate a new supporting dashboard. Existing supporting reports must state the
 coverage and population actually available to them.
 
+### Owner storage clarification
+
+The approved phase order is unchanged. Initial years and working copies may use
+the D: SSD. **Backblaze B2 is the intended durable home for reusable Parquet,
+quarter summaries and their manifests; Cloudflare remains the CDN/delivery layer.**
+The owner will provide the B2 bucket, prefix, endpoint/region and access for remote
+integration. Keep the owner's cache configuration separate from Backblaze's
+official read-only source bucket. No bucket, token or remote data has been created.
+
+Design cache identity and relative object paths independently of storage location.
+Migration copies and verifies existing files/manifests rather than regenerating
+them from CSV. Inspect manifests and explicit content checksums before computing;
+reuse valid data and recompute only missing, invalid or semantically changed
+partitions. Projection-cache and summary versions have different dependencies, so
+a later model-normalization change need not force reparsing unchanged raw inputs.
+
+The generator task must define resumable verified transfer and manifest/recovery
+behavior, test the required B2-compatible operations, and retain source lineage.
+Local working data can bootstrap the first batches; the remote bucket is needed
+for the later migration/integration, not for writing the contract or tiny tests.
+The public site continues to receive small aggregate JSON, separate from private
+processing data. The hosting task decides the detailed delivery arrangement.
+
 Persist projected private input and sufficient quarter/drive summaries so normal
 quarterly updates avoid rescanning every historical daily observation. Keep source
 checksums, row/date coverage, capacity frequencies and lifecycle state private.
@@ -343,6 +366,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r003**; r001 and r002 are retained as history. Planned workers
+assignment revision is **r004**; r001–r003 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.
