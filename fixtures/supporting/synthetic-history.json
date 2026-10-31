@@ -1,0 +1,430 @@
+{
+  "artifactType": "supporting-history",
+  "schemaVersion": 1,
+  "snapshotId": "synthetic-supporting-2025-Q2",
+  "asOfQuarter": "2025-Q2",
+  "sourceManifestSha256": "4d8b95b23c3eef99d115145cdc9582199dbdeb4dd8169d9e7941504312c064b9",
+  "versions": {
+    "selection": "synthetic-selection-v1",
+    "normalization": "synthetic-normalization-v1",
+    "metrics": "supporting-v1",
+    "capacity": "positive-observation-mode-tie-smallest-v1"
+  },
+  "provenance": {
+    "kind": "sample",
+    "sourceUrl": "https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data",
+    "attribution": "Synthetic test aggregates, not observed Backblaze data. Backblaze publishes the source program that inspired this independent project.",
+    "historyStart": "2024-01-01",
+    "selectionPatterns": [
+      "^SAMPLE-HDD-"
+    ],
+    "selectionSha256": "aaa3c3e21e6c7f2b0b373e9c61244913d6319b7e062ab6ff2f60c4bfb737ffbd",
+    "notes": [
+      "All numbers and model names are synthetic. Manifest hash identifies a synthetic test description, not a downloaded source.",
+      "Includes a 500-drive model below the matrix threshold, all-supplied SSDs, unknown location, zero population, missing/incomplete coverage and unavailable capacity."
+    ]
+  },
+  "quarters": [
+    {
+      "quarter": "2024-Q1",
+      "coverage": "complete",
+      "coverageReason": null,
+      "scopes": [
+        {
+          "scopeId": "selected_hdd",
+          "totals": {
+            "driveCount": 2500,
+            "newDrives": 2500,
+            "capacityTb": 38000
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "no_previous_quarter",
+          "models": [
+            {
+              "id": "SAMPLE-HDD-A",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-A",
+              "measures": {
+                "driveCount": 2000,
+                "newDrives": 2000,
+                "capacityTb": 32000
+              }
+            },
+            {
+              "id": "SAMPLE-HDD-B",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-B",
+              "measures": {
+                "driveCount": 500,
+                "newDrives": 500,
+                "capacityTb": 6000
+              }
+            }
+          ],
+          "manufacturers": [
+            {
+              "manufacturer": "Synthetic Vendor",
+              "measures": {
+                "driveCount": 2500,
+                "newDrives": 2500,
+                "capacityTb": 38000
+              },
+              "populationShare": 1,
+              "newShare": 1,
+              "capacityShare": 1
+            }
+          ],
+          "datacenters": [],
+          "knownLocationShare": null
+        },
+        {
+          "scopeId": "all_supplied",
+          "totals": {
+            "driveCount": 2540,
+            "newDrives": 2540,
+            "capacityTb": 38040
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "no_previous_quarter",
+          "models": [
+            {
+              "id": "SAMPLE-HDD-A",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-A",
+              "measures": {
+                "driveCount": 2000,
+                "newDrives": 2000,
+                "capacityTb": 32000
+              }
+            },
+            {
+              "id": "SAMPLE-HDD-B",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-B",
+              "measures": {
+                "driveCount": 500,
+                "newDrives": 500,
+                "capacityTb": 6000
+              }
+            },
+            {
+              "id": "SAMPLE-SSD",
+              "manufacturer": "Unknown",
+              "model": "SAMPLE-SSD",
+              "measures": {
+                "driveCount": 40,
+                "newDrives": 40,
+                "capacityTb": 40
+              }
+            }
+          ],
+          "manufacturers": [],
+          "datacenters": [
+            {
+              "datacenter": "IAD1",
+              "driveCount": 2540,
+              "capacityTb": 38040
+            }
+          ],
+          "knownLocationShare": 1
+        }
+      ]
+    },
+    {
+      "quarter": "2024-Q2",
+      "coverage": "complete",
+      "coverageReason": null,
+      "scopes": [
+        {
+          "scopeId": "selected_hdd",
+          "totals": {
+            "driveCount": 3500,
+            "newDrives": 1000,
+            "capacityTb": 54000
+          },
+          "capacityDeltaTb": 16000,
+          "capacityDeltaReason": null,
+          "models": [
+            {
+              "id": "SAMPLE-HDD-A",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-A",
+              "measures": {
+                "driveCount": 3000,
+                "newDrives": 1000,
+                "capacityTb": 48000
+              }
+            },
+            {
+              "id": "SAMPLE-HDD-B",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-B",
+              "measures": {
+                "driveCount": 500,
+                "newDrives": 0,
+                "capacityTb": 6000
+              }
+            }
+          ],
+          "manufacturers": [
+            {
+              "manufacturer": "Synthetic Vendor",
+              "measures": {
+                "driveCount": 3500,
+                "newDrives": 1000,
+                "capacityTb": 54000
+              },
+              "populationShare": 1,
+              "newShare": 1,
+              "capacityShare": 1
+            }
+          ],
+          "datacenters": [],
+          "knownLocationShare": null
+        },
+        {
+          "scopeId": "all_supplied",
+          "totals": {
+            "driveCount": 3550,
+            "newDrives": 1010,
+            "capacityTb": 54050
+          },
+          "capacityDeltaTb": 16010,
+          "capacityDeltaReason": null,
+          "models": [
+            {
+              "id": "SAMPLE-HDD-A",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-A",
+              "measures": {
+                "driveCount": 3000,
+                "newDrives": 1000,
+                "capacityTb": 48000
+              }
+            },
+            {
+              "id": "SAMPLE-HDD-B",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-B",
+              "measures": {
+                "driveCount": 500,
+                "newDrives": 0,
+                "capacityTb": 6000
+              }
+            },
+            {
+              "id": "SAMPLE-SSD",
+              "manufacturer": "Unknown",
+              "model": "SAMPLE-SSD",
+              "measures": {
+                "driveCount": 50,
+                "newDrives": 10,
+                "capacityTb": 50
+              }
+            }
+          ],
+          "manufacturers": [],
+          "datacenters": [
+            {
+              "datacenter": "IAD1",
+              "driveCount": 3500,
+              "capacityTb": 54000
+            },
+            {
+              "datacenter": "Unknown",
+              "driveCount": 50,
+              "capacityTb": 50
+            }
+          ],
+          "knownLocationShare": 0.9859154929577465
+        }
+      ]
+    },
+    {
+      "quarter": "2024-Q3",
+      "coverage": "missing",
+      "coverageReason": "Synthetic source coverage gap",
+      "scopes": [
+        {
+          "scopeId": "selected_hdd",
+          "totals": {
+            "driveCount": null,
+            "newDrives": null,
+            "capacityTb": null
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "coverage_gap",
+          "models": [],
+          "manufacturers": [],
+          "datacenters": [],
+          "knownLocationShare": null
+        },
+        {
+          "scopeId": "all_supplied",
+          "totals": {
+            "driveCount": null,
+            "newDrives": null,
+            "capacityTb": null
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "coverage_gap",
+          "models": [],
+          "manufacturers": [],
+          "datacenters": [],
+          "knownLocationShare": null
+        }
+      ]
+    },
+    {
+      "quarter": "2024-Q4",
+      "coverage": "incomplete",
+      "coverageReason": "Synthetic source coverage gap",
+      "scopes": [
+        {
+          "scopeId": "selected_hdd",
+          "totals": {
+            "driveCount": null,
+            "newDrives": null,
+            "capacityTb": null
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "coverage_gap",
+          "models": [],
+          "manufacturers": [],
+          "datacenters": [],
+          "knownLocationShare": null
+        },
+        {
+          "scopeId": "all_supplied",
+          "totals": {
+            "driveCount": null,
+            "newDrives": null,
+            "capacityTb": null
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "coverage_gap",
+          "models": [],
+          "manufacturers": [],
+          "datacenters": [],
+          "knownLocationShare": null
+        }
+      ]
+    },
+    {
+      "quarter": "2025-Q1",
+      "coverage": "complete",
+      "coverageReason": null,
+      "scopes": [
+        {
+          "scopeId": "selected_hdd",
+          "totals": {
+            "driveCount": 0,
+            "newDrives": 0,
+            "capacityTb": 0
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "coverage_gap",
+          "models": [],
+          "manufacturers": [],
+          "datacenters": [],
+          "knownLocationShare": null
+        },
+        {
+          "scopeId": "all_supplied",
+          "totals": {
+            "driveCount": 0,
+            "newDrives": 0,
+            "capacityTb": 0
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "coverage_gap",
+          "models": [],
+          "manufacturers": [],
+          "datacenters": [
+            {
+              "datacenter": "IAD1",
+              "driveCount": 0,
+              "capacityTb": 0
+            }
+          ],
+          "knownLocationShare": null
+        }
+      ]
+    },
+    {
+      "quarter": "2025-Q2",
+      "coverage": "complete",
+      "coverageReason": null,
+      "scopes": [
+        {
+          "scopeId": "selected_hdd",
+          "totals": {
+            "driveCount": 2000,
+            "newDrives": 2000,
+            "capacityTb": null
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "capacity_unavailable",
+          "models": [
+            {
+              "id": "SAMPLE-HDD-A",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-A",
+              "measures": {
+                "driveCount": 2000,
+                "newDrives": 2000,
+                "capacityTb": null
+              }
+            }
+          ],
+          "manufacturers": [
+            {
+              "manufacturer": "Synthetic Vendor",
+              "measures": {
+                "driveCount": 2000,
+                "newDrives": 2000,
+                "capacityTb": null
+              },
+              "populationShare": 1,
+              "newShare": 1,
+              "capacityShare": null
+            }
+          ],
+          "datacenters": [],
+          "knownLocationShare": null
+        },
+        {
+          "scopeId": "all_supplied",
+          "totals": {
+            "driveCount": 2000,
+            "newDrives": 2000,
+            "capacityTb": null
+          },
+          "capacityDeltaTb": null,
+          "capacityDeltaReason": "capacity_unavailable",
+          "models": [
+            {
+              "id": "SAMPLE-HDD-A",
+              "manufacturer": "Synthetic Vendor",
+              "model": "SAMPLE-HDD-A",
+              "measures": {
+                "driveCount": 2000,
+                "newDrives": 2000,
+                "capacityTb": null
+              }
+            }
+          ],
+          "manufacturers": [],
+          "datacenters": [
+            {
+              "datacenter": "IAD1",
+              "driveCount": 2000,
+              "capacityTb": null
+            }
+          ],
+          "knownLocationShare": 1
+        }
+      ]
+    }
+  ]
+}

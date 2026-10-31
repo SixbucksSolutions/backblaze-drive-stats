@@ -1,0 +1,1283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sixbuckssolutions.com/schemas/flagship-matrix-v1.schema.json",
+  "title": "Flagship production AFR matrix v1",
+  "description": "Production aggregate contract. Semantic invariants and publication gates are normative in docs/flagship-matrix-contract.md. Not the legacy workbook fixture format.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifactType",
+    "contractVersion",
+    "snapshot",
+    "versions",
+    "selection",
+    "coverage",
+    "provenance",
+    "display",
+    "colorScales",
+    "models"
+  ],
+  "properties": {
+    "artifactType": {
+      "const": "flagship_matrix"
+    },
+    "contractVersion": {
+      "const": "1.0.0"
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "asOfQuarter",
+        "cutoffDate",
+        "generatedAt",
+        "revisionOf",
+        "immutablePath"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asOfQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "cutoffDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "revisionOf": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "immutablePath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metrics",
+        "time",
+        "delta",
+        "colors",
+        "selection",
+        "normalization",
+        "generator"
+      ],
+      "properties": {
+        "metrics": {
+          "const": "flagship-metrics-v1"
+        },
+        "time": {
+          "const": "calendar-offset-v1"
+        },
+        "delta": {
+          "const": "prior-eligible-v1"
+        },
+        "colors": {
+          "const": "shared-scales-v1"
+        },
+        "selection": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalization": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generator": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "patternsSha256",
+        "normalizationSha256",
+        "rawMatchRule",
+        "patterns",
+        "resolvedModels",
+        "identityRule",
+        "population",
+        "minimumPopulation"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "patternsSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "normalizationSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "rawMatchRule": {
+          "const": "regex_search_raw_model_before_normalization"
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "resolvedModels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "identityRule": {
+          "const": "normalized_model_and_serial"
+        },
+        "population": {
+          "const": "personal_hdd_selection"
+        },
+        "minimumPopulation": {
+          "const": 2000
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "historyStart",
+        "throughQuarter",
+        "anchorSearchComplete",
+        "quarters",
+        "newestObservationDate"
+      ],
+      "properties": {
+        "historyStart": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "throughQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "anchorSearchComplete": {
+          "const": true
+        },
+        "quarters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/coverageQuarter"
+          },
+          "minItems": 1
+        },
+        "newestObservationDate": {
+          "description": "Maximum selected normalized-population observation date; may precede the validated source partition end.",
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sources",
+        "sourceManifestSha256",
+        "dataSourceNotice",
+        "projectAttribution",
+        "datasetAttribution"
+      ],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          },
+          "minItems": 1
+        },
+        "sourceManifestSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "dataSourceNotice": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projectAttribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "datasetAttribution": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "display": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quarterLabel",
+        "maxRelativeQuarter",
+        "defaultGuideAfterQuarter",
+        "referenceGuidesAfterQuarters",
+        "metricOrder",
+        "units"
+      ],
+      "properties": {
+        "quarterLabel": {
+          "const": "YYYY Qn"
+        },
+        "maxRelativeQuarter": {
+          "type": "integer",
+          "minimum": 24
+        },
+        "defaultGuideAfterQuarter": {
+          "const": 20
+        },
+        "referenceGuidesAfterQuarters": {
+          "const": [
+            20,
+            24
+          ]
+        },
+        "metricOrder": {
+          "const": [
+            "afr",
+            "afrDelta",
+            "count",
+            "populationDelta",
+            "new",
+            "retired",
+            "failed"
+          ]
+        },
+        "units": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "afr",
+            "afrDelta",
+            "count",
+            "populationDelta",
+            "new",
+            "retired",
+            "failed",
+            "exposure"
+          ],
+          "properties": {
+            "afr": {
+              "const": "percent"
+            },
+            "afrDelta": {
+              "const": "percentage_points"
+            },
+            "count": {
+              "const": "drives"
+            },
+            "populationDelta": {
+              "const": "drives"
+            },
+            "new": {
+              "const": "drives"
+            },
+            "retired": {
+              "const": "drives"
+            },
+            "failed": {
+              "const": "daily_failure_flags"
+            },
+            "exposure": {
+              "const": "recorded_drive_days"
+            }
+          }
+        }
+      }
+    },
+    "colorScales": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "percentile",
+        "interpolation",
+        "domains"
+      ],
+      "properties": {
+        "scope": {
+          "const": "all_numeric_eligible_cells_in_snapshot"
+        },
+        "percentile": {
+          "const": "inclusive_linear_n_minus_1"
+        },
+        "interpolation": {
+          "const": "srgb_piecewise_linear_round_half_up"
+        },
+        "domains": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "afr",
+            "afrDelta",
+            "count",
+            "populationDelta",
+            "new",
+            "retired",
+            "failed"
+          ],
+          "properties": {
+            "afr": {
+              "$ref": "#/$defs/colorDomain"
+            },
+            "afrDelta": {
+              "$ref": "#/$defs/colorDomain"
+            },
+            "count": {
+              "$ref": "#/$defs/colorDomain"
+            },
+            "populationDelta": {
+              "$ref": "#/$defs/colorDomain"
+            },
+            "new": {
+              "$ref": "#/$defs/colorDomain"
+            },
+            "retired": {
+              "$ref": "#/$defs/colorDomain"
+            },
+            "failed": {
+              "$ref": "#/$defs/colorDomain"
+            }
+          }
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/model"
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "quarter": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-Q[1-4]$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "afr",
+        "afrDelta",
+        "count",
+        "populationDelta",
+        "new",
+        "retired",
+        "failed"
+      ],
+      "properties": {
+        "afr": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "afrDelta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "populationDelta": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "new": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retired": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "failed": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "failures",
+        "driveDays",
+        "complete"
+      ],
+      "properties": {
+        "failures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "driveDays": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "complete": {
+          "type": "boolean"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "publicUrl",
+        "sha256",
+        "revision"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "backblaze_zip",
+            "backblaze_iceberg",
+            "derived_manifest"
+          ]
+        },
+        "publicUrl": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "coverageQuarter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quarter",
+        "status",
+        "expectedDays",
+        "observedDays",
+        "observedStart",
+        "observedEnd",
+        "rowCount",
+        "sourceIds"
+      ],
+      "properties": {
+        "quarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "missing",
+            "incomplete"
+          ]
+        },
+        "expectedDays": {
+          "type": "integer",
+          "minimum": 89,
+          "maximum": 92
+        },
+        "observedDays": {
+          "description": "Validated source partition dates before model selection, including valid empty partitions.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 92
+        },
+        "observedStart": {
+          "description": "First validated source partition date before model selection, not first selected-model observation.",
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observedEnd": {
+          "description": "Last validated source partition date before model selection, not last selected-model observation.",
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rowCount": {
+          "description": "Validated source observation rows before personal model selection.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "priorQuarter",
+        "elapsedQuarters",
+        "afr",
+        "count"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "initial_zero",
+            "prior_eligible",
+            "unavailable"
+          ]
+        },
+        "priorQuarter": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{4}-Q[1-4]$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "elapsedQuarters": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "afr": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "initial_zero"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priorQuarter": {
+                "type": "null"
+              },
+              "elapsedQuarters": {
+                "type": "null"
+              },
+              "afr": {
+                "const": 0
+              },
+              "count": {
+                "const": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "prior_eligible"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priorQuarter": {
+                "$ref": "#/$defs/quarter"
+              },
+              "elapsedQuarters": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 2000
+              }
+            }
+          }
+        }
+      ]
+    },
+    "observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "new",
+        "retired",
+        "failed"
+      ],
+      "properties": {
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "new": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retired": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "failed": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quarter",
+        "relativeQuarter",
+        "state",
+        "eligibility",
+        "coverage",
+        "metrics",
+        "observations",
+        "quarterComponents",
+        "cumulativeComponents",
+        "quarterAfr",
+        "deltaBaseline",
+        "retirementInference",
+        "rateUnavailableReason"
+      ],
+      "properties": {
+        "quarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "relativeQuarter": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "state": {
+          "enum": [
+            "eligible",
+            "below_threshold",
+            "source_missing",
+            "source_incomplete",
+            "snapshot_end"
+          ]
+        },
+        "eligibility": {
+          "enum": [
+            "eligible",
+            "below_threshold",
+            "unknown",
+            "not_yet_observed"
+          ]
+        },
+        "coverage": {
+          "enum": [
+            "complete",
+            "missing",
+            "incomplete",
+            "outside_snapshot"
+          ]
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        },
+        "observations": {
+          "$ref": "#/$defs/observations"
+        },
+        "quarterComponents": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/components"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cumulativeComponents": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/components"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quarterAfr": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deltaBaseline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/baseline"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retirementInference": {
+          "enum": [
+            "last_seen_before_boundary",
+            "newest_quarter_failed_proxy",
+            "unavailable",
+            "not_applicable"
+          ]
+        },
+        "rateUnavailableReason": {
+          "anyOf": [
+            {
+              "enum": [
+                "incomplete_cumulative_coverage",
+                "zero_exposure",
+                "not_displayed"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "eligible"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "eligibility": {
+                "const": "eligible"
+              },
+              "coverage": {
+                "const": "complete"
+              },
+              "metrics": {
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 2000
+                  },
+                  "new": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "failed": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              },
+              "deltaBaseline": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/baseline"
+                  },
+                  {
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "initial_zero",
+                          "prior_eligible"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "below_threshold"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "eligibility": {
+                "const": "below_threshold"
+              },
+              "coverage": {
+                "const": "complete"
+              },
+              "observations": {
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1999
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "source_missing"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "eligibility": {
+                "const": "unknown"
+              },
+              "coverage": {
+                "const": "missing"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "source_incomplete"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "eligibility": {
+                "const": "unknown"
+              },
+              "coverage": {
+                "const": "incomplete"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "snapshot_end"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "eligibility": {
+                "const": "not_yet_observed"
+              },
+              "coverage": {
+                "const": "outside_snapshot"
+              },
+              "observations": {
+                "properties": {
+                  "count": {
+                    "type": "null"
+                  },
+                  "new": {
+                    "type": "null"
+                  },
+                  "retired": {
+                    "type": "null"
+                  },
+                  "failed": {
+                    "type": "null"
+                  }
+                }
+              },
+              "quarterComponents": {
+                "type": "null"
+              },
+              "cumulativeComponents": {
+                "type": "null"
+              },
+              "deltaBaseline": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "below_threshold",
+                  "source_missing",
+                  "source_incomplete",
+                  "snapshot_end"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "metrics": {
+                "properties": {
+                  "afr": {
+                    "type": "null"
+                  },
+                  "afrDelta": {
+                    "type": "null"
+                  },
+                  "count": {
+                    "type": "null"
+                  },
+                  "populationDelta": {
+                    "type": "null"
+                  },
+                  "new": {
+                    "type": "null"
+                  },
+                  "retired": {
+                    "type": "null"
+                  },
+                  "failed": {
+                    "type": "null"
+                  }
+                }
+              },
+              "quarterAfr": {
+                "type": "null"
+              },
+              "retirementInference": {
+                "enum": [
+                  "unavailable",
+                  "not_applicable"
+                ]
+              },
+              "deltaBaseline": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelId",
+        "modelNumber",
+        "vendor",
+        "rawModelAliases",
+        "anchorQuarter",
+        "finalEligibleQuarter",
+        "asOfStatus",
+        "historyStart",
+        "preEligibilityComponents",
+        "cells"
+      ],
+      "properties": {
+        "modelId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modelNumber": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vendor": {
+          "enum": [
+            "Seagate",
+            "Toshiba",
+            "WDC/HGST"
+          ]
+        },
+        "rawModelAliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "anchorQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "finalEligibleQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "asOfStatus": {
+          "enum": [
+            "eligible",
+            "below_threshold",
+            "source_missing",
+            "source_incomplete"
+          ]
+        },
+        "historyStart": {
+          "type": "string",
+          "format": "date"
+        },
+        "preEligibilityComponents": {
+          "$ref": "#/$defs/components"
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cell"
+          },
+          "minItems": 24
+        }
+      }
+    },
+    "colorDomain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sampleCount",
+        "observedMinimum",
+        "observedMedian",
+        "observedMaximum",
+        "knots",
+        "emptyColor"
+      ],
+      "properties": {
+        "sampleCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observedMinimum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observedMedian": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observedMaximum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "knots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "value",
+              "color"
+            ],
+            "properties": {
+              "value": {
+                "type": "number"
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^#[A-F0-9]{6}$"
+              }
+            }
+          },
+          "maxItems": 3
+        },
+        "emptyColor": {
+          "const": "#F2F2F2"
+        }
+      }
+    }
+  }
+}

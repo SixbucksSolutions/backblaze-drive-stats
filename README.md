@@ -16,6 +16,13 @@ The planned flagship is a vendor-grouped comparison aligned by relative quarter,
 preserving the AFR workbook's seven adjacent metrics and conditional colors.
 See the [flagship plan](docs/flagship-afr-plan.md) for scope and implementation gates.
 
+The proposed [matrix contract](docs/flagship-matrix-contract.md) and
+[supporting-report contract](docs/supporting-report-contract.md) define the next
+data products. [Golden workbook fixtures](docs/flagship-workbook-fixtures.md)
+preserve both owner-supplied references, separately from explicitly synthetic
+production edge cases. These contracts await owner acceptance before the flagship
+UI and historical generator are implemented; the current explorer is unchanged.
+
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's
 source data, name, branding and other third-party material retain their own rights
 and usage terms. This is an independent project. See [data sources and attribution](DATA_SOURCES.md).

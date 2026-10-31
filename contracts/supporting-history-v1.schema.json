@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SixbucksSolutions/backblaze-drive-stats/contracts/supporting-history-v1.schema.json",
+  "title": "Supporting calendar-quarter history v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["artifactType", "schemaVersion", "snapshotId", "asOfQuarter", "sourceManifestSha256", "versions", "provenance", "quarters"],
+  "properties": {
+    "artifactType": {"const": "supporting-history"},
+    "schemaVersion": {"const": 1},
+    "snapshotId": {"$ref": "#/$defs/text"},
+    "asOfQuarter": {"$ref": "#/$defs/quarter"},
+    "sourceManifestSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "versions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["selection", "normalization", "metrics", "capacity"],
+      "properties": {
+        "selection": {"$ref": "#/$defs/text"}, "normalization": {"$ref": "#/$defs/text"},
+        "metrics": {"const": "supporting-v1"}, "capacity": {"const": "positive-observation-mode-tie-smallest-v1"}
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "sourceUrl", "attribution", "historyStart", "selectionPatterns", "selectionSha256", "notes"],
+      "properties": {
+        "kind": {"enum": ["backblaze", "sample"]},
+        "sourceUrl": {"type": "string", "format": "uri"},
+        "attribution": {"$ref": "#/$defs/text"},
+        "historyStart": {"type": "string", "format": "date"},
+        "selectionPatterns": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}},
+        "selectionSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "notes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "quarters": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/period"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "quarter": {"type": "string", "pattern": "^[0-9]{4}-Q[1-4]$"},
+    "count": {"type": ["integer", "null"], "minimum": 0, "maximum": 9007199254740991},
+    "level": {"type": ["number", "null"], "minimum": 0},
+    "share": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "measures": {
+      "type": "object", "additionalProperties": false,
+      "required": ["driveCount", "newDrives", "capacityTb"],
+      "properties": {
+        "driveCount": {"$ref": "#/$defs/count"}, "newDrives": {"$ref": "#/$defs/count"},
+        "capacityTb": {"$ref": "#/$defs/level"}
+      }
+    },
+    "period": {
+      "type": "object", "additionalProperties": false,
+      "required": ["quarter", "coverage", "coverageReason", "scopes"],
+      "properties": {
+        "quarter": {"$ref": "#/$defs/quarter"},
+        "coverage": {"enum": ["complete", "incomplete", "missing"]},
+        "coverageReason": {"type": ["string", "null"]},
+        "scopes": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/scope"}}
+      }
+    },
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scopeId", "totals", "capacityDeltaTb", "capacityDeltaReason", "models", "manufacturers", "datacenters", "knownLocationShare"],
+      "properties": {
+        "scopeId": {"enum": ["selected_hdd", "all_supplied"]},
+        "totals": {"$ref": "#/$defs/measures"},
+        "capacityDeltaTb": {"type": ["number", "null"]},
+        "capacityDeltaReason": {"enum": [null, "no_previous_quarter", "coverage_gap", "capacity_unavailable", "semantic_change"]},
+        "models": {"type": "array", "items": {"$ref": "#/$defs/model"}},
+        "manufacturers": {"type": "array", "items": {"$ref": "#/$defs/manufacturer"}},
+        "datacenters": {"type": "array", "items": {"$ref": "#/$defs/datacenter"}},
+        "knownLocationShare": {"$ref": "#/$defs/share"}
+      }
+    },
+    "model": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "manufacturer", "model", "measures"],
+      "properties": {
+        "id": {"$ref": "#/$defs/text"}, "manufacturer": {"$ref": "#/$defs/text"},
+        "model": {"$ref": "#/$defs/text"}, "measures": {"$ref": "#/$defs/measures"}
+      }
+    },
+    "manufacturer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["manufacturer", "measures", "populationShare", "newShare", "capacityShare"],
+      "properties": {
+        "manufacturer": {"$ref": "#/$defs/text"}, "measures": {"$ref": "#/$defs/measures"},
+        "populationShare": {"$ref": "#/$defs/share"}, "newShare": {"$ref": "#/$defs/share"},
+        "capacityShare": {"$ref": "#/$defs/share"}
+      }
+    },
+    "datacenter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["datacenter", "driveCount", "capacityTb"],
+      "properties": {
+        "datacenter": {"$ref": "#/$defs/text"}, "driveCount": {"$ref": "#/$defs/count"},
+        "capacityTb": {"$ref": "#/$defs/level"}
+      }
+    }
+  }
+}
