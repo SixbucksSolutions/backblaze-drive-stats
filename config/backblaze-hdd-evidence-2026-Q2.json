@@ -1,0 +1,19 @@
+{
+  "version": "backblaze-reported-hdd-2026-Q2-v1",
+  "models": [
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST8000DM002",
+      "aliases": ["ST8000DM002"],
+      "mediaClass": "hdd",
+      "evidence": "Backblaze's 2026 Q2 hard-drive table identifies ST8000DM002 as an 8 TB data HDD: https://www.backblaze.com/blog/backblaze-drive-stats-for-q2-2026/"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST8000NM0055",
+      "aliases": ["ST8000NM0055"],
+      "mediaClass": "hdd",
+      "evidence": "Backblaze's 2026 Q2 hard-drive table identifies ST8000NM0055 as an 8 TB data HDD: https://www.backblaze.com/blog/backblaze-drive-stats-for-q2-2026/"
+    }
+  ]
+}

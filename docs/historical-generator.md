@@ -53,6 +53,10 @@ Registry and discovery
 - [The example registry](../config/historical-registry.example.json) is fictional
   and must not serve as real device evidence. Supply retained specifications,
   announcements or other reviewed evidence for production classifications.
+- [The retained 2026 Q2 evidence registry](../config/backblaze-hdd-evidence-2026-Q2.json)
+  classifies two real qualifying off-seed Seagate HDDs from Backblaze's report.
+  It supplements the owner's positive seed and is not an exhaustive future-model
+  catalog. Keep investigating newly qualifying unclassified candidates.
 
 Private cache and recovery
 

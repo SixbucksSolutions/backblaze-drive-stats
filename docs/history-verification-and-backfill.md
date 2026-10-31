@@ -34,6 +34,18 @@ reimported. The generator ran with four Polars workers and an explicit
   was not replaced. This window begins in 2026 Q2; its New includes the initial
   fleet and its AFR does not reconstruct lifetime exposure or real model anchors.
 
+A subsequent evidence-backed classification pass resolved those two qualifying
+off-seed candidates using [Backblaze's 2026 Q2 hard-drive table](https://www.backblaze.com/blog/backblaze-drive-stats-for-q2-2026/).
+The retained [registry](../config/backblaze-hdd-evidence-2026-Q2.json) identifies
+both as 8 TB data HDDs. With daily scanning prohibited, the same verified summaries
+produced **40 selected models, 21 eligible matrix models and 353,575 selected
+drives** in about **2.36 seconds**, with no unresolved qualifying candidates in
+this source window. Evidence: `data/staging/0016/classification-verification.json`.
+This is a partial registry for that observed window, not a universal HDD catalog;
+unfamiliar future models still require classification evidence. Old staged
+snapshots were preserved. The initial seed-only parity and timing figures above
+remain separately identified rather than rewritten to imply matching cohorts.
+
 Generator-source SHA-256 for this measurement:
 `6a686ab3f59d094a1ca970b8edbd6087346d6c6a4f57a2a7cbd750fe15cc4db9`.
 Do not apply these timings or the memory figure to a later revision without
