@@ -1,9 +1,14 @@
 # Flagship AFR comparison plan
 
-Plan #0013, revision 2 (r002), 2026-10-30. This specifies the primary comparison product;
+Plan #0013, revision 3 (r003), 2026-10-30. This specifies the primary comparison product;
 it does not start its implementation or authorize a historical backfill. The
 existing calendar-quarter explorer remains a supporting view. Python + Polars is
 the owner's selected generator stack.
+
+The owner's deployment, geography, COVID/AI and IPO observations explain how the
+visualizations are read. They are interpretation context, not additional feature
+requests. Preserve the existing six report families and the flagship scope; do
+not add event overlays, financial-data ingestion, causal models or extra dashboards.
 
 ## Decision the view supports
 
@@ -81,6 +86,15 @@ for hashes, exact ranges and rules. The owner also supplied cropped examples:
    Exos X24 example's rise from about 1.03% to 2.72% over four displayed quarters,
    despite a growing population. A concerning AFR trajectory can appear before
    retirement waves. Keep this exact model distinct from favorable Seagate models.
+7. **HUH721212ALE604, bulk rollout stops:** the owner points to the New column's
+   abrupt reduction after relative quarter 5 while Count remains near 13,000.
+   Preserve the distinction between a large existing deployment and continuing
+   additions; neither Count nor New should stand in for the other.
+8. **WUH722222ALE6L4, sustained bulk rollout:** the owner contrasts that plateau
+   with thousands of additions per displayed quarter and a population exceeding
+   44,000. This is a continuing-commitment reading case, without an asserted motive.
+   Calendar-quarter details must remain available because equal relative ages of
+   different models can refer to different years and market conditions.
 
 The owner also wants to test whether WUH721816ALE6L4 outperforms the selected
 large-population Seagate models at comparable relative ages, and whether Toshiba
@@ -153,9 +167,10 @@ Future/unobserved age cells must not look like confirmed threshold exits.
 An **as-of snapshot** selector defaults to the latest fully generated historical
 snapshot. It selects the evidence available at that cutoff, not one calendar
 quarter's fleet report. Supporting calendar-quarter reports stay under Explore.
-Link vendor headers to the supporting manufacturer timeline so the owner can test
-whether deployment choices moved with the reliability patterns. Keep new observed
-deployments, observed population/share and raw capacity/share distinct. The
+The supporting manufacturer report provides context for whether deployment
+choices moved with reliability patterns. A vendor-filter navigation link to that
+existing report is optional; a new timeline is not a delivery gate. Keep observed
+deployments, population/share and raw capacity/share distinct. The
 owner's observed early Seagate-only series and later WD shift are a historical
 question to reproduce from source, with selection and coverage stated explicitly;
 do not imply the full fleet was 100% Seagate from a filtered-model result.
@@ -170,12 +185,10 @@ do not directly measure customer demand or utilized storage. The original
 datacenter report may use the full supplied drive population, so state its scope
 separately from the personal HDD subset. A richer datacenter trend display is a
 secondary enhancement, not a gate for the flagship's first delivery.
-Preserve the raw-capacity calendar series and its quarter-over-quarter change
-too. The owner's specific reconciliation checkpoints are the 2020 Q3 inflection,
-subsequent moderation and later AI-era acceleration in overall capacity. Show
-the aggregate and datacenter contributions so the distribution of growth can be
-examined. These are owner-observed patterns to verify, not established causal
-attributions to customer demand or a specific event.
+Preserve the existing raw-capacity calendar series and its quarter-over-quarter
+change too. The owner's 2020 Q3 and later AI-era observations explain why those
+aggregations were useful; they are not additional reconciliation requirements or
+causal claims. No new event annotations or datacenter trend dashboard is required.
 Define the capacity delta as the difference in observed-quarter raw capacity
 from the previous calendar quarter. It is distinct from capacity of newly
 observed drives and from customer data uploaded. Do not silently bridge missing
@@ -291,6 +304,10 @@ denominators, estimate transfer/disk/processing needs, and present that bounded
 backfill scope before execution. ZIPs and Iceberg are equivalent source adapters
 for this purpose. No new historical download, paid compute or cloud provisioning
 is authorized by this plan.
+Historical execution is bounded by the flagship's actual data requirements.
+Do not expand the fetch solely to reproduce the owner's contextual stories or
+populate a new supporting dashboard. Existing supporting reports must state the
+coverage and population actually available to them.
 
 Persist projected private input and sufficient quarter/drive summaries so normal
 quarterly updates avoid rescanning every historical daily observation. Keep source
@@ -326,6 +343,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r002**; r001 is retained as history. Planned workers
+assignment revision is **r003**; r001 and r002 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.
