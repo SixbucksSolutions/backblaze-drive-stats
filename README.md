@@ -8,7 +8,11 @@ The `web/` directory contains a TypeScript 7 static explorer for all six quarter
 report views. It fetches `data/index.json`, then one aggregate JSON file for the
 selected quarter. Python runs only when preparing data; the website needs no backend.
 
-With Node.js 24 installed, start the localhost site:
+Use Node.js 26.13.0 LTS and npm 12.2.1 for the frontend. The `web/.node-version`
+file pins the tested Node version, and `web/package.json` records the runtime
+requirements and package-manager version. After installing Node, update its bundled
+npm with `npm install --global npm@12.2.1` (use an administrator terminal when Node
+is installed under Windows Program Files). Start the localhost site:
 
 ```powershell
 cd web
