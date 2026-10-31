@@ -49,3 +49,6 @@
 .comparison-matrix tbody .year{vertical-align:top}
 .comparison-matrix .year-number{display:flex;height:33px;align-items:center;justify-content:center}
 .comparison-matrix tbody .year.horizon-year{border-bottom:3px solid #345f4b}
+
+/* Keep horizon labels inside their Quarter cell instead of under the next sticky row. */
+.comparison-matrix .guide-label{position:static;display:block;transform:none;margin-top:1px}

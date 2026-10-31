@@ -162,3 +162,13 @@ frozen age columns. Desktop evidence is in
 `data/staging/ui-0015/typography/desktop-final.png`. Unit checks cover late font
 completion, fallback, stalled startup and partial year grouping; these do not
 replace a full-site accessibility or performance audit.
+
+Subsequent owner feedback makes the relative-row outline transient: leaving a
+row clears its highlight and stored active-row state, without clearing the cell
+inspector or changing keyboard focus. Moving between cells within the same row
+keeps the outline. Horizon labels now occupy normal space inside Quarter cells,
+so subsequent sticky rows cannot cover the lower half of the five-/six-year text.
+Browser checks confirmed both badges fit vertically and horizontally inside
+their Quarter cells, and leaving row 27 removes the row outline. The owner also
+confirmed the hover behavior. Evidence:
+`data/staging/ui-0015/typography/hover-guides-final.png`.
