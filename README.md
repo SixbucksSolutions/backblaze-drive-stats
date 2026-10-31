@@ -1,6 +1,6 @@
 # Backblaze Drive Stats
 
-**Updated 2026-10-30**
+**Updated 2026-10-31**
 
 Independent hard-drive reliability analysis and a static data explorer by
 [SixbucksSolutions](https://github.com/SixbucksSolutions).
@@ -16,12 +16,17 @@ The planned flagship is a vendor-grouped comparison aligned by relative quarter,
 preserving the AFR workbook's seven adjacent metrics and conditional colors.
 See the [flagship plan](docs/flagship-afr-plan.md) for scope and implementation gates.
 
-The proposed [matrix contract](docs/flagship-matrix-contract.md) and
+The approved [matrix contract](docs/flagship-matrix-contract.md) and
 [supporting-report contract](docs/supporting-report-contract.md) define the next
 data products. [Golden workbook fixtures](docs/flagship-workbook-fixtures.md)
 preserve both owner-supplied references, separately from explicitly synthetic
-production edge cases. These contracts await owner acceptance before the flagship
-UI and historical generator are implemented; the current explorer is unchanged.
+production edge cases. A [fixture comparison preview](docs/flagship-ui.md) is
+available at `?view=matrix`, with full workbook references and clearly labeled
+synthetic edge cases. The [historical generator](docs/historical-generator.md)
+prepares paired aggregate snapshots offline; its private caches support
+[verified local/B2 transfer](docs/history-storage.md). Full history and primary
+integration retain their [separate execution gate](docs/history-verification-and-backfill.md).
+The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's
 source data, name, branding and other third-party material retain their own rights

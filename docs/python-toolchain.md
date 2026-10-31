@@ -36,9 +36,9 @@ locally. The native zstandard build needs a compatible compiler, such as the
 Microsoft C++ build tools; both builds succeeded on the verified machine. Other platforms may have different wheel
 availability. No live cloud credentials or dataset downloads are needed for tests.
 
-The development dependency group includes `jsonschema` for the proposed flagship
-and supporting-history contracts. `uv sync --frozen` installs it by default;
-production-only installs may use `--no-dev`. These validators enforce Draft
+The default dependencies include `jsonschema` for the flagship and
+supporting-history contracts. The historical generator validates artifacts during
+normal operation, so production-only installs must retain it too. These validators enforce Draft
 2020-12 structure and separate aggregate semantic checks. They do not verify an
 upstream daily source scan or authorize publication by themselves.
 

@@ -1,0 +1,102 @@
+# Historical cache transfer and snapshot publication
+
+Implemented for #0016 using local storage first. No B2 bucket was provisioned,
+no owner credentials were received, and no remote service calls have been run.
+The adapter's GetObject/PutObject behavior is tested with an injected client;
+actual B2 integration remains a gate when the owner supplies access.
+
+## Separate private processing from public delivery
+
+Private projected Parquet, identity-quarter summaries, capacity frequencies,
+source receipts, generation stamps and their manifests belong in an ignored local
+cache and eventually the owner's Backblaze B2 prefix. They contain drive serials
+and per-drive dates. Public delivery contains only validated aggregate matrix and
+supporting JSON with source/cohort/version metadata. Cloudflare is the later CDN;
+no private Parquet or cache manifests belong in the website bundle.
+
+`history_storage.LocalObjectStore` and `B2ObjectStore` use the same relative POSIX
+object keys. Root directory, bucket, prefix and endpoint are transport settings,
+not semantic cache identities. Migration copies bytes and verifies SHA-256; it
+does not regenerate CSV or summaries merely because their location changed.
+Keys use portable ASCII names; case aliases within a transfer, trailing dots or
+spaces, and Windows reserved device names are refused before copying.
+
+## Verified object-level resume
+
+Create a transfer manifest with `build_transfer_manifest(root, relative_paths)`.
+Supply an explicit list of retained completed objects, including their commit
+manifests; omit active locks and temporary files. The manifest records relative
+path, byte length and SHA-256 for each object. Keep it private with the cache.
+
+`transfer_verified(source, target, manifest)` checks the source against that
+manifest, skips target objects only after reading and verifying their actual
+bytes, copies missing/corrupt objects, then reads back and verifies every copied
+object. ETags and checksum metadata alone are never trusted. On failure, no
+successful completion receipt is returned. Retrying the same manifest reuses
+completed verified objects; the interrupted object is copied again in full.
+Resume granularity is **one object**, not byte ranges or multipart uploads.
+
+An object is limited to 128 MiB by default. Transfers hold one object in memory;
+this supports the intended daily projections/summaries, not arbitrary huge ZIPs.
+The Python API allows a deliberately chosen larger bound. One writer per target
+prefix is required. Remote writes are object-atomic transport operations; this
+adapter does not claim a distributed lock, a cross-object transaction, or a B2
+conditional-write capability. Do not use a destination cache until the entire
+manifest verifies. The generator separately rechecks summary/source manifests.
+
+The explicit CLI is `sync_history_cache.py push|pull` with `--local-root`,
+`--manifest`, `--bucket`, `--prefix`, `--endpoint`, and `--region`. These are private
+runtime parameters; do not commit an owner bucket configuration. The endpoint
+must be the matching HTTPS `s3.<region>.backblazeb2.com` service. Credentials come
+only from **B2_CACHE_ACCESS_KEY_ID** and **B2_CACHE_SECRET_ACCESS_KEY**, separate
+from official read-only source access. No credential flags or default credential
+chain are used. Official Drive Stats source buckets are refused as write targets.
+
+Backblaze documents the relevant API in its
+[S3-compatible API guide](https://www.backblaze.com/docs/cloud-storage-s3-compatible-api),
+[Put Object reference](https://www.backblaze.com/apidocs/s3-put-object), and
+[application-key guide](https://www.backblaze.com/docs/cloud-storage-s3-compatible-app-keys).
+Service compatibility, permissions and real round-trip verification must be
+tested in the owner-supplied prefix before remote migration is accepted.
+
+## Immutable aggregate publication
+
+`publish_generation(output_root, matrix, supporting)` validates both contracts and
+their shared snapshot ID, cutoff, source manifest, cohort and selection/version
+definitions. It reconciles complete-quarter model Count/New between artifacts.
+It writes `snapshots/<snapshot-id>/matrix.json` and `supporting.json` immutably;
+the matrix's declared immutable path must match. Same ID/same bytes is idempotent.
+Same ID/different bytes is an error, including changed generation timestamps.
+
+A cooperative local `.publication.lock` serializes publishers. Immutable creation
+uses an atomic exclusive link, protecting against a racing writer overwriting
+another result. The index is replaced atomically only after both files succeed.
+An interrupted unpublished generation can leave partial, unreferenced immutable
+files; retrying identical content completes it. Old generations are retained.
+If a process dies holding the lock, verify that writer has stopped before manually
+removing the stale lock. The tool never kills a process or guesses a stale lease.
+
+The small index contract has `artifactType: "flagship-index"`, `schemaVersion: 1`,
+`latest`, and `snapshots`. Each snapshot entry carries `id`, `asOfQuarter`, UTC
+`generatedAt`, matrix/supporting `{url, sha256, sizeBytes}`, and a
+`generationSha256` over the canonical entry before that checksum is added.
+Canonical JSON uses UTF-8, sorted keys, compact separators, a final newline and
+finite numbers. Entries are newest cutoff first, then actual generation instant,
+then ID; publishing an older cutoff does not make it latest. Index URLs are
+generation-relative public artifact paths. Existing index entries and content
+checksums are verified before extension; corruption requires explicit repair.
+
+This supplies a local publication mechanism. Uploading public generations and
+switching the CDN index is a later hosting step, not an implicit cloud action.
+
+## Verification
+
+```powershell
+uv run --frozen python -m unittest discover -s tests -p test_history_storage.py
+```
+
+Tests exercise local/fake-B2 round trips, resume after interruption, corrupt source
+and destination bytes, public/private path boundaries, dedicated credentials,
+source-bucket protection, paired publication mismatch, partial publication retry,
+immutable concurrent creation, cooperative locks, and damaged index/content
+refusal. They use temporary files and invented aggregate data, without network.

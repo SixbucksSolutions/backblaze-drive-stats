@@ -1,0 +1,19 @@
+{
+  "version": "example-only-not-production-v1",
+  "models": [
+    {
+      "vendor": "XYZ",
+      "modelNumber": "XYZ26TB-01",
+      "aliases": ["XYZ26TB-01", "XYZ XYZ26TB-01"],
+      "mediaClass": "hdd",
+      "evidence": "FICTIONAL EXAMPLE ONLY. Replace with retained manufacturer specification or Backblaze evidence before real use."
+    },
+    {
+      "vendor": "ExampleVendor",
+      "modelNumber": "EXAMPLE-SSD",
+      "aliases": ["EXAMPLE-SSD"],
+      "mediaClass": "non_hdd",
+      "evidence": "FICTIONAL EXAMPLE ONLY: explicit solid-state classification."
+    }
+  ]
+}
