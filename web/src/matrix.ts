@@ -13,6 +13,7 @@ import storyUrl from '../../fixtures/workbooks/owner-stories.json?url';
 import { adaptProduction, adaptWorkbook, axisExtent, cellAt, formatMetric, interpolate, metrics, metricLabels, stateInfo, visibleModels } from './matrix-data.ts';
 import type { MatrixSnapshot, MatrixModel, MatrixCell, Metric } from './matrix-data.ts';
 import { captureControlFocus, controlId, restoreControlFocus } from './matrix-focus.ts';
+import { connectMatrixScroll } from './matrix-scroll.ts';
 
 const files = [q4, q3, later, earlier, correction, xyz];
 const esc = (value: unknown) => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -24,6 +25,7 @@ let vendor = 'all', search = '', guide = 20, neutral = false, onlyPinned = false
 let pinned = new Set<string>(), selected = new Set<string>();
 let selection: { model: MatrixModel; cell: MatrixCell; metric: Metric } | undefined;
 let activeRow = 0;
+let disconnectScrolling: (() => void) | undefined;
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const empty = (value: unknown) => value === null || value === undefined ? 'Unavailable' : esc(value);
 
@@ -47,6 +49,7 @@ function groups(models: MatrixModel[]) {
   return result;
 }
 function render() {
+  disconnectScrolling?.();
   const savedFocus = captureControlFocus(document.activeElement as HTMLElement | null);
   const focusedElement = document.activeElement;
   const scroll = app.querySelector('.matrix-scroll');
@@ -61,13 +64,19 @@ function render() {
   ${snapshot.kind === 'reference' ? `<details class="matrix-stories"><summary>Owner reading cases · all eight reference stories</summary><p>Historical owner interpretations, not automated rankings or purchase recommendations. Select a case to place its exact models together.</p><div>${stories.map(s => `<button id="${controlId('story', s.id)}" data-story="${esc(s.id)}"><strong>${esc(s.models.join(' / '))}</strong><span>${esc(s.owner_reading)}</span></button>`).join('')}</div></details>` : ''}</section>
   <section class="matrix-workspace"><div class="matrix-caption"><div><strong>${models.length} models · ${esc(snapshot.label)}</strong><span>${snapshot.kind === 'reference' ? 'Relative retained-row positions' : 'Calendar offsets from first ≥2,000-drive quarter'} · guides follow Q${guide} and Q24 · scroll for the full history</span></div><a href="#matrix-legend">Color legend ↓</a></div>
   <p class="matrix-instruction" id="matrix-help">Focus, click or hover any value for details. Arrow keys move between cells; Home/End move across a row. The same relative row is outlined across models. Relative history is not individual drive age.</p>
-  <div class="matrix-scroll" tabindex="0" role="region" aria-label="Deployment history matrix, scroll horizontally and vertically" aria-describedby="matrix-help">${models.length ? table(models) : '<div class="matrix-empty">No models match. Adjust filters, select a model, or reset selection.</div>'}</div>
+  <div class="matrix-pane">
+    <div class="matrix-scroll" id="matrix-data" tabindex="0" role="region" aria-label="Deployment history matrix, scroll horizontally and vertically" aria-describedby="matrix-help">${models.length ? table(models) : '<div class="matrix-empty">No models match. Adjust filters, select a model, or reset selection.</div>'}</div>
+    <div class="matrix-vscroll" tabindex="0" role="region" aria-label="Scroll relative quarters vertically" aria-controls="matrix-data"><div class="matrix-scroll-size" aria-hidden="true"></div></div>
+    <div class="matrix-hscroll" tabindex="0" role="region" aria-label="Scroll drive model columns horizontally" aria-controls="matrix-data"><div class="matrix-scroll-size" aria-hidden="true"></div></div>
+    <div class="matrix-scroll-corner" aria-hidden="true"></div>
+  </div>
   <div class="matrix-states">${['below_threshold', 'source_missing', 'source_incomplete', 'snapshot_end', 'trailing_blank_unknown'].map(s => `<span class="state-key state-${s}" title="${esc(stateInfo(s).description)}">${stateInfo(s).label}</span>`).join('')}<span>— on an eligible row = metric unavailable; inspect for the reason</span></div></section>
   <aside class="matrix-inspector" id="matrix-inspector" aria-label="Cell details">${selection ? inspector() : '<p class="eyebrow">CELL INSPECTOR</p><h2>Read a value in context.</h2><p>Focus, click or hover a matrix cell for its exact value, calendar context, exposure and baseline.</p>'}</aside>
   ${legend()}<details class="matrix-method"><summary>How to read this comparison & source context</summary><p>AFR is cumulative through the displayed quarter, in percent; AFR delta is in percentage points. Count means distinct drives observed anywhere in a quarter, not the installed population at quarter end. New means first seen in supplied history. Failed sums daily failure flags.</p><p>Retired is inferred from last observations and may include failures. A newest-quarter Failed proxy, when identified by production metadata, is provisional. Neither is proof of voluntary retirement or its cause. Large population and continuing additions provide deployment context, not a spending measurement.</p><p>All seven scales use the full eligible snapshot population. Filtering, selection, pinning and neutral colors never recalculate them. The malformed New source color is normalized to intended white. No composite ranking is calculated.</p><p>${snapshot.kind === 'reference' ? 'Workbook first-row deltas subtract zero; subsequent rows subtract the prior retained row. Calendar, pre-eligibility exposure and cutoff are unknown. Nonzero cumulative AFR with zero current Failed can reflect earlier contributions, but those components cannot be reconstructed here.' : 'Production examples retain real calendar offsets and the original anchor after reentry. Delta subtracts the prior eligible row and states its elapsed span. Pre-eligibility contributions remain in cumulative AFR; coverage gaps can make cumulative rates unavailable while Count remains known.'}</p><p>Guides after 20 and 24 quarters are deployment-history references for five and six years. They do not predict an individual drive’s lifetime or recommend a replacement date.</p><p>Snapshot: ${esc(snapshot.id)} · ${esc(snapshot.versions)}.</p><p class="matrix-hash">Source SHA-256 / manifest: ${esc(snapshot.sourceHash)}</p>${snapshot.sourceUrl ? `<a href="${esc(snapshot.sourceUrl)}">Original owner-supplied workbook ↗</a>` : '<p>Invented aggregate contract example; no observed Backblaze performance is represented.</p>'}</details>
   <footer>Local comparison preview · Production generation and primary navigation remain separately gated.<a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a><a href="?">Back to Explore ↗</a></footer></div>`);
   bind();
   const nextScroll = app.querySelector('.matrix-scroll'); if (nextScroll) { nextScroll.scrollLeft = left; nextScroll.scrollTop = top; }
+  disconnectScrolling = connectMatrixScroll(app.querySelector<HTMLElement>('.matrix-pane')!);
   if (document.activeElement !== focusedElement) restoreControlFocus(savedFocus, id => document.getElementById(id));
   const focusedCell = document.activeElement;
   if (focusedCell instanceof HTMLButtonElement && focusedCell.dataset.cell) {

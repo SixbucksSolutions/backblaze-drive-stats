@@ -52,3 +52,16 @@
 
 /* Keep horizon labels inside their Quarter cell instead of under the next sticky row. */
 .comparison-matrix .guide-label{position:static;display:block;transform:none;margin-top:1px}
+
+/* Native scrollbar rails bound only the movable rows/columns. The single table
+   keeps its accessible structure, sticky headings and wheel/touch scrolling. */
+.matrix-pane{--matrix-header-size:118px;--matrix-frozen-size:124px;--matrix-vrail-size:18px;--matrix-hrail-size:18px;display:grid;grid-template-columns:minmax(0,1fr) var(--matrix-vrail-size);grid-template-rows:auto var(--matrix-hrail-size);overflow:hidden;border-block:1px solid #cdd8c7;background:#f8faf7}
+.matrix-pane>.matrix-scroll{grid-area:1/1;min-width:0;min-height:0;border:0;scrollbar-width:none}
+.matrix-pane>.matrix-scroll::-webkit-scrollbar{display:none}
+.matrix-vscroll{grid-area:1/2;min-height:0;margin-top:var(--matrix-header-size);overflow-x:hidden;overflow-y:scroll;contain:size}
+.matrix-hscroll{grid-area:2/1;min-width:0;margin-left:var(--matrix-frozen-size);overflow-x:scroll;overflow-y:hidden;contain:size}
+.matrix-vscroll>.matrix-scroll-size{width:1px}
+.matrix-hscroll>.matrix-scroll-size{height:1px}
+.matrix-pane[data-horizontal-overflow=false]>.matrix-hscroll,.matrix-pane[data-vertical-overflow=false]>.matrix-vscroll{visibility:hidden}
+.matrix-scroll-corner{grid-area:2/2}
+.matrix-vscroll:focus-visible,.matrix-hscroll:focus-visible{outline-offset:-3px}

@@ -13,7 +13,7 @@
     "check": "tsc --noEmit",
     "check:data": "node --experimental-strip-types scripts/check-data.mjs",
     "check:fonts": "node scripts/check-font-assets.mjs",
-    "test": "node --experimental-strip-types --test src/data.test.ts src/matrix-data.test.ts src/matrix-contrast.test.ts src/matrix-display.test.ts src/font-ready.test.ts",
+    "test": "node --experimental-strip-types --test src/data.test.ts src/matrix-data.test.ts src/matrix-contrast.test.ts src/matrix-display.test.ts src/font-ready.test.ts src/matrix-scroll.test.ts",
     "build": "npm run check && npm run check:data && npm run check:fonts && vite build",
     "preview": "vite preview --host 127.0.0.1"
   },

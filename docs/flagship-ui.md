@@ -172,3 +172,46 @@ Browser checks confirmed both badges fit vertically and horizontally inside
 their Quarter cells, and leaving row 27 removes the row outline. The owner also
 confirmed the hover behavior. Evidence:
 `data/staging/ui-0015/typography/hover-guides-final.png`.
+
+## Scrollbars around the data area
+
+The owner approved placing the vertical scrollbar below the frozen headers and
+the horizontal scrollbar after the frozen Year/Quarter columns. The matrix keeps
+one semantic table and its sticky headers. Two separate native overflow rails
+control the same viewport; no scrollbar thumb or drag behavior is drawn by the
+application.
+
+- The right rail starts at the measured bottom of the table header. The bottom
+  rail starts at the measured right edge of the frozen age columns.
+- Rail content extents match the viewport's scroll ranges exactly. Scrolling
+  either rail updates the table; wheel, touch and focus-driven movement in the
+  table update the rails. Resize and font changes refresh the geometry.
+- Rail boxes use size containment, so their invisible sizing content cannot
+  enlarge the surrounding grid. The fixed 18 px slots remain allocated; a rail
+  is hidden when its axis has no overflow.
+- The matrix and both native rails have keyboard-accessible region labels. The
+  rails identify the table viewport they control. Existing cell navigation,
+  source/inspector detail, hover exit and filter/pin behavior remain in place.
+- Rendering reconnects synchronization after content updates and restores the
+  table's prior offsets. Cleanup removes old listeners and resize observers.
+
+Native scrollbar appearance and auto-hiding follow the browser and operating
+system. This changes their placement without adding a custom scrollbar widget.
+
+Verification on 2026-10-31: 26 web tests and the production/type/data/font build
+pass. A regression reproduces delayed scroll-event echoes during native rail
+animation and verifies that synchronization does not rewrite the active rail's
+position. Actual native keyboard scrolling reached the full 528 px vertical
+range and advanced 80 px for two horizontal arrow presses. Cell End navigation
+also moved the viewport and horizontal rail together to the final model.
+
+Desktop and 390 px browser checks confirmed matching rail/viewport ranges, track
+origins aligned with the header bottom and frozen-column edge, retained offsets
+through a neutral-color update, hidden rails for empty results, and visible final
+model labels after resizing/filtering. Fresh independent source and screenshot
+reviews were completed. Continuous horizontal scrolling can expose a partial
+column beside the frozen boundary, as before. Evidence:
+`data/staging/ui-0015/typography/scrollbars-desktop-final.png` and
+`scrollbars-narrow-final.png` in the same directory. Mouse-wheel/touch support is
+retained through the original viewport; physical touchscreen input and other
+browser engines were not separately exercised.
