@@ -1,6 +1,24 @@
-# backblaze-drive-stats-analysis
+# Backblaze Drive Stats
 
-**Updated 2026-06-14**
+**Updated 2026-10-30**
+
+Independent hard-drive reliability analysis and a static data explorer by
+[SixbucksSolutions](https://github.com/SixbucksSolutions).
+
+**Made possible by Backblaze.** Thank you to Backblaze for collecting, maintaining,
+and openly publishing the [Drive Stats dataset](https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data).
+Their ongoing work makes these comparisons possible. Please visit their
+[official Drive Stats reports](https://www.backblaze.com/blog/category/hard-drive-stats/)
+for Backblaze's own analysis and context.
+
+The current site provides calendar-quarter exploration using real 2026 Q2 data.
+The planned flagship is a vendor-grouped comparison aligned by relative quarter,
+preserving the AFR workbook's seven adjacent metrics and conditional colors.
+See the [flagship plan](docs/flagship-afr-plan.md) for scope and implementation gates.
+
+The software and original project analysis are [MIT licensed](LICENSE). Backblaze's
+source data, name, branding and other third-party material retain their own rights
+and usage terms. This is an independent project. See [data sources and attribution](DATA_SOURCES.md).
 
 ## Quarterly website
 
@@ -43,7 +61,23 @@ For eventual Cloudflare Pages hosting, use `web` as the root directory,
 included `_headers` keeps the quarter index fresh and caches hashed application
 assets. Deploying is a separate step; local development does not publish a site.
 
-## Creating Quarterly AFR CSV
+## Python generator environment
+
+The tested generator uses Python 3.15.2, Polars 2.1.0 and uv 0.13.6. From the
+repository root:
+
+```powershell
+uv python install 3.15.2
+uv sync --frozen
+uv run --frozen python -m unittest discover -s tests
+```
+
+Use `uv run --frozen` for the generator and original reports. See the
+[Python toolchain](docs/python-toolchain.md) for native build prerequisites,
+dependency constraints and lockfile refresh instructions. The flagship relative
+quarter comparison is specified in the [AFR plan](docs/flagship-afr-plan.md).
+
+## Creating Quarterly AFR XLSX
 
 ### System Requirements
 
@@ -67,16 +101,16 @@ repositories, so it's left as an exercise for the reader.
 
 ```bash
 $ sudo apt-get update
-$ sudo apt-get -y upgrade
 $ sudo apt-get -y install build-essential
-$ curl -LsSf https://astral.sh/uv/install.sh | sudo env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
-$ ./install-latest-uv-python-env.sh
+$ curl -LsSf https://astral.sh/uv/install.sh | sh
+$ uv python install 3.15.2
+$ uv sync --frozen
 ```
 
 ### Running The Script
 
 ```
-$ uv run quarterly_afr_xlsx_from_iceberg.py 	        \
+$ uv run --frozen quarterly_afr_xlsx_from_iceberg.py 	        \
     drives_of_interest_regexes.json     		        \
     [s3_access_key]                     		        \
     [s3_secret_access_key]              		        \

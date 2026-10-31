@@ -64,7 +64,7 @@ def prepare_source(source: pl.LazyFrame, patterns: list[str] | None = None, *, t
     invalid = source.filter(
         pl.col("date").is_null() | pl.col("serial_number").is_null() |
         (pl.col("serial_number").str.strip_chars() == "") | pl.col("model").is_null() |
-        (pl.col("model") == "") | pl.col("failure").is_null() | ~pl.col("failure").is_in([0, 1])
+        (pl.col("model") == "") | pl.col("failure").is_null() | ~pl.col("failure").is_in([0.0, 1.0])
     ).select(pl.len()).collect().item()
     if invalid:
         raise ValueError(f"Source has {invalid} invalid required observations")

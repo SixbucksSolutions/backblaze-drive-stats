@@ -1,0 +1,331 @@
+# Flagship AFR comparison plan
+
+Plan #0013, revision 2 (r002), 2026-10-30. This specifies the primary comparison product;
+it does not start its implementation or authorize a historical backfill. The
+existing calendar-quarter explorer remains a supporting view. Python + Polars is
+the owner's selected generator stack.
+
+## Decision the view supports
+
+Compare selected HDD models by vendor and relative quarter to judge an intended
+service life and plan proactive replacement. The owner values a large deployed
+population, a long useful history, low AFR, and absence of early retirement waves.
+A model can remain attractive when deterioration occurs late enough for a planned
+replacement horizon. The owner targets at least five years; an annual staggered
+replacement cycle can make six years relevant too.
+
+The owner also reads deployment scale as revealed preference: "Where is Backblaze
+putting their money?" Growing from a small eligible population toward tens of
+thousands represents substantial operational commitment. Count is both an evidence
+base and a commitment cue; New shows continuing deployment. Keep that signal
+prominent alongside reliability. The dataset does not provide purchase prices,
+actual spending or the reasons for a procurement decision.
+
+The primary display must preserve the combined trajectory. A final AFR number,
+single color, newest-quarter ranking or invented composite score cannot replace
+that reading task. This is a comparison workspace with owner judgment, not an
+automatic purchase or replacement-age recommendation.
+
+## Confirmed owner decisions
+
+- Python + Polars generates static JSON offline. No request-time backend is needed.
+- Keep the personal HDD selection and canonical SMART model normalization.
+- Compare exact model numbers. Family, generation and vendor labels organize
+  models; they must not merge variant histories or imply equal reliability.
+- Group model columns under Seagate, Toshiba and WDC/HGST vendor headers.
+- Relative quarter 1 starts at the first calendar quarter with **at least 2,000
+  observed drives** for the normalized model.
+- Eligibility applies in both directions. Below 2,000, the model leaves the
+  displayed metric series and is shown as out of service under this convention.
+  A tooltip states that this means below the comparison threshold; some drives
+  may remain in the source fleet. The cutoff is the owner's population-screening
+  rule, not a universal guarantee of statistical significance.
+- Warm AFR colors flag values the owner dislikes. Green Count means relatively
+  many observed drives and is read by the owner as deployment commitment.
+  Warm Retired colors flag large population outflows, read
+  alongside the signed population Delta.
+- Five years is the minimum service-life reference. The owner proactively
+  replaces the oldest drive on an annual schedule while it still appears healthy.
+- Preserve year-first calendar labels, such as **2025 Q4**.
+- Publish the independent project under SixbucksSolutions with MIT licensing for
+  its software and original analysis. Prominently credit Backblaze and retain the
+  source dataset's own rights and usage terms.
+
+## Reference evidence and acceptance stories
+
+The supplied [2025 Q3 workbook](https://s3.us-east-2.amazonaws.com/backblaze-drive-stats.sixbuckssolutions.com/afr_data/2025q3_quarterly_afr.xlsx)
+and [2025 Q4 workbook](https://s3.us-east-2.amazonaws.com/backblaze-drive-stats.sixbuckssolutions.com/afr_data/2025q4_quarterly_afr.xlsx)
+are the visual baseline. See the [mechanical audit](workbook-reference-analysis.md)
+for hashes, exact ranges and rules. The owner also supplied cropped examples:
+
+1. **ST12000NM0007, warning reference:** worsening AFR followed by large retirement
+   waves and a collapsing population early in the displayed history. The user must
+   be able to see that combination at a glance.
+2. **WUH721816ALE6L4, promising reference:** low AFR, a population growing toward
+   27,000, and quiet retirement/failure columns over 14 displayed quarters. Its
+   shorter history remains visible; it does not yet demonstrate the full target
+   horizon solely from this reference.
+3. **HUH721212ALN604, mature-good reference:** long stable history followed by the
+   owner's recognizable late reliability cliff. Late red AFR cells must remain in
+   age context rather than automatically mark the entire model as bad.
+4. **MG08ACA16TA / MG08ACA16TE, early-spike diagnostic:** the owner supplied
+   histories that rise early and settle near 1%. Keep those initial quarters and
+   the later trajectory together. MG08ACA16TA's first displayed row has 3.570%
+   cumulative AFR and zero current-quarter Failed, so cell details must expose the
+   pre-eligibility contribution instead of attributing the rate to that row alone.
+5. **ST16000NM001G, favorable but historically unavailable:** the owner considered
+   its history attractive but could not buy it when shopping. Retain it as a
+   comparison baseline. Fleet data does not establish current purchase availability;
+   no live inventory feed is in this phase.
+6. **ST24000NM002H, early deterioration while growing:** the owner flagged the
+   Exos X24 example's rise from about 1.03% to 2.72% over four displayed quarters,
+   despite a growing population. A concerning AFR trajectory can appear before
+   retirement waves. Keep this exact model distinct from favorable Seagate models.
+
+The owner also wants to test whether WUH721816ALE6L4 outperforms the selected
+large-population Seagate models at comparable relative ages, and whether Toshiba
+models show high early mortality followed by a more stable period. Treat these as
+questions for the evidence, not accepted vendor-wide conclusions. Preserve early
+losses in the historical record; a later low cumulative AFR must not erase them.
+
+The relative-quarter axis describes model deployment history from the eligibility
+anchor. It is not each disk's physical age. Population additions and changes in
+cohort mix remain visible in New and Count. Interpreting a fleet-history cliff as a
+personal replacement horizon is owner judgment, not a measured individual survival
+forecast. No price, SMART monitoring or shopping integration is in this phase.
+
+## Primary layout and interactions
+
+### Source-to-view map
+
+| Existing script | Role and aggregation to preserve or reconcile |
+| --- | --- |
+| `quarterly_afr_xlsx_from_iceberg.py` | Flagship: cumulative AFR and quarterly model/lifecycle measures, aligned relative display rows and shared color scales |
+| `quarterly_drive_model_deployments.py` | Calendar-quarter first-observed deployments by model/vendor; distinct from the active population |
+| `quarterly_drive_model_distributions.py` | Calendar-quarter distinct observed drive populations by normalized model |
+| `quarterly_raw_storage_capacity.py` | Overall observed-quarter raw capacity and change from the prior quarter |
+| `quarterly_raw_storage_capacity_by_mfr.py` | Calendar-quarter raw capacity and shares by manufacturer within its selection |
+| `quarterly_raw_storage_capacity_by_datacenter.py` | Calendar-quarter raw capacity by datacenter within available location coverage |
+
+The contract task must reconcile the existing reports' different selection and
+capacity-cleaning rules, including median versus mode and treatment of moves or
+aliases. Preserve the intended aggregation and state any deliberate correction;
+do not claim that differently scoped legacy totals are automatically equivalent.
+
+Retain the workbook orientation: **relative Year/Quarter down the left, vendor and
+model groups across the top**. Each model keeps these seven adjacent columns:
+
+| AFR | AFR | Drives | Drives | Drives | Drives | Drives |
+| --- | --- | --- | --- | --- | --- | --- |
+| Value | Delta | Count | Delta | New | Retired | Failed |
+
+Use a scrollable table with sticky age columns and vendor/model/metric headers.
+Keep full model histories, including models that qualified previously but are
+below the threshold now. Show blank/ineligible cells after their displayed service
+series, with an explicit threshold status, rather than replacing missing cells
+with zero or removing the historical model block.
+
+Visibly distinguish three blank-like states: below-threshold exit, missing or
+incomplete source observations, and history ending at the selected snapshot.
+Provide a short label or pattern and keyboard-accessible explanation. A complete
+quarter with a known sub-threshold count is an exit; an unknown population caused
+by absent coverage is not. Never infer exit merely from trailing workbook blanks
+when the reference lacks the required calendar/coverage metadata.
+
+Provide model/vendor selection and a pinned comparison set so a few candidates can
+stay together on narrower screens. All seven metrics remain the default view.
+Filtering or pinning must not silently change color meanings. Keep the full
+selected-population color reference for the chosen as-of snapshot, independent of
+which models are currently visible.
+
+Hovering, clicking or keyboard-focusing a cell reveals the model, actual calendar
+quarter, relative quarter, exact value, exposure and source/as-of context. Highlight
+the same relative row across visible models without washing out cell colors.
+Propose an adjustable horizontal service-horizon guide, defaulting to 20 quarters,
+so the owner can compare deterioration before and after the intended horizon.
+Include 24 quarters as another reference for a staggered six-drive annual rotation.
+Place these guides at the boundaries **after quarters 20 and 24**, labeled as
+deployment-history references. Keep the age axis and guides reachable even when
+all visible candidates have shorter histories; for example, the 14-quarter
+promising reference still needs its unobserved distance to the target visible.
+Future/unobserved age cells must not look like confirmed threshold exits.
+
+An **as-of snapshot** selector defaults to the latest fully generated historical
+snapshot. It selects the evidence available at that cutoff, not one calendar
+quarter's fleet report. Supporting calendar-quarter reports stay under Explore.
+Link vendor headers to the supporting manufacturer timeline so the owner can test
+whether deployment choices moved with the reliability patterns. Keep new observed
+deployments, observed population/share and raw capacity/share distinct. The
+owner's observed early Seagate-only series and later WD shift are a historical
+question to reproduce from source, with selection and coverage stated explicitly;
+do not imply the full fleet was 100% Seagate from a filtered-model result.
+The 2,000-drive cutoff belongs to the AFR comparison. The supporting vendor view
+retains all models in its stated HDD selection, including smaller populations,
+unless the owner deliberately applies another filter. Preserve raw summaries so
+screening the matrix does not erase that deployment context.
+Retain the existing datacenter report under Explore as well. The owner's observed
+PHX/IAD growth and Canada/Europe plateaus are supporting historical questions.
+Keep observed raw capacity, population, units and coverage explicit; these records
+do not directly measure customer demand or utilized storage. The original
+datacenter report may use the full supplied drive population, so state its scope
+separately from the personal HDD subset. A richer datacenter trend display is a
+secondary enhancement, not a gate for the flagship's first delivery.
+Preserve the raw-capacity calendar series and its quarter-over-quarter change
+too. The owner's specific reconciliation checkpoints are the 2020 Q3 inflection,
+subsequent moderation and later AI-era acceleration in overall capacity. Show
+the aggregate and datacenter contributions so the distribution of growth can be
+examined. These are owner-observed patterns to verify, not established causal
+attributions to customer demand or a specific event.
+Define the capacity delta as the difference in observed-quarter raw capacity
+from the previous calendar quarter. It is distinct from capacity of newly
+observed drives and from customer data uploaded. Do not silently bridge missing
+quarters or treat incomplete coverage as a measured zero. Use clearly labeled
+decimal TB/PB/EB units and the stated population/coverage scope.
+Mobile may scroll horizontally; it must preserve access to the complete block and
+age context rather than silently turn the flagship into isolated summary cards.
+Keep prominent Backblaze dataset/report links and independent-project attribution
+in the common view, and carry source/as-of attribution with JSON, CSV and shared
+outputs. Follow [the data-source notice](../DATA_SOURCES.md); the software's MIT
+license does not replace Backblaze's dataset or branding terms.
+
+## Color behavior
+
+Preserve the reference palette and metric-specific semantics. Vendor colors are
+category labels, with readable text; green vendor branding is not a reliability
+assessment. Keep numeric values visible, provide a legend and accessible focus/
+descriptions, and offer a neutral-color presentation without changing the data.
+
+All dynamic scales use eligible cells across all model blocks in the as-of
+snapshot, not each row or individual model. Ignore missing/ineligible cells.
+
+| Metric | Scale to preserve |
+| --- | --- |
+| Cumulative AFR value | Observed minimum green, fixed 1% yellow, fixed 2% red; clamp beyond the fixed high endpoint |
+| AFR Delta | Minimum green, zero white, maximum red |
+| Count | Minimum red, median yellow, maximum green |
+| Population Delta | Minimum red, zero white, maximum green |
+| New | Zero white, maximum green |
+| Retired | Zero green, median yellow, maximum red |
+| Failed | Minimum green, median yellow, maximum red |
+
+Use the actual percentile calculation, interpolation and scope from the reference
+when generating the golden fixture. The New scale contains a malformed serialized
+color; the owner's screenshots establish the intended white-to-green rendering.
+Use valid CSS white, preserve the source files and document that normalization.
+Do not copy the black New cells produced by the alternate renderer.
+
+## Metric and history contract
+
+The default AFR remains **cumulative AFR through that calendar quarter**, in
+percent units. Delta is in percentage points. Count is distinct normalized
+model/serial identities observed at any time in the quarter, not a quarter-end
+installed fleet. New is first observed within supplied history. Failed is the sum
+of daily failure flags. Cumulative exposure retains pre-eligibility history.
+
+Retired preserves the reference's inference semantics for the fidelity phase:
+last recorded observation before the as-of boundary, including failed identities.
+The newest calendar-quarter rule currently substitutes Failed for Retired. Record
+that rule and provisional status explicitly. It must not be represented as net
+population Delta or confirmed manufacturer-directed retirement. A retirement wave
+is an investigation signal, not proof of its cause.
+
+Preserve the reference first-row delta convention for fidelity: subtract zero,
+and explain that it is an initialization baseline. Subsequent reference deltas
+subtract the previous retained row. Golden fixtures must retain those exact
+values; changing delta behavior later requires a declared metric-version decision.
+
+Proposed production time handling keeps real calendar offsets from the confirmed
+anchor, leaves below-threshold gaps unavailable, and resumes at the original
+anchor if eligibility returns. It does not compress elapsed time. This improves
+edge-case age accuracy relative to the reference's retained-row numbering and is
+an explicit proposal for review, not a silently accepted behavior change. The
+contract task must reconcile the delta baseline after gaps and test both cases
+before this behavior is implemented.
+
+Create a separate versioned matrix contract; do not repurpose the current
+calendar-quarter bundle. It needs:
+
+- Snapshot id, as-of cutoff, coverage, source hashes, selection/normalization/
+  metric versions, minimum population, horizon definition and color-scale domain.
+- Every historically qualifying model, vendor, identity, actual anchor quarter,
+  final eligible quarter and below-threshold/no-observation status.
+- Model/calendar-quarter cells with the seven metrics, exposure, relative index,
+  eligibility and inference status; never raw serial numbers. Include quarterly
+  and cumulative failure/exposure components for inspecting rates. Quarter-only
+  AFR can be calculated in cell details without replacing the main cumulative AFR.
+- Explicit missing/ineligible cells and display units. Keep initial deltas and
+  incomplete coverage distinguishable from observed zero.
+- A defined supporting manufacturer/calendar-quarter rollup, derived from the
+  retained source population rather than only visible matrix cells, for the
+  existing manufacturer report and its trend link. Labels and denominators must
+  distinguish new observations, population and capacity.
+  Retain the level and calendar-quarter delta for the existing overall raw-capacity
+  report, with coverage-aware unavailable values for noncomparable periods.
+
+An early qualifying quarter can contain a short deployment exposure even with
+2,000 observed drives. Make that exposure inspectable. The matrix alone does not
+establish a conditional survival rate for individual drives reaching year 2;
+that would require a separately defined cohort analysis and appropriate age data.
+
+Later observations can revise earlier Retired values: 22 existing retirement
+cells changed between the references. An as-of snapshot is immutable; selecting a
+new snapshot can show those revisions. Publish a complete validated generation
+under immutable paths, then switch its index. A new snapshot must not be assembled
+from partially overwritten files or silently rebase colors to a visible subset.
+
+## Data path and resource gate
+
+The current local 2026 Q2 data cannot supply the complete flagship history. The
+XLSX files provide visual/golden fixtures, but omit the calendar/exposure metadata
+needed to reconstruct a trustworthy production matrix from them alone.
+
+The planned current cutoff is **2026 Q2**, extending the latest supplied 2025 Q4
+reference through 2026 Q1 and Q2. Screenshots illustrate historical reading cases;
+new exposure, deployments and failures can change their assessment. Future refreshes
+should select the newest complete published quarter, with the as-of cutoff visible.
+Small or stalled deployment is a question to investigate; fleet records alone do
+not identify a procurement motive or a vendor confidence decision.
+
+Discover the earliest required history for the selected models and the cumulative
+denominators, estimate transfer/disk/processing needs, and present that bounded
+backfill scope before execution. ZIPs and Iceberg are equivalent source adapters
+for this purpose. No new historical download, paid compute or cloud provisioning
+is authorized by this plan.
+
+Persist projected private input and sufficient quarter/drive summaries so normal
+quarterly updates avoid rescanning every historical daily observation. Keep source
+checksums, row/date coverage, capacity frequencies and lifecycle state private.
+Rebuild affected history when a source quarter or a semantic version changes.
+Use the [locked Python toolchain](python-toolchain.md) and test the actual execution
+plan/resource behavior; current single-quarter parity is not a full-history memory
+guarantee.
+
+## Implementation stages and review gates
+
+1. **#0014 Contract and golden fixtures:** specify eligibility, anchors/gaps, units,
+   deltas, departure boundary behavior, snapshot revisions and exact color domains.
+   Extract both reference fixtures and all owner reading cases. Obtain
+   owner acceptance before dependent implementation.
+2. **#0015 UI and #0016 generator in parallel after the contract:** build the workbook-faithful
+   matrix against fixtures; independently build persisted historical summaries and
+   snapshot export against small multi-quarter cases and the existing real cache.
+   Review source, visuals and numerical parity independently.
+3. **#0017 Bounded backfill and integration:** after the earlier work is accepted and
+   resource scope authorized, generate historical snapshots, reconcile the two
+   workbook cutoffs where source coverage permits, validate the real latest matrix,
+   and integrate it as the primary view with supporting reports under Explore.
+
+Acceptance requires the owner examples to remain recognizable, faithful
+shared color scopes, explicit threshold behavior, legible pinned comparisons,
+correct keyboard/focus behavior, valid aggregate-only JSON, exact integer metric
+parity and appropriate floating-point tolerances. Verify the five-/six-year guides
+refer to the displayed relative-quarter convention, lie after quarters 20/24, and
+remain reachable with short selected histories. Distinguish threshold exits,
+source gaps and snapshot-ended histories in both sighted and keyboard use.
+No automatic cliff detector,
+ranking score or replacement prediction is part of the baseline.
+
+The rolling worker assignments live in the private project plan. The current
+assignment revision is **r002**; r001 is retained as history. Planned workers
+do not occupy slots or authorize execution. Recheck every prerequisite and move
+the card In Progress before design, code, tests or review. Terry retains Completed.

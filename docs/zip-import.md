@@ -5,7 +5,7 @@ Download the quarterly ZIP from the [Backblaze Drive Stats data page](https://ww
 From the repository root, run:
 
 ```powershell
-uv run --no-project --with polars==1.41.2 python prepare_quarter_zip.py --input-zip data/raw/data_2026_Q2.zip --output-dir data/processed/2026-Q2 --source-url https://f001.backblazeb2.com/file/Backblaze-Hard-Drive-Data/data_Q2_2026.zip
+uv run --frozen python prepare_quarter_zip.py --input-zip data/raw/data_2026_Q2.zip --output-dir data/processed/2026-Q2 --source-url https://f001.backblazeb2.com/file/Backblaze-Hard-Drive-Data/data_Q2_2026.zip
 ```
 
 The importer processes one daily `YYYY-MM-DD.csv` member at a time. It never extracts raw CSVs. Only `date`, `serial_number`, `model`, `capacity_bytes`, `failure`, and an explicitly named `datacenter` column are retained. SMART columns and other fields are discarded. Without a `datacenter` source column, the output column is null; the web exporter labels these observations `Unknown`. Fields such as `vault_id` are not treated as datacenters.
@@ -21,5 +21,5 @@ Pass `data/processed/2026-Q2/*.parquet` as the local Parquet input to `export_qu
 Run the small synthetic checks without downloading data:
 
 ```powershell
-uv run --no-project --with polars==1.41.2 python -m unittest discover -s tests -p test_prepare_quarter_zip.py
+uv run --frozen python -m unittest discover -s tests -p test_prepare_quarter_zip.py
 ```

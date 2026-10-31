@@ -5,7 +5,7 @@
 Use the project's Python environment and existing dependencies (Polars; Iceberg additionally needs the existing S3/Iceberg dependencies):
 
 ```powershell
-python export_quarterly_web_data.py --input-parquet 'data/*.parquet' --through-quarter 2026-Q2 --output-dir web/public/data
+uv run --frozen python export_quarterly_web_data.py --input-parquet 'data/*.parquet' --through-quarter 2026-Q2 --output-dir web/public/data
 ```
 
 Omit `--input-parquet` to use the public Backblaze Iceberg table through the repository's metadata discovery helper. Set `B2_ACCESS_KEY_ID` and `B2_SECRET_ACCESS_KEY` in the environment, using the published read-only credentials or your authorized read-only credentials. Credentials are never JSON fields or command arguments. Endpoint, region, bucket and table flags retain the repository's defaults. This can scan a very large source: run deliberately as an offline job, not at web startup. No full public source scan is part of the synthetic test suite.
@@ -50,7 +50,7 @@ All bundles are validated and built before writing. Individual JSON files are re
 Run the tiny synthetic suite without network dataset access:
 
 ```powershell
-python -m unittest discover -s tests -p test_export_quarterly_web_data.py
+uv run --frozen python -m unittest discover -s tests -p test_export_quarterly_web_data.py
 ```
 
 It covers alias normalization, repaired capacity, changing datacenters, missing datacenters, drive-days/failure AFR, cumulative history, cutoff isolation (including invalid future fields/duplicates), bounded source passes across multiple quarters, privacy, manifest output and invalid/incomplete inputs.
