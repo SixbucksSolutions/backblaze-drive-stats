@@ -25,7 +25,7 @@ retain their applicable rights and licenses.
 Backblaze's published usage rules request attribution and responsibility for use,
 permit derivative works, and prohibit selling the underlying freely provided data.
 Consult the original dataset page for the authoritative current conditions.
-This repository is an independent SixbucksSolutions project and is not endorsed
+This repository is an independent Sixbucks Solutions project and is not endorsed
 by or affiliated with Backblaze.
 
 ## What is distributed here

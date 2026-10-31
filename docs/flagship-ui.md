@@ -229,3 +229,9 @@ retained separate brand headers. All 26 tests, TypeScript and production checks
 pass; fresh independent source review has no findings. Evidence is saved as
 `brands-centered-desktop.png`, `brands-centered-boundary.png` and
 `brands-centered-narrow.png` under `data/staging/ui-0015/typography/`.
+
+The display name is **Sixbucks Solutions** in the interface, project documentation,
+copyright notice and future generated attribution. GitHub organization identifiers
+and URLs retain `SixbucksSolutions`. Existing immutable snapshots and source
+fixtures remain historical evidence; new exports use the actual generator code
+revision, as required by the publication workflow.

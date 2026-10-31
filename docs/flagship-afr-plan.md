@@ -58,7 +58,7 @@ automatic purchase or replacement-age recommendation.
 - Five years is the minimum service-life reference. The owner proactively
   replaces the oldest drive on an annual schedule while it still appears healthy.
 - Preserve year-first calendar labels, such as **2025 Q4**.
-- Publish the independent project under SixbucksSolutions with MIT licensing for
+- Publish the independent project under Sixbucks Solutions with MIT licensing for
   its software and original analysis. Prominently credit Backblaze and retain the
   source dataset's own rights and usage terms.
 
@@ -372,6 +372,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r013**; r001–r012 are retained as history. Planned workers
+assignment revision is **r014**; r001–r013 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

@@ -3,7 +3,7 @@
 **Updated 2026-10-31**
 
 Independent hard-drive reliability analysis and a static data explorer by
-[SixbucksSolutions](https://github.com/SixbucksSolutions).
+[Sixbucks Solutions](https://github.com/SixbucksSolutions).
 
 **Made possible by Backblaze.** Thank you to Backblaze for collecting, maintaining,
 and openly publishing the [Drive Stats dataset](https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data).
