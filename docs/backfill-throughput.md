@@ -7,6 +7,14 @@ with 14.62 GiB sampled minimum available RAM. Native heavy-phase admission remai
 memory-aware; more queued quarters do not automatically get simultaneous heavy
 summaries. The six-direct-agent/depth-one ceiling is unchanged.
 
+The subsequent [nine-quarter ingestion and Q2 repack](ten-item-backfill-and-repack.md)
+completed the next ten-item workset. Source admission allowed eight CPU phases
+and seven heavy summaries, reserving capacity for the repack. The nine source
+pipelines completed in 105.77 seconds with 14.34 GiB sampled worker working set
+and 22.05 GiB minimum available system RAM. This does not establish ten-heavy
+capacity. All 24 loaded quarters now have a verified preferred `cache-v2` view,
+including the unchanged explicit 2022 Q4 coverage gap.
+
 The [completed four-quarter recovery benchmark](parallel-quarter-benchmark.md)
 supersedes this initial sizing proposal. Four audits overlapped with a sampled
 13.01 GiB worker working-set peak and a sampled minimum of 21.39 GiB RAM available. The owner
@@ -19,7 +27,7 @@ for that first experiment rather than limiting the newly approved batch size.
 
 The following proposal and its gates are retained as history. Its references to
 the next four-quarter batch and the then-current three-card turn describe that
-earlier approval, not the live eight-quarter doubling authorization above.
+earlier approval, not the current ten-quarter cap above.
 
 Recommendation from the accepted 2026 Q1 pilot and the measured 2025 Q4 run:
 **one ETL operator plus a fresh independent reviewer** is useful for a new quarter.

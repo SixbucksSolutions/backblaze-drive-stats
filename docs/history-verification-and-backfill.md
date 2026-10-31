@@ -29,6 +29,14 @@ search continues. The owner replaced doubling with a 10-quarter batch cap.
 The next capped workset prioritizes lossless Q2 repack #0058 plus #0041–#0049
 (2022 Q3 through 2020 Q3); #0050 carries forward. Live resource gates still apply.
 
+That [ten-item workset](ten-item-backfill-and-repack.md) is now verified and
+retained: nine additional complete quarters plus a lossless 2026 Q2 repack.
+The preferred `drive-stats/cache-v2` catalog covers 24 quarters from 2020 Q3
+through 2026 Q2, with 23 complete and the same explicit 2022 Q4 partial quarter.
+Use `data/preferred-cache-v2/` for current local analysis; the legacy generation
+is preserved. The exact reference model has 10,849 observed identities in 2020 Q3.
+Next are #0050–#0055, 2020 Q2 through 2019 Q1, and eligible #0017 integration.
+
 Continue backward until a complete quarter has zero observations of exact model
 HUH721212ALN604, extending the queue earlier if needed. Record first observation
 and first >=2,000-drive quarter separately. The old workbook compresses retained
@@ -123,11 +131,10 @@ complete historical fleet coverage. #0022's language quality gates precede furth
 - Separate discovery inventory, the fixed published analysis cohort, purchase
   defaults and historical references in the #0017 contract amendment. A UI-only
   filter cannot remove the current generator's older-cohort history obligations.
-- Work backward in bounded batches. The 2026 Q1 pilot is verified after the
-  retained 2026 Q2 cache; 2025 Q4 (#0028) is also verified. The next authorized
-  benchmark covered 2025 Q3, Q2, Q1 and 2024 Q4 and has completed with an
-  explicitly labeled recovery measurement. The next approved batch covers
-  2024 Q3 through 2022 Q4. Recheck transfer limits and resources before launch.
+- Work backward in bounded batches. Verified processing coverage now reaches
+  2020 Q3, with the explicit 2022 Q4 source gap retained. The next six initially
+  queued cards (#0050–#0055) cover 2020 Q2 through 2019 Q1. Recheck lane,
+  prerequisite, source and resource gates before launch; cap worksets at ten.
 - Establish each candidate's anchor and pre-eligibility exposure honestly. The
   first loaded qualifying quarter is not proof of the original anchor, and an
   earlier zero quarter does not exclude an older deployment followed by reentry.

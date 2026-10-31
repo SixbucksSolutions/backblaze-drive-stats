@@ -35,6 +35,8 @@ The [four-quarter benchmark and recovery](docs/parallel-quarter-benchmark.md) ex
 through 2024 Q4 and records the next owner-approved eight-quarter scaling step.
 The [eight-quarter batch](docs/eight-quarter-benchmark.md) extends retained observations through 2022 Q4,
 records a verified one-day source gap, and measures eight simultaneous cold summaries.
+The [next capped batch and lossless repack](docs/ten-item-backfill-and-repack.md) extend processing history
+through 2020 Q3 and publish a verified preferred cache generation with the 2026 Q2 size anomaly removed.
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's

@@ -361,6 +361,20 @@ forward. Keep six direct agents/depth one
 and memory-aware heavy-phase admission; do not equate queued quarters with
 unlimited simultaneous memory allocations. Normal source/resource gates remain.
 
+That [ten-item workset](ten-item-backfill-and-repack.md) has completed private
+ingestion, independent artifact review and preferred B2 publication. Coverage now
+reaches 2020 Q3: 23 complete quarters and one explicit 2022 Q4 partial quarter.
+The reference model still has 10,849 observed identities in 2020 Q3, so neither
+its first appearance nor a known-zero boundary is established. The Q2 repack
+saved 17.17% of daily Parquet bytes with unchanged observations and numeric
+summaries. `drive-stats/current-cache.json` identifies the preferred `cache-v2`
+generation; legacy objects and recovery references remain intact.
+
+Terry approved #0033–#0040 while explicitly retaining their RFR lanes. The next
+source queue is #0050–#0055 (2020 Q2 through 2019 Q1), alongside eligible #0017
+evidence/integration work. No production matrix or cumulative-history claim has
+been changed by this processing/storage handoff.
+
 The provisional quarter queue reaches 2019 Q1. Continue earlier if necessary to
 find a fully covered quarter with zero HUH721212ALN604 observations across its
 evidenced aliases. Record first appearance and first >=2,000-drive quarter
@@ -431,6 +445,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r024**; r001–r023 are retained as history. Planned workers
+assignment revision is **r025**; r001–r024 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

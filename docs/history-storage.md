@@ -1,5 +1,12 @@
 # Historical cache transfer and snapshot publication
 
+Current preferred processing storage is **`drive-stats/cache-v2`**, discovered
+through **`drive-stats/current-cache.json`**. Its verified 24-quarter catalog
+covers 2020 Q3 through 2026 Q2 with the 2022 Q4 one-day gap explicit. Current
+local analysis uses `data/preferred-cache-v2/`; private runtime discovery is
+`data/preferred-cache.json`. `cache-v1` and original local working inputs remain
+legacy recovery evidence. See the [migration/repack report](ten-item-backfill-and-repack.md).
+
 Implemented for #0016 using local storage first. On 2026-10-31, #0056 verified
 the adapter against the owner's private Backblaze B2 bucket with a dedicated,
 bucket- and prefix-restricted application key supplied outside the repository.
@@ -123,8 +130,11 @@ totaling 5,300,621 bytes. Q1 has one 2,512,007-byte enriched variant. The genera
 selects one verified candidate, preferring the current profile; it does not add
 the versions together. Retaining migration evidence is not duplicate exposure.
 Referenced objects must remain available to their existing recovery manifests.
-The owner requested a full-quarter lossless repack in #0058 after this batch;
-its measured result and preferred-cache publication are pending that task.
+The owner-requested full-quarter lossless repack in #0058 has since completed:
+daily Parquet is 183,750,684 bytes (17.17% smaller). Its preferred processed
+folder is 184,278,429 bytes including the receipt, and the preferred single
+summary is 2,553,233 bytes. Old referenced objects remain intact in `cache-v1`;
+use the current pointer for comparisons rather than the legacy baseline.
 
 ## Immutable aggregate publication
 
