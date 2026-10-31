@@ -58,7 +58,7 @@
 .matrix-table-footer .matrix-options-heading{margin:0 0 6px;padding:0;font-size:11px}
 .matrix-table-footer .matrix-filters{padding:0;gap:14px}
 .matrix-table-footer .matrix-filters>label:first-child{display:flex;align-items:center;gap:7px;width:auto}
-.matrix-table-footer .matrix-filters #matrix-guide{height:30px;margin:0}
+.matrix-table-footer .matrix-filters #matrix-guide{height:30px;margin:0;padding-block:4px}
 .matrix-table-footer .matrix-filters .matrix-check{height:30px;font-size:11px}
 
 /* Native scrollbar rails bound only the movable rows/columns. The single table

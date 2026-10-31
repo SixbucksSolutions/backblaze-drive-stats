@@ -309,3 +309,9 @@ The subsequent footer placement is captured in `table-display-footer-desktop-fin
 and `table-display-footer-narrow.png`. Browser checks confirm desktop alignment,
 narrow containment, native dropdown keyboard focus through changes and unchanged
 guide/color behavior. The former standalone control card above the table is removed.
+
+The compact 56 × 30 px year dropdown uses 4 px vertical padding, avoiding the
+clipped numeral caused by inheriting the taller field's 9 px padding. Desktop and
+390 px checks confirm the complete selected `6`; its size and footer spacing
+are unchanged. Evidence: `dropdown-six-unclipped-desktop.png` and
+`dropdown-six-unclipped-narrow.png` in the same directory.
