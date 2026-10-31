@@ -5,15 +5,17 @@ import { adaptProduction, adaptWorkbook, axisExtent, cellAt, formatMetric, inter
 import type { Domain } from './matrix-data.ts';
 import { captureControlFocus, controlId, restoreControlFocus } from './matrix-focus.ts';
 const fixture = (path: string) => JSON.parse(readFileSync(new URL(`../../fixtures/${path}`, import.meta.url), 'utf8'));
-test('rerender restores the exact selection, pin or story control and preserves a middle-string search caret', () => {
+test('rerender restores the exact brand, model or story control and preserves a middle-string search caret', () => {
   const calls: unknown[] = [];
-  for (const scope of ['model', 'picker-pin', 'header-pin', 'story']) {
+  for (const scope of ['vendor', 'model', 'story']) {
     const id = controlId(scope, 'model with spaces / variant');
     const saved = captureControlFocus({ id, focus() {} });
     restoreControlFocus(saved, sought => { assert.equal(sought, id); return { id, focus: options => calls.push([id, options]) }; });
     assert.deepEqual(calls.at(-1), [id, { preventScroll: true }]);
   }
-  assert.notEqual(controlId('picker-pin', 'ST12000'), controlId('header-pin', 'ST12000'));
+  assert.notEqual(controlId('vendor', 'a / b'), controlId('model', 'a / b'));
+  assert.notEqual(controlId('model', 'a / b'), controlId('model', 'a%20%2F%20b'));
+  assert.equal(controlId('vendor', 'WDC/HGST'), 'matrix-vendor-WDC%2FHGST');
   const saved = captureControlFocus({ id: 'matrix-search', selectionStart: 3, selectionEnd: 7, selectionDirection: 'backward', focus() {} });
   restoreControlFocus(saved, id => ({ id, focus: () => calls.push('focus'), setSelectionRange: (...args) => calls.push(args) }));
   assert.deepEqual(calls.slice(-2), ['focus', [3, 7, 'backward']]);
@@ -55,17 +57,22 @@ test('calendar offsets, exposure, prior-eligible baselines, gaps, threshold exit
   assert.match(stateInfo('trailing_blank_unknown').description, /does not establish threshold exit/);
   assert.equal(formatMetric(0, 'failed'), '0'); assert.equal(formatMetric(null, 'failed'), '—');
 });
-test('full snapshot color domains are immutable across filtering, pinning, new vendors and snapshot changes', () => {
+test('full snapshot color domains are immutable across model selection, new vendors and snapshot changes', () => {
   const s = adaptWorkbook(fixture('workbooks/2025-Q4.json'));
   const serialized = JSON.stringify(s.domains);
-  const pin = new Set(['WUH721816ALE6L4']), selected = new Set(s.models.map(m => m.id));
-  const filtered = visibleModels(s, 'Toshiba', 'MG08', pin, selected);
-  assert.equal(filtered[0]!.id, 'WUH721816ALE6L4'); assert.ok(filtered.slice(1).every(m => m.vendor === 'Toshiba'));
+  const selected = new Set(['WUH721816ALE6L4', 'MG08ACA16TA']);
+  const filtered = visibleModels(s, selected);
+  assert.deepEqual(filtered.map(m => m.id), ['MG08ACA16TA', 'WUH721816ALE6L4']);
+  assert.deepEqual(visibleModels(s, new Set()), []);
+  assert.equal(visibleModels(s, new Set(s.models.map(m => m.id))).length, s.models.length);
   assert.equal(JSON.stringify(s.domains), serialized); assert.equal(s.domains.count.observedMaximum, 44425);
   assert.equal(adaptWorkbook(fixture('workbooks/2025-Q3.json')).domains.count.observedMaximum, 40322);
-  assert.deepEqual(visibleModels(s, 'all', '', pin, selected, true).map(m => m.id), [...pin]);
   const xyz = adaptProduction(fixture('matrix/synthetic-new-manufacturer.json'));
-  assert.ok(visibleModels(xyz, 'XYZ', '', new Set(), new Set(xyz.models.map(m => m.id))).some(m => m.vendor === 'XYZ'));
+  const xyzDomains = JSON.stringify(xyz.domains);
+  const newVendorModels = xyz.models.filter(m => m.vendor === 'XYZ');
+  assert.ok(newVendorModels.length > 0);
+  assert.deepEqual(visibleModels(xyz, new Set(newVendorModels.map(m => m.id))), newVendorModels);
+  assert.equal(JSON.stringify(xyz.domains), xyzDomains);
 });
 test('short models retain the 20/24 horizon extent, unknown reference extension never becomes a production exit', () => {
   const s = adaptWorkbook(fixture('workbooks/2025-Q4.json')), promising = s.models.find(m => m.id === 'WUH721816ALE6L4')!;

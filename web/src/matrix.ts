@@ -1,4 +1,5 @@
 import './matrix.css';
+import './matrix-selection.css';
 import { deltaDisplay, metricFieldWidths, yearRowGroups } from './matrix-display.ts';
 import { patchContent } from './matrix-render.ts';
 import { heatmapPaint } from './matrix-contrast.ts';
@@ -14,6 +15,7 @@ import { adaptProduction, adaptWorkbook, axisExtent, cellAt, formatMetric, inter
 import type { MatrixSnapshot, MatrixModel, MatrixCell, Metric } from './matrix-data.ts';
 import { captureControlFocus, controlId, restoreControlFocus } from './matrix-focus.ts';
 import { connectMatrixScroll } from './matrix-scroll.ts';
+import { groupModels, setVendorSelected, vendorSelectionState } from './matrix-selection.ts';
 
 const files = [q4, q3, later, earlier, correction, xyz];
 const esc = (value: unknown) => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -21,8 +23,8 @@ const quarter = (value: string | null | undefined) => value ? value.replace('-Q'
 let snapshots: MatrixSnapshot[] = [];
 let snapshot: MatrixSnapshot;
 let stories: { id: string; models: string[]; owner_reading: string }[] = [];
-let vendor = 'all', search = '', guide = 20, neutral = false, onlyPinned = false;
-let pinned = new Set<string>(), selected = new Set<string>();
+let search = '', guide = 20, neutral = false;
+let selected = new Set<string>();
 let selection: { model: MatrixModel; cell: MatrixCell; metric: Metric } | undefined;
 let activeRow = 0;
 let disconnectScrolling: (() => void) | undefined;
@@ -43,10 +45,31 @@ export async function initMatrix(signal?: AbortSignal) {
     render();
   } catch (error) { if (signal?.aborted) throw error; app.innerHTML = `<div class="matrix-loading" role="alert"><h1>Comparison preview unavailable</h1><p>${esc(error instanceof Error ? error.message : error)}</p><a href="?">Return to Explore</a></div>`; }
 }
-function groups(models: MatrixModel[]) {
-  const result: { vendor: string; count: number; pinned: boolean }[] = [];
-  for (const m of models) { const last = result.at(-1); if (last?.vendor === m.vendor && last.pinned === pinned.has(m.id)) last.count++; else result.push({ vendor: m.vendor, count: 1, pinned: pinned.has(m.id) }); }
-  return result;
+function modelNavigation(models: MatrixModel[]) {
+  const query = search.trim().toLowerCase();
+  const groups = groupModels(snapshot.models).map(group => ({ ...group,
+    matches: group.models.filter(model => `${model.name} ${model.vendor}`.toLowerCase().includes(query)),
+  })).filter(group => group.matches.length);
+  return `<aside class="matrix-model-nav" aria-label="Brands and drive models">
+    <h2 class="matrix-nav-heading">Brands & models</h2>
+    <p class="matrix-nav-count" role="status">${models.length} of ${snapshot.models.length} models selected</p>
+    <label class="matrix-nav-search">Find choices<input id="matrix-search" type="search" value="${esc(search)}" placeholder="Model or brand" aria-describedby="matrix-selection-help"></label>
+    <p id="matrix-selection-help" class="matrix-nav-help">Search finds choices. Checkboxes control the table. Brand checkboxes apply to all models in that brand.</p>
+    <div class="matrix-nav-actions"><button type="button" id="matrix-select-all">Select all</button><button type="button" id="matrix-clear">Clear all</button></div>
+    <div class="matrix-brand-list">${groups.map(group => {
+      const state = vendorSelectionState(group.models, selected);
+      return `<div class="matrix-brand-group" data-render-key="choices-${esc(group.vendor)}" style="--brand-color:${vendorPaint(group.vendor).background}"><fieldset class="matrix-brand-options"><legend><label class="matrix-vendor-choice"><input type="checkbox" id="${controlId('vendor', group.vendor)}" data-vendor="${esc(group.vendor)}" aria-controls="matrix-data" ${state.checked ? 'checked' : ''}><span>${esc(group.vendor)}</span><small aria-hidden="true">${state.selectedCount}/${state.totalCount}</small></label></legend><div class="matrix-model-choices">${group.matches.map(model => `<label class="matrix-model-choice" data-render-key="choice-${esc(model.id)}"><input type="checkbox" id="${controlId('model', model.id)}" data-model="${esc(model.id)}" aria-controls="matrix-data" ${selected.has(model.id) ? 'checked' : ''}><span class="model-id">${esc(model.name)}</span></label>`).join('')}</div></fieldset></div>`;
+    }).join('') || '<p class="matrix-nav-empty">No matching brands or models.</p>'}</div>
+  </aside>`;
+}
+function updateSelected(next: Set<string>) {
+  selected = next;
+  if (selection && !selected.has(selection.model.id)) { selection = undefined; activeRow = 0; }
+  render();
+}
+function exampleComparisons() {
+  if (snapshot.kind !== 'reference') return '';
+  return `<details class="matrix-stories matrix-method"><summary>Example comparisons · ${stories.length} reading cases</summary><p>Historical workbook examples. Choose a comparison to show its models in the table.</p><div>${stories.map(story => `<button type="button" id="${controlId('story', story.id)}" data-story="${esc(story.id)}"><strong>${esc(story.models.join(' / '))}</strong><span>${esc(story.owner_reading)}</span></button>`).join('')}</div></details>`;
 }
 function render() {
   disconnectScrolling?.();
@@ -54,25 +77,24 @@ function render() {
   const focusedElement = document.activeElement;
   const scroll = app.querySelector('.matrix-scroll');
   const left = scroll?.scrollLeft ?? 0, top = scroll?.scrollTop ?? 0;
-  const models = visibleModels(snapshot, vendor, search, pinned, selected, onlyPinned);
+  const models = visibleModels(snapshot, selected);
   patchContent(app, `<div class="matrix-page"><header class="matrix-top"><a class="matrix-brand" href="?">▰ DriveStats <span>BY SIXBUCKS SOLUTIONS</span></a><a href="?">Explore calendar-quarter reports ↗</a></header>
   <section class="matrix-heading"><div><p class="eyebrow">THE FULL TRAJECTORY</p><h1>Reliability through deployment history.</h1><p>Compare cumulative AFR, population and turnover together. Each model keeps its seven workbook columns.</p></div><label class="snapshot-control">AS-OF EVIDENCE<select id="matrix-snapshot">${snapshots.map(s => `<option value="${esc(s.id)}" ${s === snapshot ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select></label></section>
   <aside class="matrix-notice ${snapshot.kind}"><strong>${snapshot.kind === 'reference' ? 'WORKBOOK REFERENCE · NOT A PRODUCTION SNAPSHOT' : 'SYNTHETIC SAMPLE · INVENTED FIGURES'}</strong><span>${esc(snapshot.notice)}</span></aside>
   <div class="matrix-source">Dataset and reports: <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a> · <a href="https://www.backblaze.com/blog/category/hard-drive-stats/">Official reports</a> · Independent analysis by <a href="https://github.com/SixbucksSolutions">Sixbucks Solutions</a>. Software MIT; dataset retains its own terms.</div>
-  <section class="matrix-tools" aria-label="Comparison controls"><div class="matrix-filters"><label>Find models<input id="matrix-search" type="search" value="${esc(search)}" placeholder="Model number or vendor"></label><label>Vendor<select id="matrix-vendor"><option value="all">All vendors</option>${[...new Set(snapshot.models.map(m => m.vendor))].map(v => `<option ${v === vendor ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></label><label>Guide after quarter<input id="matrix-guide" type="number" min="1" max="80" value="${guide}"></label><label class="matrix-check"><input id="matrix-neutral" type="checkbox" ${neutral ? 'checked' : ''}>Neutral colors</label><label class="matrix-check"><input id="matrix-pinned-only" type="checkbox" ${onlyPinned ? 'checked' : ''}>Pinned only (${pinned.size})</label><button id="matrix-reset">Reset selection</button></div>
-  <details class="model-picker"><summary>Choose models & pin comparisons <span>${models.length} of ${snapshot.models.length} shown</span></summary><p>Pinned models stay together at the left, across filters. Pinning does not freeze columns or change the snapshot color scales.</p><div>${snapshot.models.map(m => `<label><input type="checkbox" id="${controlId('model', m.id)}" data-model="${esc(m.id)}" ${selected.has(m.id) ? 'checked' : ''}><span class="model-id">${esc(m.name)}</span> <small>${esc(m.vendor)}</small><button id="${controlId('picker-pin', m.id)}" data-pin="${esc(m.id)}" aria-pressed="${pinned.has(m.id)}" aria-label="${pinned.has(m.id) ? 'Unpin' : 'Pin'} ${esc(m.name)}">${pinned.has(m.id) ? '★ Pinned' : '☆ Pin'}</button></label>`).join('')}</div></details>
-  ${snapshot.kind === 'reference' ? `<details class="matrix-stories"><summary>Owner reading cases · all eight reference stories</summary><p>Historical owner interpretations, not automated rankings or purchase recommendations. Select a case to place its exact models together.</p><div>${stories.map(s => `<button id="${controlId('story', s.id)}" data-story="${esc(s.id)}"><strong>${esc(s.models.join(' / '))}</strong><span>${esc(s.owner_reading)}</span></button>`).join('')}</div></details>` : ''}</section>
+  <section class="matrix-tools" aria-label="Comparison controls"><div class="matrix-filters"><label>Guide after quarter<input id="matrix-guide" type="number" min="1" max="80" value="${guide}"></label><label class="matrix-check"><input id="matrix-neutral" type="checkbox" ${neutral ? 'checked' : ''}>Neutral colors</label></div>
+  </section>
   <section class="matrix-workspace"><div class="matrix-caption"><div><strong>${models.length} models · ${esc(snapshot.label)}</strong><span>${snapshot.kind === 'reference' ? 'Relative retained-row positions' : 'Calendar offsets from first ≥2,000-drive quarter'} · guides follow Q${guide} and Q24 · scroll for the full history</span></div><a href="#matrix-legend">Color legend ↓</a></div>
   <p class="matrix-instruction" id="matrix-help">Focus, click or hover any value for details. Arrow keys move between cells; Home/End move across a row. The same relative row is outlined across models. Relative history is not individual drive age.</p>
-  <div class="matrix-pane">
-    <div class="matrix-scroll" id="matrix-data" tabindex="0" role="region" aria-label="Deployment history matrix, scroll horizontally and vertically" aria-describedby="matrix-help">${models.length ? table(models) : '<div class="matrix-empty">No models match. Adjust filters, select a model, or reset selection.</div>'}</div>
+  <div class="matrix-comparison-layout">${modelNavigation(models)}<div class="matrix-table-area"><div class="matrix-pane">
+    <div class="matrix-scroll" id="matrix-data" tabindex="0" role="region" aria-label="Deployment history matrix, scroll horizontally and vertically" aria-describedby="matrix-help">${models.length ? table(models) : '<div class="matrix-empty">No models selected. Choose a brand or model to display.</div>'}</div>
     <div class="matrix-vscroll" tabindex="0" role="region" aria-label="Scroll relative quarters vertically" aria-controls="matrix-data"><div class="matrix-scroll-size" aria-hidden="true"></div></div>
     <div class="matrix-hscroll" tabindex="0" role="region" aria-label="Scroll drive model columns horizontally" aria-controls="matrix-data"><div class="matrix-scroll-size" aria-hidden="true"></div></div>
     <div class="matrix-scroll-corner" aria-hidden="true"></div>
-  </div>
+  </div></div></div>
   <div class="matrix-states">${['below_threshold', 'source_missing', 'source_incomplete', 'snapshot_end', 'trailing_blank_unknown'].map(s => `<span class="state-key state-${s}" title="${esc(stateInfo(s).description)}">${stateInfo(s).label}</span>`).join('')}<span>— on an eligible row = metric unavailable; inspect for the reason</span></div></section>
   <aside class="matrix-inspector" id="matrix-inspector" aria-label="Cell details">${selection ? inspector() : '<p class="eyebrow">CELL INSPECTOR</p><h2>Read a value in context.</h2><p>Focus, click or hover a matrix cell for its exact value, calendar context, exposure and baseline.</p>'}</aside>
-  ${legend()}<details class="matrix-method"><summary>How to read this comparison & source context</summary><p>AFR is cumulative through the displayed quarter, in percent; AFR delta is in percentage points. Count means distinct drives observed anywhere in a quarter, not the installed population at quarter end. New means first seen in supplied history. Failed sums daily failure flags.</p><p>Retired is inferred from last observations and may include failures. A newest-quarter Failed proxy, when identified by production metadata, is provisional. Neither is proof of voluntary retirement or its cause. Large population and continuing additions provide deployment context, not a spending measurement.</p><p>All seven scales use the full eligible snapshot population. Filtering, selection, pinning and neutral colors never recalculate them. The malformed New source color is normalized to intended white. No composite ranking is calculated.</p><p>${snapshot.kind === 'reference' ? 'Workbook first-row deltas subtract zero; subsequent rows subtract the prior retained row. Calendar, pre-eligibility exposure and cutoff are unknown. Nonzero cumulative AFR with zero current Failed can reflect earlier contributions, but those components cannot be reconstructed here.' : 'Production examples retain real calendar offsets and the original anchor after reentry. Delta subtracts the prior eligible row and states its elapsed span. Pre-eligibility contributions remain in cumulative AFR; coverage gaps can make cumulative rates unavailable while Count remains known.'}</p><p>Guides after 20 and 24 quarters are deployment-history references for five and six years. They do not predict an individual drive’s lifetime or recommend a replacement date.</p><p>Snapshot: ${esc(snapshot.id)} · ${esc(snapshot.versions)}.</p><p class="matrix-hash">Source SHA-256 / manifest: ${esc(snapshot.sourceHash)}</p>${snapshot.sourceUrl ? `<a href="${esc(snapshot.sourceUrl)}">Original owner-supplied workbook ↗</a>` : '<p>Invented aggregate contract example; no observed Backblaze performance is represented.</p>'}</details>
+  ${legend()}${exampleComparisons()}<details class="matrix-method"><summary>How to read this comparison & source context</summary><p>AFR is cumulative through the displayed quarter, in percent; AFR delta is in percentage points. Count means distinct drives observed anywhere in a quarter, not the installed population at quarter end. New means first seen in supplied history. Failed sums daily failure flags.</p><p>Retired is inferred from last observations and may include failures. A newest-quarter Failed proxy, when identified by production metadata, is provisional. Neither is proof of voluntary retirement or its cause. Large population and continuing additions provide deployment context, not a spending measurement.</p><p>All seven scales use the full eligible snapshot population. Model selection and neutral colors never recalculate them. The malformed New source color is normalized to intended white. No composite ranking is calculated.</p><p>${snapshot.kind === 'reference' ? 'Workbook first-row deltas subtract zero; subsequent rows subtract the prior retained row. Calendar, pre-eligibility exposure and cutoff are unknown. Nonzero cumulative AFR with zero current Failed can reflect earlier contributions, but those components cannot be reconstructed here.' : 'Production examples retain real calendar offsets and the original anchor after reentry. Delta subtracts the prior eligible row and states its elapsed span. Pre-eligibility contributions remain in cumulative AFR; coverage gaps can make cumulative rates unavailable while Count remains known.'}</p><p>Guides after 20 and 24 quarters are deployment-history references for five and six years. They do not predict an individual drive’s lifetime or recommend a replacement date.</p><p>Snapshot: ${esc(snapshot.id)} · ${esc(snapshot.versions)}.</p><p class="matrix-hash">Source SHA-256 / manifest: ${esc(snapshot.sourceHash)}</p>${snapshot.sourceUrl ? `<a href="${esc(snapshot.sourceUrl)}">Original owner-supplied workbook ↗</a>` : '<p>Invented aggregate contract example; no observed Backblaze performance is represented.</p>'}</details>
   <footer>Local comparison preview · Production generation and primary navigation remain separately gated.<a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a><a href="?">Back to Explore ↗</a></footer></div>`);
   bind();
   const nextScroll = app.querySelector('.matrix-scroll'); if (nextScroll) { nextScroll.scrollLeft = left; nextScroll.scrollTop = top; }
@@ -87,8 +109,8 @@ function render() {
 function table(models: MatrixModel[]) {
   const extent = axisExtent(snapshot, guide);
   const widths = metricFieldWidths(snapshot);
-  return `<table class="comparison-matrix" style="${metrics.map(metric => `--field-${metric}:${widths[metric]}ch`).join(';')}"><caption class="sr-only">Seven adjacent metrics per model. Relative year and quarter down the left; vendor and model across the top.</caption><thead><tr class="vendor-row"><th rowspan="4" class="age year">Year</th><th rowspan="4" class="age age-quarter">Quarter</th>${groups(models).map(g => `<th colspan="${g.count * 7}" class="vendor-header" style="background:${vendorPaint(g.vendor).background};color:${vendorPaint(g.vendor).foreground}"><span class="vendor-label">${esc(g.vendor)}${g.pinned ? ' · PINNED COMPARISONS' : ''}</span></th>`).join('')}</tr>
-  <tr class="model-row">${models.map(m => `<th colspan="7" class="model-header" data-render-key="model-${esc(m.id)}" style="background:${vendorPaint(m.vendor).background};color:${vendorPaint(m.vendor).foreground}"><span class="model-label-track"><span class="model-name">${esc(m.name)}</span></span><button id="${controlId('header-pin', m.id)}" data-pin="${esc(m.id)}" aria-pressed="${pinned.has(m.id)}" aria-label="${pinned.has(m.id) ? 'Unpin' : 'Pin'} ${esc(m.name)}">${pinned.has(m.id) ? '★ Pinned' : '☆ Pin'}</button></th>`).join('')}</tr>
+  return `<table class="comparison-matrix" style="${metrics.map(metric => `--field-${metric}:${widths[metric]}ch`).join(';')}"><caption class="sr-only">Seven adjacent metrics per model. Relative year and quarter down the left; vendor and model across the top.</caption><thead><tr class="vendor-row"><th rowspan="4" class="age year">Year</th><th rowspan="4" class="age age-quarter">Quarter</th>${groupModels(models).map(g => `<th colspan="${g.models.length * 7}" class="vendor-header" style="background:${vendorPaint(g.vendor).background};color:${vendorPaint(g.vendor).foreground}"><span class="vendor-label">${esc(g.vendor)}</span></th>`).join('')}</tr>
+  <tr class="model-row">${models.map(m => `<th colspan="7" class="model-header" data-render-key="model-${esc(m.id)}" style="background:${vendorPaint(m.vendor).background};color:${vendorPaint(m.vendor).foreground}"><span class="model-label-track"><span class="model-name">${esc(m.name)}</span></span></th>`).join('')}</tr>
   <tr class="family-row">${models.map(() => '<th colspan="2" class="model-start">AFR</th><th colspan="5">Drives</th>').join('')}</tr>
   <tr class="metric-row">${models.map(() => ['Value %', 'Delta pp', 'Count', 'Delta', 'New', 'Retired', 'Failed'].map((v, i) => `<th class="${i === 0 ? 'model-start' : ''} ${i < 2 ? 'metric-rate' : 'metric-count'}" title="${metricLabels[i]}">${v}</th>`).join('')).join('')}</tr></thead>${yearRowGroups(extent).map(group => `<tbody data-render-key="year-${group.year}">${group.quarters.map((q, rowIndex) => `<tr data-render-key="row-${q}" data-relative="${q}" class="${q % 4 === 1 ? 'year-start' : ''} ${q === guide || q === 24 ? 'horizon-row' : ''}">${rowIndex === 0 ? `<th class="age year ${group.quarters.at(-1) === guide || group.quarters.at(-1) === 24 ? 'horizon-year' : ''}" scope="rowgroup" rowspan="${group.quarters.length}"><span class="year-number">${group.year}</span></th>` : ''}<th class="age age-quarter" scope="row">Q${(q - 1) % 4 + 1}<small>${q}</small>${q === guide || q === 24 ? `<span class="guide-label">After Q${q}${q === 20 ? ' · 5y' : q === 24 ? ' · 6y' : ''}</span>` : ''}</th>${models.map(m => metrics.map((metric, mi) => cellHtml(m, cellAt(m, q), metric, mi)).join('')).join('')}</tr>`).join('')}</tbody>`).join('')}</table>`;
 }
@@ -118,16 +140,31 @@ function inspect(button: HTMLButtonElement) {
   if (document.activeElement === button) { app.querySelectorAll<HTMLButtonElement>('[data-cell]').forEach(cell => { cell.tabIndex = cell === button ? 0 : -1; }); }
 }
 function bind() {
-  app.querySelector<HTMLElement>('#matrix-snapshot')!.onchange = event => { snapshot = snapshots.find(s => s.id === (event.target as HTMLSelectElement).value)!; selected = new Set(snapshot.models.map(m => m.id)); pinned = new Set([...pinned].filter(id => snapshot.models.some(m => m.id === id))); vendor = 'all'; search = ''; onlyPinned = false; selection = undefined; activeRow = 0; const url = new URL(location.href); url.searchParams.set('snapshot', snapshot.id); history.replaceState(null, '', url); render(); };
+  app.querySelector<HTMLElement>('#matrix-snapshot')!.onchange = event => { snapshot = snapshots.find(s => s.id === (event.target as HTMLSelectElement).value)!; selected = new Set(snapshot.models.map(m => m.id)); search = ''; selection = undefined; activeRow = 0; const url = new URL(location.href); url.searchParams.set('snapshot', snapshot.id); history.replaceState(null, '', url); render(); };
   app.querySelector<HTMLElement>('#matrix-search')!.oninput = event => { search = (event.target as HTMLInputElement).value; render(); };
-  app.querySelector<HTMLElement>('#matrix-vendor')!.onchange = event => { vendor = (event.target as HTMLSelectElement).value; render(); };
   app.querySelector<HTMLElement>('#matrix-guide')!.onchange = event => { guide = Math.min(80, Math.max(1, Math.trunc(Number((event.target as HTMLInputElement).value)) || 20)); render(); };
   app.querySelector<HTMLElement>('#matrix-neutral')!.onchange = event => { neutral = (event.target as HTMLInputElement).checked; render(); };
-  app.querySelector<HTMLElement>('#matrix-pinned-only')!.onchange = event => { onlyPinned = (event.target as HTMLInputElement).checked; render(); };
-  app.querySelector<HTMLElement>('#matrix-reset')!.onclick = () => { vendor = 'all'; search = ''; selected = new Set(snapshot.models.map(m => m.id)); pinned.clear(); onlyPinned = false; render(); };
-  app.querySelectorAll<HTMLInputElement>('[data-model]').forEach(input => input.onchange = () => { if (input.checked) selected.add(input.dataset.model!); else { selected.delete(input.dataset.model!); pinned.delete(input.dataset.model!); } render(); });
-  app.querySelectorAll<HTMLButtonElement>('[data-pin]').forEach(button => button.onclick = () => { const id = button.dataset.pin!; if (pinned.has(id)) pinned.delete(id); else { pinned.add(id); selected.add(id); } render(); });
-  app.querySelectorAll<HTMLButtonElement>('[data-story]').forEach(button => button.onclick = () => { const s = stories.find(s => s.id === button.dataset.story)!; selected = new Set(s.models); pinned = new Set(s.models); onlyPinned = true; vendor = 'all'; search = ''; selection = undefined; render(); });
+  app.querySelector<HTMLElement>('#matrix-select-all')!.onclick = () => updateSelected(new Set(snapshot.models.map(model => model.id)));
+  app.querySelector<HTMLElement>('#matrix-clear')!.onclick = () => updateSelected(new Set());
+  app.querySelectorAll<HTMLInputElement>('[data-vendor]').forEach(input => {
+    const models = snapshot.models.filter(model => model.vendor === input.dataset.vendor);
+    input.indeterminate = vendorSelectionState(models, selected).indeterminate;
+    input.onchange = () => updateSelected(setVendorSelected(snapshot.models, input.dataset.vendor!, selected, input.checked));
+  });
+  app.querySelectorAll<HTMLInputElement>('[data-model]').forEach(input => input.onchange = () => {
+    const next = new Set(selected);
+    if (input.checked) next.add(input.dataset.model!); else next.delete(input.dataset.model!);
+    updateSelected(next);
+  });
+  app.querySelectorAll<HTMLButtonElement>('[data-story]').forEach(button => button.onclick = () => {
+    const story = stories.find(item => item.id === button.dataset.story)!;
+    search = ''; selection = undefined; activeRow = 0;
+    updateSelected(new Set(story.models));
+    const viewport = app.querySelector<HTMLElement>('.matrix-scroll')!;
+    viewport.scrollLeft = 0; viewport.scrollTop = 0;
+    viewport.focus({ preventScroll: true });
+    app.querySelector<HTMLElement>('.matrix-workspace')!.scrollIntoView({ block: 'start', behavior: 'instant' });
+  });
   app.querySelectorAll<HTMLTableRowElement>('tr[data-relative]').forEach(row => row.onmouseleave = () => {
     if (activeRow === Number(row.dataset.relative)) { activeRow = 0; highlight(0); }
   });

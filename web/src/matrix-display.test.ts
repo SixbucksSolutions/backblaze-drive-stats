@@ -20,16 +20,17 @@ test('search focus fallback retains caret and direction without scrolling', () =
   restoreControlFocus(saved, () => ({ id: 'matrix-search', focus: options => calls.push(options), setSelectionRange: (...args) => calls.push(args) }));
   assert.deepEqual(calls, [{ preventScroll: true }, [2, 5, 'backward']]);
   restoreControlFocus(saved, () => null);
-  assert.equal(controlId('header-pin', 'a / b'), 'matrix-header-pin-a%20%2F%20b');
+  assert.equal(controlId('model', 'a / b'), 'matrix-model-a%20%2F%20b');
 });
 
-test('all seven numeric field widths use the full snapshot and remain stable across filtering and pinning', () => {
+test('all seven numeric field widths use the full snapshot and remain stable across model selection', () => {
   const snapshot = adaptWorkbook(JSON.parse(readFileSync(new URL('../../fixtures/workbooks/2025-Q4.json', import.meta.url), 'utf8')));
   const widths = metricFieldWidths(snapshot);
   const before = { ...widths };
-  const selected = new Set(snapshot.models.map(model => model.id));
-  visibleModels(snapshot, 'Toshiba', 'MG08', new Set(['WUH721816ALE6L4']), selected, true);
-  assert.deepEqual(metricFieldWidths(snapshot), before);
+  for (const selected of [new Set<string>(), new Set(['WUH721816ALE6L4']), new Set(snapshot.models.map(model => model.id))]) {
+    visibleModels(snapshot, selected);
+    assert.deepEqual(metricFieldWidths(snapshot), before);
+  }
   for (const metric of metrics) {
     const lengths = snapshot.models.flatMap(model => model.cells.map(cell => {
       const value = cell.metrics[metric];

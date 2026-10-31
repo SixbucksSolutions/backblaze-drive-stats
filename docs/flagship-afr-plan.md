@@ -152,9 +152,11 @@ quarter with a known sub-threshold count is an exit; an unknown population cause
 by absent coverage is not. Never infer exit merely from trailing workbook blanks
 when the reference lacks the required calendar/coverage metadata.
 
-Provide model/vendor selection and a pinned comparison set so a few candidates can
-stay together on narrower screens. All seven metrics remain the default view.
-Filtering or pinning must not silently change color meanings. Keep the full
+Provide a left-side brand/model checkbox selector, per the owner's 2026-10-31
+refinement replacing pinning. Brand checkboxes toggle every model in that brand;
+partially selected brands use an operable native indeterminate state. Indent
+model choices and extend each brand color bar through its model list. All seven
+metrics remain the default view. Model selection must not change color meanings. Keep the full
 selected-population color reference for the chosen as-of snapshot, independent of
 which models are currently visible.
 
@@ -362,7 +364,7 @@ guarantee.
    and integrate it as the primary view with supporting reports under Explore.
 
 Acceptance requires the owner examples to remain recognizable, faithful
-shared color scopes, explicit threshold behavior, legible pinned comparisons,
+shared color scopes, explicit threshold behavior, legible brand/model selection,
 correct keyboard/focus behavior, valid aggregate-only JSON, exact integer metric
 parity and appropriate floating-point tolerances. Verify the five-/six-year guides
 refer to the displayed relative-quarter convention, lie after quarters 20/24, and
@@ -372,6 +374,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r014**; r001–r013 are retained as history. Planned workers
+assignment revision is **r015**; r001–r014 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

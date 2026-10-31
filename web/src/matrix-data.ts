@@ -1,3 +1,5 @@
+import { groupModels } from './matrix-selection.ts';
+
 export const metrics = ['afr', 'afrDelta', 'count', 'populationDelta', 'new', 'retired', 'failed'] as const;
 export type Metric = typeof metrics[number];
 export const metricLabels = ['AFR value', 'AFR delta', 'Count', 'Population delta', 'New', 'Retired', 'Failed'];
@@ -48,10 +50,8 @@ export const states: Record<string, { label: string; description: string }> = {
   outside_reference: { label: 'No reference', description: 'Beyond the supplied reference rows. No calendar or exit inference is possible.' },
 };
 export function stateInfo(state: string) { return states[state] ?? { label: state.replaceAll('_', ' '), description: 'Unavailable under the selected snapshot contract.' }; }
-export function visibleModels(snapshot: MatrixSnapshot, vendor: string, search: string, pinned: Set<string>, selected: Set<string>, onlyPinned = false) {
-  const candidates = snapshot.models.filter(m => pinned.has(m.id) || (!onlyPinned && selected.has(m.id) && (vendor === 'all' || m.vendor === vendor) && `${m.name} ${m.vendor}`.toLowerCase().includes(search.toLowerCase())));
-  const order = ['Seagate', 'Toshiba', 'WDC/HGST'];
-  return candidates.sort((a, b) => Number(pinned.has(b.id)) - Number(pinned.has(a.id)) || (order.includes(a.vendor) ? order.indexOf(a.vendor) : 3) - (order.includes(b.vendor) ? order.indexOf(b.vendor) : 3) || a.vendor.localeCompare(b.vendor) || a.name.localeCompare(b.name));
+export function visibleModels(snapshot: MatrixSnapshot, selected: Set<string>): MatrixModel[] {
+  return groupModels(snapshot.models).flatMap(group => group.models.filter(model => selected.has(model.id)));
 }
 export function formatMetric(value: number | null, metric: Metric) { return value === null ? '—' : metric === 'afr' || metric === 'afrDelta' ? value.toFixed(3) : value.toLocaleString('en-US'); }
 export function axisExtent(snapshot: MatrixSnapshot, guide: number) { return Math.max(24, snapshot.extent, guide); }

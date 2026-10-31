@@ -7,7 +7,7 @@ import { formatMetric, metrics } from './matrix-data.ts';
 import type { MatrixSnapshot, Metric } from './matrix-data.ts';
 
 
-/** Widths use every model in the snapshot, so filtering and pinning never shift digits. */
+/** Widths use every model in the snapshot, so model selection never shifts digits. */
 export function metricFieldWidths(snapshot: MatrixSnapshot): Record<Metric, number> {
   const widths = Object.fromEntries(metrics.map(metric => [metric, 1])) as Record<Metric, number>;
   for (const model of snapshot.models) for (const cell of model.cells) for (const metric of metrics) {
