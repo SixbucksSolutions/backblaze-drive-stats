@@ -215,3 +215,17 @@ column beside the frozen boundary, as before. Evidence:
 `scrollbars-narrow-final.png` in the same directory. Mouse-wheel/touch support is
 retained through the original viewport; physical touchscreen input and other
 browser engines were not separately exercised.
+
+Owner follow-up centers manufacturer names within the visible portion of their
+brand band, excluding the frozen age columns. This keeps labels centered during
+horizontal movement and centers each band separately at a manufacturer boundary.
+Offscreen labels stay within their own bands and retain accessible header text;
+narrow visible fragments may ellipsize. Resize, filtering and pinned groups
+refresh the placement without changing scroll offsets or native scrollbar ranges.
+
+Browser checks found subpixel centering agreement for a full Seagate band, the
+Seagate/Toshiba boundary and WDC/HGST at 390 px; pinned Seagate plus filtered WD
+retained separate brand headers. All 26 tests, TypeScript and production checks
+pass; fresh independent source review has no findings. Evidence is saved as
+`brands-centered-desktop.png`, `brands-centered-boundary.png` and
+`brands-centered-narrow.png` under `data/staging/ui-0015/typography/`.

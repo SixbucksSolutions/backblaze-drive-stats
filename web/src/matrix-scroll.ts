@@ -13,6 +13,29 @@ export function connectMatrixScroll(pane: HTMLElement): () => void {
   let expectedTop = vertical.scrollTop;
   let expectedViewportLeft = scroll.scrollLeft;
   let expectedViewportTop = scroll.scrollTop;
+  let frozenWidth = 0;
+  let labelScrollLeft = NaN;
+  const vendorLabels = [...scroll.querySelectorAll<HTMLElement>('.vendor-header')]
+    .map(header => ({ header, label: header.querySelector<HTMLElement>('.vendor-label') }));
+
+  const alignVendorLabels = (force = false) => {
+    if (!vendorLabels.length || (!force && scroll.scrollLeft === labelScrollLeft)) return;
+    labelScrollLeft = scroll.scrollLeft;
+    const viewportLeft = scroll.getBoundingClientRect().left + scroll.clientLeft;
+    const dataLeft = viewportLeft + frozenWidth;
+    const dataRight = viewportLeft + scroll.clientWidth;
+    for (const { header, label } of vendorLabels) {
+      if (!label) continue;
+      const bounds = header.getBoundingClientRect();
+      const left = Math.max(bounds.left, dataLeft), right = Math.min(bounds.right, dataRight);
+      // Center each visible band fragment. Offscreen labels remain inside their
+      // own band, retaining the header's accessible name without covering context.
+      const visible = right > left;
+      setPixels(label, '--vendor-label-center', visible ? (left + right) / 2 - bounds.left : bounds.width / 2);
+      setPixels(label, '--vendor-label-width', visible ? right - left : bounds.width);
+    }
+  };
+  const updateVendorLabels = () => alignVendorLabels();
 
   const synchronize = () => {
     // Assigning even an unchanged offset can cancel native keyboard animation.
@@ -42,6 +65,7 @@ export function connectMatrixScroll(pane: HTMLElement): () => void {
     expectedLeft = horizontal.scrollLeft;
     if (scroll.scrollLeft !== expectedLeft) scroll.scrollLeft = expectedLeft;
     expectedViewportLeft = scroll.scrollLeft;
+    alignVendorLabels();
   };
   const scrollVertically = () => {
     if (vertical.scrollTop === expectedTop) return;
@@ -58,7 +82,7 @@ export function connectMatrixScroll(pane: HTMLElement): () => void {
     const header = scroll.querySelector('thead');
     const frozenCells = header?.querySelectorAll<HTMLElement>('th.age');
     const headerHeight = header?.getBoundingClientRect().height ?? 0;
-    const frozenWidth = [...(frozenCells ?? [])].slice(0, 2)
+    frozenWidth = [...(frozenCells ?? [])].slice(0, 2)
       .reduce((width, cell) => width + cell.getBoundingClientRect().width, 0);
     setPixels(pane, '--matrix-header-size', headerHeight);
     setPixels(pane, '--matrix-frozen-size', frozenWidth);
@@ -72,6 +96,7 @@ export function connectMatrixScroll(pane: HTMLElement): () => void {
     setPixels(horizontalSize, 'width', maxLeft + horizontal.clientWidth);
     setPixels(verticalSize, 'height', maxTop + vertical.clientHeight);
     synchronize();
+    alignVendorLabels(true);
   };
   const scheduleMeasure = () => {
     if (disposed || frame) return;
@@ -79,6 +104,7 @@ export function connectMatrixScroll(pane: HTMLElement): () => void {
   };
 
   scroll.addEventListener('scroll', scrollViewport, { passive: true });
+  scroll.addEventListener('scroll', updateVendorLabels, { passive: true });
   horizontal.addEventListener('scroll', scrollHorizontally, { passive: true });
   vertical.addEventListener('scroll', scrollVertically, { passive: true });
   const observer = new ResizeObserver(scheduleMeasure);
@@ -97,6 +123,7 @@ export function connectMatrixScroll(pane: HTMLElement): () => void {
     if (frame) cancelAnimationFrame(frame);
     observer.disconnect();
     scroll.removeEventListener('scroll', scrollViewport);
+    scroll.removeEventListener('scroll', updateVendorLabels);
     horizontal.removeEventListener('scroll', scrollHorizontally);
     vertical.removeEventListener('scroll', scrollVertically);
     window.removeEventListener('resize', scheduleMeasure);

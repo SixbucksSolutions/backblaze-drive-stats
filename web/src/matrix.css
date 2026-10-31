@@ -40,8 +40,8 @@
 .comparison-matrix .model-header>button{position:absolute;right:8px;top:7px;float:none;font-family:var(--font-ui)}
 .comparison-matrix .model-header>button{border-color:#000}
 .comparison-matrix .model-header>button:focus-visible{outline:3px solid #000;outline-offset:2px;box-shadow:0 0 0 5px #fff}
-.comparison-matrix .vendor-header{text-align:left;padding-inline:12px}
-.vendor-label{display:inline-block;position:sticky;left:136px;right:8px}
+.comparison-matrix .vendor-header{text-align:center;padding-inline:0}
+.vendor-label{display:inline-block;position:absolute;left:var(--vendor-label-center,50%);top:50%;transform:translate(-50%,-50%);max-width:var(--vendor-label-width,100%);box-sizing:border-box;padding-inline:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .legend-swatches span{font-family:var(--font-ui);font-size:13px;font-weight:600}
 @media(forced-colors:active){.model-header .model-name{background:Canvas!important;color:CanvasText!important}}
 
