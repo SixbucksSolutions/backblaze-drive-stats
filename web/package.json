@@ -12,7 +12,7 @@
     "dev": "vite --host 127.0.0.1",
     "check": "tsc --noEmit",
     "check:data": "node --experimental-strip-types scripts/check-data.mjs",
-    "test": "node --experimental-strip-types --test src/data.test.ts src/matrix-data.test.ts",
+    "test": "node --experimental-strip-types --test src/data.test.ts src/matrix-data.test.ts src/matrix-contrast.test.ts",
     "build": "npm run check && npm run check:data && vite build",
     "preview": "vite preview --host 127.0.0.1"
   },
