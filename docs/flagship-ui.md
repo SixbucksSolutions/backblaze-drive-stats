@@ -37,7 +37,8 @@ remain gated by #0017; this preview does not run a backfill or publish a Site.
   their exact model selections and update the sidebar states.
 - All stored snapshot color domains remain fixed during model selection.
   Exact encoded-sRGB interpolation rounds half upward and clamps endpoints.
-  Neutral mode preserves numbers and state patterns. The expandable legend
+  **Show data colors** is checked when numeric cells have their heatmap colors.
+  Unchecking it preserves numbers and state patterns. The expandable legend
   gives every metric's knots, population count, extrema and inclusive median.
 - Focus, click or hover a value to populate the inspector. Arrow keys move
   across metrics and relative rows; Home/End move to row endpoints. A focused
@@ -49,11 +50,12 @@ remain gated by #0017; this preview does not run a backfill or publish a Site.
   and snapshot-ended future history use distinct labels/patterns and accessible
   explanations. An eligible cell with an unavailable metric shows a dash and
   retains its available neighboring metrics. Observed zeros stay numeric zeros.
-- A configurable guide defaults after quarter 20; the six-year guide stays after
-  quarter 24. The axis always extends to at least 24 and includes the full source
-  history, even for short candidates. Changing the guide extends it further.
+- **Guide after year** is a compact, centered native dropdown offering 1–6 and
+  defaulting to 6. Exactly one guide appears after the selected year's Q4; year 6
+  means relative quarter 24. Its label spans Year and Quarter. The axis extends
+  to at least 24 and retains the full source history, even beyond the chosen guide.
   Extended production sample rows remain snapshot-ended; extended reference rows
-  remain unknown reference coverage. Guides describe deployment history, not
+  remain unknown reference coverage. The guide describes deployment history, not
   physical drive age or a replacement prediction.
 
 ## Verification
@@ -70,7 +72,7 @@ An immutable fixture can be selected directly, for example
 `?view=matrix&snapshot=synthetic-later-v1` or
 `?view=matrix&snapshot=synthetic-new-manufacturer-v1`.
 Browser review should include wide and narrow viewports, both scroll axes,
-the promising 14-row reference against the 20/24 guides, the first Toshiba
+the promising 14-row reference against the selected-year guide, the first Toshiba
 spike, the later synthetic gap and an XYZ-only comparison. Source review and
 visual review are independent handoff gates, recorded by the parent task.
 
@@ -170,10 +172,9 @@ replace a full-site accessibility or performance audit.
 Subsequent owner feedback makes the relative-row outline transient: leaving a
 row clears its highlight and stored active-row state, without clearing the cell
 inspector or changing keyboard focus. Moving between cells within the same row
-keeps the outline. Horizon labels now occupy normal space inside Quarter cells,
-so subsequent sticky rows cannot cover the lower half of the five-/six-year text.
-Browser checks confirmed both badges fit vertically and horizontally inside
-their Quarter cells, and leaving row 27 removes the row outline. The owner also
+keeps the outline. The guide reserves a label line in Q4 and spans the frozen
+Year/Quarter columns, so subsequent sticky rows cannot cover it. Browser checks
+confirmed the badge fits the frozen width and leaving row 27 removes the row outline. The owner also
 confirmed the hover behavior. Evidence:
 `data/staging/ui-0015/typography/hover-guides-final.png`.
 
@@ -276,3 +277,30 @@ touch hardware, other engines and an OS forced-colors session were not exercised
 Evidence under `data/staging/ui-0015/typography/`:
 `selection-sidebar-desktop-final.png`, `selection-sidebar-narrow-final.png` and
 `example-comparisons-bottom.png`.
+
+## Final guide and color controls
+
+The owner closed this UI review round after these final refinements:
+
+- **Table display** titles the guide/color control section and labels its region
+  for assistive technology.
+- **Guide after year** is a 56 px native dropdown with centered values 1–6 and a
+  default of 6. It draws one guide after that year's Q4, replacing both former
+  simultaneous guides. Choosing 1 or 5 moves it to quarter 4 or 20; 6 uses 24.
+- **After year N** spans the frozen Year and Quarter columns. A reserved label
+  line prevents overlap with Q4 text or the following year. The full source
+  history stays visible, including years beyond the guide.
+- **Show data colors** uses positive checkbox wording: checked means numeric
+  cells are colored; unchecked removes those colors. It starts checked and is
+  independent of the year selection.
+
+Browser verification confirms all six dropdown choices, centered styling and
+56 px width; exactly one row/year marker for years 1, 5 and 6; and a 124 px label
+span within one pixel of both frozen edges on desktop and 390 px screens. The
+color checkbox removes/restores metric paints while retaining year 6 and its
+single guide. The application default explicitly overrides older producer hints;
+golden fixtures and existing immutable artifact metadata were not rewritten.
+
+Final evidence: `data/staging/ui-0015/typography/year-guide-and-data-colors-final.png`
+and `year-guide-six-narrow-final.png` in the same directory. The final titled
+section is captured in `table-display-final-signoff.png`.

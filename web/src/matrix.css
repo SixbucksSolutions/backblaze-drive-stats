@@ -47,8 +47,11 @@
 .comparison-matrix .year-number{display:flex;height:33px;align-items:center;justify-content:center}
 .comparison-matrix tbody .year.horizon-year{border-bottom:3px solid #345f4b}
 
-/* Keep horizon labels inside their Quarter cell instead of under the next sticky row. */
-.comparison-matrix .guide-label{position:static;display:block;transform:none;margin-top:1px}
+/* Reserve a label line, then span the complete frozen Year/Quarter width. */
+.comparison-matrix .guide-slot{position:relative;display:block;height:15px;margin-top:1px}
+.comparison-matrix .guide-label{position:absolute;inset:0 -1px 0 auto;display:block;width:var(--matrix-frozen-size,124px);box-sizing:border-box;transform:none;margin:0;text-align:center}
+.matrix-filters #matrix-guide{width:56px;padding-inline:6px;text-align:center;text-align-last:center}
+.matrix-options-heading{margin:0;padding:16px 18px 0;color:#243d36;font-size:14px;font-weight:600;line-height:1.3}
 
 /* Native scrollbar rails bound only the movable rows/columns. The single table
    keeps its accessible structure, sticky headings and wheel/touch scrolling. */

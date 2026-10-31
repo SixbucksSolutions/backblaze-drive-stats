@@ -163,11 +163,11 @@ which models are currently visible.
 Hovering, clicking or keyboard-focusing a cell reveals the model, actual calendar
 quarter, relative quarter, exact value, exposure and source/as-of context. Highlight
 the same relative row across visible models without washing out cell colors.
-Propose an adjustable horizontal service-horizon guide, defaulting to 20 quarters,
-so the owner can compare deterioration before and after the intended horizon.
-Include 24 quarters as another reference for a staggered six-drive annual rotation.
-Place these guides at the boundaries **after quarters 20 and 24**, labeled as
-deployment-history references. Keep the age axis and guides reachable even when
+Provide one horizontal deployment-history guide using a compact, centered
+**Guide after year** dropdown with choices 1–6, defaulting to **6**. The owner's
+final 2026-10-31 refinement replaces the former pair of guides. Place the single
+guide after Q4 of the chosen relative year; year 6 means quarter 24. Its label
+spans the frozen Year and Quarter columns. Keep the age axis and guide reachable even when
 all visible candidates have shorter histories; for example, the 14-quarter
 promising reference still needs its unobserved distance to the target visible.
 Future/unobserved age cells must not look like confirmed threshold exits.
@@ -366,14 +366,14 @@ guarantee.
 Acceptance requires the owner examples to remain recognizable, faithful
 shared color scopes, explicit threshold behavior, legible brand/model selection,
 correct keyboard/focus behavior, valid aggregate-only JSON, exact integer metric
-parity and appropriate floating-point tolerances. Verify the five-/six-year guides
-refer to the displayed relative-quarter convention, lie after quarters 20/24, and
+parity and appropriate floating-point tolerances. Verify the single selected-year guide
+uses the displayed relative-quarter convention, lies after that year's Q4, and
 remain reachable with short selected histories. Distinguish threshold exits,
 source gaps and snapshot-ended histories in both sighted and keyboard use.
 No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r015**; r001–r014 are retained as history. Planned workers
+assignment revision is **r016**; r001–r015 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

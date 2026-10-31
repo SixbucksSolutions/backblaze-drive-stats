@@ -54,4 +54,4 @@ export function visibleModels(snapshot: MatrixSnapshot, selected: Set<string>): 
   return groupModels(snapshot.models).flatMap(group => group.models.filter(model => selected.has(model.id)));
 }
 export function formatMetric(value: number | null, metric: Metric) { return value === null ? '—' : metric === 'afr' || metric === 'afrDelta' ? value.toFixed(3) : value.toLocaleString('en-US'); }
-export function axisExtent(snapshot: MatrixSnapshot, guide: number) { return Math.max(24, snapshot.extent, guide); }
+export function axisExtent(snapshot: MatrixSnapshot, guideYear: number) { return Math.max(24, snapshot.extent, guideYear * 4); }

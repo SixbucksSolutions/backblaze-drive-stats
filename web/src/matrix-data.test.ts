@@ -74,10 +74,12 @@ test('full snapshot color domains are immutable across model selection, new vend
   assert.deepEqual(visibleModels(xyz, new Set(newVendorModels.map(m => m.id))), newVendorModels);
   assert.equal(JSON.stringify(xyz.domains), xyzDomains);
 });
-test('short models retain the 20/24 horizon extent, unknown reference extension never becomes a production exit', () => {
+test('the chosen year guide extends the axis without truncating history or inventing a reference exit', () => {
   const s = adaptWorkbook(fixture('workbooks/2025-Q4.json')), promising = s.models.find(m => m.id === 'WUH721816ALE6L4')!;
   assert.equal(promising.cells.filter(c => c.state === 'reference_observed').length, 14);
-  assert.ok(axisExtent(s, 20) >= 24); assert.equal(axisExtent(s, 40), 40);
+  assert.equal(axisExtent(s, 1), s.extent);
+  assert.ok(axisExtent(s, 5) >= 20); assert.equal(axisExtent(s, 6), s.extent);
+  assert.equal(axisExtent(adaptProduction(fixture('matrix/synthetic-earlier.json')), 6), 24);
   assert.equal(cellAt(promising, 24).state, 'trailing_blank_unknown'); assert.equal(cellAt(promising, 40).state, 'outside_reference');
 });
 test('exact piecewise sRGB interpolation, clamping, singleton, empty and tied production domains', () => {
