@@ -228,4 +228,8 @@ async function init() {
     render();
   }
 }
-void init();
+if (params.get('view') === 'matrix') {
+  void import('./matrix.ts').then(module => module.initMatrix());
+} else {
+  void init();
+}
