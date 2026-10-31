@@ -24,8 +24,10 @@ production edge cases. A [fixture comparison preview](docs/flagship-ui.md) is
 available at `?view=matrix`, with full workbook references and clearly labeled
 synthetic edge cases. The [historical generator](docs/historical-generator.md)
 prepares paired aggregate snapshots offline; its private caches support
-[verified local/B2 transfer](docs/history-storage.md). Full history and primary
-integration retain their [separate execution gate](docs/history-verification-and-backfill.md).
+[verified local/B2 transfer](docs/history-storage.md). Parquet uses an
+[explicit enriched metadata profile](docs/parquet-profile.md) with statistics,
+real sorting, page indexes/checksums and selective serial Bloom. Full history and
+primary integration retain their [separate execution gate](docs/history-verification-and-backfill.md).
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's

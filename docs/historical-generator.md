@@ -60,12 +60,19 @@ Registry and discovery
 
 Private cache and recovery
 
-Quarter objects live under `quarters/YYYY-QN/<input-content-hash>/`. Each contains
+New quarter objects live under
+`quarters/YYYY-QN/<semantic-input-hash>.<physical-parquet-profile>/`. Legacy
+`<input-content-hash>/` directories remain readable and preserved. Each contains
 `drives.parquet` (one identity/quarter record with first/last observation, exposure,
 failures and latest location), `capacities.parquet` (positive finite capacity
 observation frequencies), and `manifest.json` (coverage, raw aliases, byte hashes,
 source receipt and semantic versions). Serial identities and per-drive dates stay
 private. Never copy this cache to the public site.
+
+The [shared Parquet profile](parquet-profile.md) enriches new outputs. Verified
+legacy summaries can be repacked into a current physical variant without reading
+daily observations or changing their semantic identity. Old bytes remain intact;
+physical write errors surface rather than causing a raw-data rescan.
 
 Before computing a quarter, the generator hashes its source files and checks the
 manifest content hash and both retained object hashes. Valid hits read only the

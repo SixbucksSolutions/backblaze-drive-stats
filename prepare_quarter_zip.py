@@ -17,6 +17,8 @@ import zipfile
 
 import polars as pl
 
+from parquet_profile import PROFILE_ID, write_enriched_parquet
+
 REQUIRED = ("date", "serial_number", "model", "capacity_bytes", "failure")
 DAILY_NAME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv")
 SCHEMA = {
@@ -111,7 +113,8 @@ def prepare(input_zip: Path, output_dir: Path, *, source_url: str | None = None,
             descriptor, temporary = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=output_dir)
             os.close(descriptor)
             try:
-                frame.write_parquet(temporary, compression="zstd")
+                write_enriched_parquet(frame, Path(temporary), kind="daily_projection",
+                                       lineage={"sourceZipSha256": digest, "partition": target.stem})
                 os.replace(temporary, target)
             finally:
                 Path(temporary).unlink(missing_ok=True)
@@ -119,7 +122,7 @@ def prepare(input_zip: Path, output_dir: Path, *, source_url: str | None = None,
                             "datacenterAvailable": "datacenter" in columns, "memberCrc32": f"{member.CRC:08x}",
                             "memberSizeBytes": member.file_size, "outputFile": target.name})
             del frame
-        metadata = {"schemaVersion": 1, "sourceZipSha256": digest, "sourceUrl": source_url,
+        metadata = {"schemaVersion": 1, "parquetProfile": PROFILE_ID, "sourceZipSha256": digest, "sourceUrl": source_url,
                     "rowCount": sum(record["rowCount"] for record in records), "fileCount": len(records),
                     "dates": [record["date"] for record in records],
                     "sourceColumns": sorted({column for record in records for column in record["sourceColumns"]}),

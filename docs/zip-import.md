@@ -18,6 +18,12 @@ Existing target files cause refusal before processing. To retry a partial import
 
 Pass `data/processed/2026-Q2/*.parquet` as the local Parquet input to `export_quarterly_web_data.py`. Only the exporter's aggregate JSON belongs in the public web bundle. Never copy these daily Parquet files into the website.
 
+New files use the [shared enriched Parquet profile](parquet-profile.md): real
+model/serial/date sorting, explicit statistics/indexes/checksums, schema/lineage
+metadata and selective serial-number Bloom filters. The receipt records the
+physical profile. Sorting changes row order, not logical observations. Existing
+daily caches are preserved.
+
 Run the small synthetic checks without downloading data:
 
 ```powershell

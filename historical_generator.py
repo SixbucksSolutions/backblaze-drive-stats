@@ -22,6 +22,7 @@ from urllib.parse import urlsplit
 import polars as pl
 
 from drive_model_names import normalize_drive_model_name
+from parquet_profile import PROFILE_ID, SORT_KEYS, write_enriched_parquet
 from tools.validate_matrix_contract import METRICS, bounds, color_domains, ordinal, quarter, rate, validate_matrix
 from tools.validate_supporting_contract import validate_supporting
 
@@ -85,6 +86,40 @@ def atomic_json(path, value):
         os.replace(temporary, path)
     finally:
         Path(temporary).unlink(missing_ok=True)
+
+
+def summary_directory(key, profile=None):
+    if not re.fullmatch(r"[0-9a-f]{64}", key):
+        raise ValueError("Invalid summary semantic identity")
+    if profile is None:
+        return key  # Existing v2 layout remains readable and is preserved.
+    if not isinstance(profile, str) or not re.fullmatch(r"private-parquet-rich-v[0-9]+-[0-9a-f]{12}", profile):
+        raise ValueError("Invalid summary physical profile")
+    return key + "." + profile
+
+
+def persist_summary_layout(quarter_root, manifest, drives, capacities):
+    """Repack verified summaries; physical changes never require a daily rescan."""
+    target = quarter_root / summary_directory(manifest["inputSha256"], PROFILE_ID)
+    target.mkdir(parents=True, exist_ok=True)
+    result = dict(manifest)
+    result.pop("manifestContentSha256", None)
+    result["parquetProfile"] = PROFILE_ID
+    result["objects"] = {}
+    for name, frame, kind in (("drives.parquet", drives, "drive_quarter"),
+                              ("capacities.parquet", capacities, "capacity_frequencies")):
+        fd, temporary = tempfile.mkstemp(dir=target, prefix=".pending-")
+        os.close(fd)
+        try:
+            write_enriched_parquet(frame, Path(temporary), kind=kind,
+                                   lineage={"semanticKey": result["inputSha256"], "partition": result["coverage"]["quarter"]})
+            os.replace(temporary, target / name)
+        finally:
+            Path(temporary).unlink(missing_ok=True)
+        result["objects"][name] = file_sha(target / name)
+    result["manifestContentSha256"] = digest(result)
+    atomic_json(target / "manifest.json", result)
+    return result
 
 
 def generation_time(cache_root, snapshot_id, source_hash, output_root=None):
@@ -198,7 +233,9 @@ def summarize_partitioned_input(item, cache_root, registry, cutoff):
     # Discover verified candidates by source bytes and implementation first. Only
     # mappings actually used by this quarter participate in its semantic identity.
     # A new registry entry for a future raw name must not reparse old quarters.
-    for manifest_path in sorted(quarter_root.glob("*/manifest.json")):
+    candidates = sorted(quarter_root.glob("*/manifest.json"),
+                        key=lambda path: (not path.parent.name.endswith("." + PROFILE_ID), str(path)))
+    for manifest_path in candidates:
         target = manifest_path.parent
         try:
             manifest = json.loads(manifest_path.read_text())
@@ -215,11 +252,17 @@ def summarize_partitioned_input(item, cache_root, registry, cutoff):
             # checksums have been verified. Reclassify using current evidence.
             effective = {raw: registry.resolve(raw)["modelId"] for raw in manifest["names"]}
             key = digest(dict(lineage=lineage, canonicalModels=effective))
-            if manifest.get("canonicalModels") != effective or manifest.get("inputSha256") != key or target.name != key:
+            if manifest.get("canonicalModels") != effective or manifest.get("inputSha256") != key or target.name != summary_directory(key, manifest.get("parquetProfile")):
                 continue
-            return manifest, pl.read_parquet(target / "drives.parquet"), pl.read_parquet(target / "capacities.parquet"), True
+            drives = pl.read_parquet(target / "drives.parquet").sort(SORT_KEYS["drive_quarter"], nulls_last=True, maintain_order=True)
+            capacities = pl.read_parquet(target / "capacities.parquet").sort(SORT_KEYS["capacity_frequencies"], nulls_last=True, maintain_order=True)
         except (ValueError, TypeError, KeyError, AttributeError, OSError, pl.exceptions.PolarsError):
-            pass  # An incomplete commit marker is a cache miss, never evidence.
+            continue  # An incomplete commit marker is a cache miss, never evidence.
+        if manifest.get("parquetProfile") != PROFILE_ID:
+            # A physical rewrite failure must surface; it is not a reason to
+            # reparse historical source that already has verified summaries.
+            manifest = persist_summary_layout(quarter_root, manifest, drives, capacities)
+        return manifest, drives, capacities, True
     frames, dates, row_count, names = [], [], 0, {}
     for record in records:
         source = pl.scan_parquet(directory / record["outputFile"])
@@ -266,12 +309,10 @@ def summarize_partitioned_input(item, cache_root, registry, cutoff):
         pl.col("date").max().alias("last"),
         pl.len().alias("driveDays"),
         pl.col("failure").sum().alias("failures"),
-        pl.col("datacenter").sort_by("date").last().alias("datacenter")).collect(engine="streaming")
-    capacities = source.filter(pl.col("capacity_bytes").is_finite() & (pl.col("capacity_bytes") > 0)).group_by("id", "capacity_bytes").len().collect(engine="streaming")
+        pl.col("datacenter").sort_by("date").last().alias("datacenter")).collect(engine="streaming").sort(SORT_KEYS["drive_quarter"], nulls_last=True, maintain_order=True)
+    capacities = source.filter(pl.col("capacity_bytes").is_finite() & (pl.col("capacity_bytes") > 0)).group_by("id", "capacity_bytes").len().collect(engine="streaming").sort(SORT_KEYS["capacity_frequencies"], nulls_last=True, maintain_order=True)
     effective = {raw: item["modelId"] for raw,item in names.items()}
     key = digest(dict(lineage=lineage, canonicalModels=effective))
-    target = quarter_root / key
-    manifest_path = target / "manifest.json"
     expected = (end - start).days + 1
     coverage = dict(quarter=item.quarter,
         status="complete" if len(dates) == expected else "incomplete",
@@ -281,20 +322,8 @@ def summarize_partitioned_input(item, cache_root, registry, cutoff):
         observedEnd=max(dates),
         rowCount=row_count,
         sourceIds=["source-" + key])
-    target.mkdir(parents=True, exist_ok=True)
-    objects = {}
-    for name, frame in (("drives.parquet", drives), ("capacities.parquet", capacities)):
-        fd, temporary = tempfile.mkstemp(dir=target, prefix=".pending-")
-        os.close(fd)
-        try:
-            frame.write_parquet(temporary, compression="zstd")
-            os.replace(temporary, target / name)
-        finally:
-            Path(temporary).unlink(missing_ok=True)
-        objects[name] = file_sha(target / name)
-    manifest = dict(inputSha256=key, lineage=lineage, canonicalModels=effective, objects=objects, coverage=coverage, names=names)
-    manifest["manifestContentSha256"] = digest(manifest)
-    atomic_json(manifest_path, manifest)  # commit marker written last
+    manifest = dict(inputSha256=key, lineage=lineage, canonicalModels=effective, coverage=coverage, names=names)
+    manifest = persist_summary_layout(quarter_root, manifest, drives, capacities)
     return manifest, drives, capacities, False
 
 

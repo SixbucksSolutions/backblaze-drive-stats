@@ -9,8 +9,10 @@ import warnings
 import zipfile
 
 import polars as pl
+import pyarrow.parquet as pq
 
 from prepare_quarter_zip import prepare
+from parquet_profile import PROFILE_ID
 
 
 HEADER = "date,serial_number,model,capacity_bytes,failure,smart_1_raw\n"
@@ -45,6 +47,8 @@ class ZipImportTests(unittest.TestCase):
             self.assertEqual(metadata["sourceZipSha256"], hashlib.sha256(archive.read_bytes()).hexdigest())
             self.assertEqual((metadata["fileCount"], metadata["rowCount"], metadata["datacenterAvailable"]), (1, 1, False))
             self.assertEqual(metadata["dates"], ["2026-04-01"])
+            self.assertEqual(metadata["parquetProfile"], PROFILE_ID)
+            self.assertEqual(pq.read_metadata(root/"out/2026-04-01.parquet").metadata[b"backblaze.parquet_profile"].decode(), PROFILE_ID)
             receipt = (root / "out/import-metadata.json").read_text()
             self.assertEqual(json.loads(receipt), metadata)
             self.assertNotIn("private-serial", receipt)

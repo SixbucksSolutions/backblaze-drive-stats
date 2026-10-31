@@ -10,6 +10,7 @@ from unittest.mock import patch
 import polars as pl
 
 from historical_generator import QuarterInput, Registry, bounds, generate, public_evidence
+from parquet_profile import PROFILE_ID
 
 PATTERNS = [r"^Seagate ST100TEST$"]
 REGISTRY = dict(version="test-media-v1",models=[
@@ -244,6 +245,59 @@ class HistoricalGeneratorTests(unittest.TestCase):
         with patch("historical_generator.pl.scan_parquet",side_effect=AssertionError("classification should use cached summaries")):
             matrix,_,_=self.run_generate(registry=registry)
         self.assertEqual(next(i for i in matrix["selection"]["inventory"] if i["modelNumber"]=="SSD")["mediaClass"],"unclassified")
+
+    def legacy_layout_copy(self, destination):
+        """Independent legacy layout: same verified data, reverse physical order."""
+        from historical_generator import digest, file_sha
+        original = {}
+        for item in self.inputs:
+            source_manifest = next((self.root/"cache"/"quarters"/item.quarter).glob("*/manifest.json"))
+            manifest = json.loads(source_manifest.read_text())
+            target = destination/"quarters"/item.quarter/manifest["inputSha256"]
+            target.mkdir(parents=True)
+            for name in manifest["objects"]:
+                pl.read_parquet(source_manifest.parent/name).reverse().write_parquet(target/name, compression="zstd")
+                manifest["objects"][name] = file_sha(target/name)
+                original[target/name] = file_sha(target/name)
+            manifest.pop("parquetProfile", None)
+            manifest.pop("manifestContentSha256")
+            manifest["manifestContentSha256"] = digest(manifest)
+            (target/"manifest.json").write_text(json.dumps(manifest))
+            original[target/"manifest.json"] = file_sha(target/"manifest.json")
+        return original
+
+    def test_legacy_metadata_upgrades_from_verified_summaries_without_daily_scans(self):
+        from historical_generator import file_sha
+        import pyarrow.parquet as pq
+        cache = self.root/"physical-upgrade-cache"
+        original = self.legacy_layout_copy(cache)
+        with patch("historical_generator.pl.scan_parquet", side_effect=AssertionError("Layout upgrade cannot rescan daily observations")):
+            matrix, supporting, report = self.run_generate(cache_root=cache)
+            again, again_supporting, again_report = self.run_generate(cache_root=cache)
+        self.assertEqual(report["computedQuarters"], [])
+        self.assertEqual(len(report["reusedQuarters"]), 4)
+        self.assertEqual(matrix, again)
+        self.assertEqual(supporting, again_supporting)
+        self.assertEqual(supporting, self.supporting)
+        self.assertEqual(matrix["provenance"]["sourceManifestSha256"], self.matrix["provenance"]["sourceManifestSha256"])
+        self.assertEqual(again_report["computedQuarters"], [])
+        for path, checksum in original.items():
+            self.assertEqual(file_sha(path), checksum)
+        manifests = list(cache.glob(f"quarters/*/*.{PROFILE_ID}/manifest.json"))
+        self.assertEqual(len(manifests), 4)
+        for path in manifests:
+            manifest = json.loads(path.read_text())
+            self.assertEqual(manifest["parquetProfile"], PROFILE_ID)
+            for name in manifest["objects"]:
+                self.assertEqual(pq.read_metadata(path.parent/name).metadata[b"backblaze.parquet_profile"].decode(), PROFILE_ID)
+
+    def test_failed_physical_upgrade_does_not_fall_back_to_daily_recomputation(self):
+        cache = self.root/"failed-physical-upgrade-cache"
+        self.legacy_layout_copy(cache)
+        with patch("historical_generator.persist_summary_layout", side_effect=OSError("simulated write failure")):
+            with patch("historical_generator.pl.scan_parquet", side_effect=AssertionError("Unexpected daily rescan")):
+                with self.assertRaisesRegex(OSError, "simulated write failure"):
+                    self.run_generate(cache_root=cache)
 
     def test_new_vendor_registry_entry_and_quarter_preserve_old_cache(self):
         cache=self.root/"new-registry-cache"
