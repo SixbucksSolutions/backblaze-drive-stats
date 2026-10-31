@@ -335,6 +335,17 @@ by the additive proposal. The owner also approved a next-batch exception to the
 three-card limit for a four-quarter benchmark (#0029–#0032); see the
 [resource/staffing recommendation](backfill-throughput.md).
 
+The owner accepted #0028/#0057 and the four-quarter batch #0029–#0032 has now
+completed private ingestion and independent artifact review. Its
+[benchmark and recovery record](parallel-quarter-benchmark.md) distinguishes the
+interrupted first attempt, successful recovery, actual phase overlap and durable
+B2 copy. Loaded source coverage now reaches 2024 Q4; the reference model remains
+present above threshold, so no original anchor or zero boundary is established.
+The owner chose eight quarters next, then doubling while resources and required
+history permit. Keep the six-direct-agent/depth-one ceiling and budget native
+threads separately from language-model agents. The prior four-card exception is
+superseded by that quarter-backfill scaling direction.
+
 The provisional quarter queue reaches 2019 Q1. Continue earlier if necessary to
 find a fully covered quarter with zero HUH721212ALN604 observations across its
 evidenced aliases. Record first appearance and first >=2,000-drive quarter
@@ -405,6 +416,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r022**; r001–r021 are retained as history. Planned workers
+assignment revision is **r023**; r001–r022 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

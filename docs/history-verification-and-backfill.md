@@ -6,14 +6,19 @@ full backfill.
 
 ## Approved pilot and current gates
 
-The owner approved newest-first quarter cards and a single-quarter pilot.
-#0027 has imported and verified 2026 Q1; see the [measurements and acceptance
-audit](quarter-pilot.md). #0028–#0055 queue 2025 Q4 through the provisional
-2019 Q1 floor. The owner accepted that pilot and B2 setup #0056, cleared the next
-turn, and 2025 Q4 #0028 has now been audited. He subsequently authorized a
-four-quarter next-batch benchmark (#0029–#0032), an explicit exception to the
-usual three-card limit. No additional quarter from that benchmark started in
-the current turn.
+The owner accepted the 2026 Q1 pilot (#0027), 2025 Q4 audit (#0028), B2 setup
+(#0056) and first cache migration (#0057). The next four quarter cards
+(#0029–#0032) have completed ingestion, independent artifact review and durable
+retention; see the [measured recovery report](parallel-quarter-benchmark.md).
+All seven loaded quarters from 2024 Q4 through 2026 Q2 have verified processing
+caches retained in B2. The reference model remains above threshold at the oldest
+loaded quarter; its origin and cumulative-history completeness are unverified.
+
+The owner approved eight quarters next (#0033–#0040, 2024 Q3 through 2022 Q4),
+then doubling while resources and required history permit. Keep the six-direct-
+agent/depth-one ceiling and budget native threads across processes. The remaining
+initial quarter queue extends to the provisional 2019 Q1 floor; extend it only
+as the reference-model boundary and actual production history needs require.
 
 Continue backward until a complete quarter has zero observations of exact model
 HUH721212ALN604, extending the queue earlier if needed. Record first observation
@@ -111,8 +116,9 @@ complete historical fleet coverage. #0022's language quality gates precede furth
   filter cannot remove the current generator's older-cohort history obligations.
 - Work backward in bounded batches. The 2026 Q1 pilot is verified after the
   retained 2026 Q2 cache; 2025 Q4 (#0028) is also verified. The next authorized
-  benchmark covers 2025 Q3, Q2, Q1 and 2024 Q4. Recheck transfer limits and
-  resources before starting it.
+  benchmark covered 2025 Q3, Q2, Q1 and 2024 Q4 and has completed with an
+  explicitly labeled recovery measurement. The next approved batch covers
+  2024 Q3 through 2022 Q4. Recheck transfer limits and resources before launch.
 - Establish each candidate's anchor and pre-eligibility exposure honestly. The
   first loaded qualifying quarter is not proof of the original anchor, and an
   earlier zero quarter does not exclude an older deployment followed by reentry.

@@ -1,5 +1,19 @@
 # Quarterly ETL staffing and initial fanout
 
+The [completed four-quarter recovery benchmark](parallel-quarter-benchmark.md)
+supersedes this initial sizing proposal. Four audits overlapped with a sampled
+13.01 GiB worker working-set peak and a sampled minimum of 21.39 GiB RAM available. The owner
+approved eight quarters next, then doubling while resources and required history
+permit. Keep the six-direct-agent/depth-one limits and budget native threads
+across processes. The older four-quarter recommendation below records the basis
+for that first experiment rather than limiting the newly approved batch size.
+
+## Historical initial proposal
+
+The following proposal and its gates are retained as history. Its references to
+the next four-quarter batch and the then-current three-card turn describe that
+earlier approval, not the live eight-quarter doubling authorization above.
+
 Recommendation from the accepted 2026 Q1 pilot and the measured 2025 Q4 run:
 **one ETL operator plus a fresh independent reviewer** is useful for a new quarter.
 The reviewer starts when artifacts exist; this is not a permanently idle pair.
@@ -44,7 +58,7 @@ four workers leave some CPU capacity for review and the desktop. The owner's
 5 Gbit/s Internet connection provides potential transfer headroom, but source
 service throughput and concurrent performance have not been benchmarked.
 
-## First parallel batch gate
+## Historical first parallel batch gate
 
 - Select up to the authorized number of eligible quarter cards and move each
   In Progress before any work. The current six-direct-agent, depth-one limit

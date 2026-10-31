@@ -7,13 +7,21 @@ The subsequent [first durable cache migration](b2-cache-migration.md) copied and
 restored 192 completed Q1/Q2 objects by verified manifest. That completed copy
 remains separate from the initial connection check below.
 
+The [four-quarter backfill retention](parallel-quarter-benchmark.md) then added
+477 verified processing objects for 2024 Q4 through 2025 Q4, including the
+previously accepted 2025 Q4 cache. Readback, zero-write reuse and a separate-root
+restore succeeded. All seven loaded quarters now have durable projected data,
+receipts and retained summaries. Raw ZIPs remain outside these processing copies.
+
 ## Real service verification
 
 The initial probe uploaded one 175-byte object, verified its SHA-256 by readback,
 repeated the transfer with zero writes and one verified reuse, then downloaded it
 to a separate local root and verified it again. The explicit transfer manifest
-and sanitized receipt remain in ignored `data/staging/0056/`. The object is kept
-as verification evidence; the probe performed no deletes or Parquet transfers.
+and sanitized receipt remain in ignored `data/staging/0056/`. The object was
+initially kept as verification evidence; the owner later deleted the disposable test
+object. Its local receipt remains. That cleanup does not affect processing caches
+or recovery manifests. The probe performed no deletes or Parquet transfers.
 
 Native API inspection confirmed the exact intended bucket and `drive-stats/`
 key restriction, private access, SSE-B2/AES256 default encryption and empty
