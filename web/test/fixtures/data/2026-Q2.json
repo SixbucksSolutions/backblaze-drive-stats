@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "quarter": "2026-Q2",
+  "period": {
+    "start": "2026-04-01",
+    "end": "2026-06-30"
+  },
+  "provenance": {
+    "kind": "sample",
+    "sourceUrl": "https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data",
+    "generatedAt": "2026-10-30T12:00:00Z",
+    "coverageStart": "2025-10-01",
+    "coverageEnd": "2026-06-30",
+    "notes": [
+      "All values in this bundle are invented development fixtures, not observed Backblaze results.",
+      "Illustrative cumulative AFR values demonstrate the interface; they are not a reconstructed historical series.",
+      "Datacenter allocations reconcile to the sample fleet and do not represent actual Backblaze locations or distribution."
+    ]
+  },
+  "models": [
+    {
+      "id": "Seagate-ST16000NM001G",
+      "manufacturer": "Seagate",
+      "model": "ST16000NM001G",
+      "capacityTb": 16,
+      "driveCount": 16420,
+      "driveDays": 1395700,
+      "failures": 83,
+      "quarterlyAfr": 2.170595400157627,
+      "cumulativeAfr": 1.095184337957874,
+      "newDrives": 1100,
+      "lastObservedDrives": 88
+    },
+    {
+      "id": "Toshiba-MG08ACA16TE",
+      "manufacturer": "Toshiba",
+      "model": "MG08ACA16TE",
+      "capacityTb": 16,
+      "driveCount": 13820,
+      "driveDays": 1174700,
+      "failures": 36,
+      "quarterlyAfr": 1.11858346811952,
+      "cumulativeAfr": 0.7472380078359394,
+      "newDrives": 1580,
+      "lastObservedDrives": 44
+    },
+    {
+      "id": "WDC/HGST-WUH722222ALE6L4",
+      "manufacturer": "WDC/HGST",
+      "model": "WUH722222ALE6L4",
+      "capacityTb": 22,
+      "driveCount": 11580,
+      "driveDays": 984300,
+      "failures": 18,
+      "quarterlyAfr": 0.6674794270039622,
+      "cumulativeAfr": 0.6765238636842327,
+      "newDrives": 2340,
+      "lastObservedDrives": 29
+    },
+    {
+      "id": "Toshiba-MG10ACA20TE",
+      "manufacturer": "Toshiba",
+      "model": "MG10ACA20TE",
+      "capacityTb": 20,
+      "driveCount": 9840,
+      "driveDays": 836400,
+      "failures": 29,
+      "quarterlyAfr": 1.2655428024868485,
+      "cumulativeAfr": 1.067568907396391,
+      "newDrives": 2010,
+      "lastObservedDrives": 43
+    },
+    {
+      "id": "Seagate-ST14000NM001G",
+      "manufacturer": "Seagate",
+      "model": "ST14000NM001G",
+      "capacityTb": 14,
+      "driveCount": 8270,
+      "driveDays": 702950,
+      "failures": 74,
+      "quarterlyAfr": 3.8423785475496124,
+      "cumulativeAfr": 2.3251835904090603,
+      "newDrives": 410,
+      "lastObservedDrives": 91
+    },
+    {
+      "id": "WDC/HGST-WUH721816ALE6L4",
+      "manufacturer": "WDC/HGST",
+      "model": "WUH721816ALE6L4",
+      "capacityTb": 16,
+      "driveCount": 7850,
+      "driveDays": 667250,
+      "failures": 17,
+      "quarterlyAfr": 0.9299363057324841,
+      "cumulativeAfr": 1.2474755320801616,
+      "newDrives": 680,
+      "lastObservedDrives": 37
+    },
+    {
+      "id": "Seagate-ST12000NM0008",
+      "manufacturer": "Seagate",
+      "model": "ST12000NM0008",
+      "capacityTb": 12,
+      "driveCount": 6810,
+      "driveDays": 578850,
+      "failures": 61,
+      "quarterlyAfr": 3.84641962511877,
+      "cumulativeAfr": 2.692955123383833,
+      "newDrives": 190,
+      "lastObservedDrives": 84
+    },
+    {
+      "id": "Toshiba-MG11ACA24TE",
+      "manufacturer": "Toshiba",
+      "model": "MG11ACA24TE",
+      "capacityTb": 24,
+      "driveCount": 5680,
+      "driveDays": 482800,
+      "failures": 12,
+      "quarterlyAfr": 0.9072079536039768,
+      "cumulativeAfr": 1.8181037444177257,
+      "newDrives": 1820,
+      "lastObservedDrives": 38
+    },
+    {
+      "id": "Seagate-ST24000NM002H",
+      "manufacturer": "Seagate",
+      "model": "ST24000NM002H",
+      "capacityTb": 24,
+      "driveCount": 4320,
+      "driveDays": 367200,
+      "failures": 34,
+      "quarterlyAfr": 3.3796296296296293,
+      "cumulativeAfr": 3.462059620596206,
+      "newDrives": 1500,
+      "lastObservedDrives": 63
+    },
+    {
+      "id": "WDC/HGST-HUH721212ALE604",
+      "manufacturer": "WDC/HGST",
+      "model": "HUH721212ALE604",
+      "capacityTb": 12,
+      "driveCount": 3210,
+      "driveDays": 272850,
+      "failures": 41,
+      "quarterlyAfr": 5.4846985523181235,
+      "cumulativeAfr": 5.269356431882076,
+      "newDrives": 60,
+      "lastObservedDrives": 73
+    },
+    {
+      "id": "Seagate-ST18000NM000J",
+      "manufacturer": "Seagate",
+      "model": "ST18000NM000J",
+      "capacityTb": 18,
+      "driveCount": 1640,
+      "driveDays": 139400,
+      "failures": 7,
+      "quarterlyAfr": 1.832855093256815,
+      "cumulativeAfr": 7.056811421772754,
+      "newDrives": 620,
+      "lastObservedDrives": 42
+    },
+    {
+      "id": "WDC/HGST-WUH722626ALE6L4",
+      "manufacturer": "WDC/HGST",
+      "model": "WUH722626ALE6L4",
+      "capacityTb": 26,
+      "driveCount": 780,
+      "driveDays": 66300,
+      "failures": 2,
+      "quarterlyAfr": 1.10105580693816,
+      "cumulativeAfr": 14.609130706691682,
+      "newDrives": 510,
+      "lastObservedDrives": 40
+    }
+  ],
+  "capacityByDatacenter": [
+    {
+      "datacenter": "SAC1",
+      "capacityTb": 714042,
+      "driveCount": 40597
+    },
+    {
+      "datacenter": "PHX1",
+      "capacityTb": 539416,
+      "driveCount": 30669
+    },
+    {
+      "datacenter": "AMS1",
+      "capacityTb": 317364,
+      "driveCount": 18044
+    },
+    {
+      "datacenter": "Unknown",
+      "capacityTb": 15998,
+      "driveCount": 910
+    }
+  ],
+  "history": [
+    {
+      "quarter": "2025-Q4",
+      "driveCount": 71275,
+      "driveDays": 6058375,
+      "failures": 302,
+      "quarterlyAfr": 1.819464790475994,
+      "capacityTb": 1253606,
+      "newDrives": 8974
+    },
+    {
+      "quarter": "2026-Q1",
+      "driveCount": 80748,
+      "driveDays": 6702084,
+      "failures": 358,
+      "quarterlyAfr": 1.9496920659305375,
+      "capacityTb": 1420220,
+      "newDrives": 10899
+    },
+    {
+      "quarter": "2026-Q2",
+      "driveCount": 90220,
+      "driveDays": 7668700,
+      "failures": 414,
+      "quarterlyAfr": 1.9704773951256407,
+      "capacityTb": 1586820,
+      "newDrives": 12820
+    }
+  ]
+}

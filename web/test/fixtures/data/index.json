@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "quarters": [
+    {
+      "quarter": "2026-Q2",
+      "label": "2026 Q2",
+      "url": "2026-Q2.json",
+      "kind": "sample"
+    },
+    {
+      "quarter": "2026-Q1",
+      "label": "2026 Q1",
+      "url": "2026-Q1.json",
+      "kind": "sample"
+    },
+    {
+      "quarter": "2025-Q4",
+      "label": "2025 Q4",
+      "url": "2025-Q4.json",
+      "kind": "sample"
+    }
+  ]
+}

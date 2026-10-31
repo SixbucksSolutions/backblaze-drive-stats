@@ -2,6 +2,43 @@
 
 **Updated 2026-06-14**
 
+## Quarterly website
+
+The `web/` directory contains a TypeScript 7 static explorer for all six quarterly
+report views. It fetches `data/index.json`, then one aggregate JSON file for the
+selected quarter. Python runs only when preparing data; the website needs no backend.
+
+With Node.js 24 installed, start the localhost site:
+
+```powershell
+cd web
+npm ci
+npm run dev
+```
+
+Open the printed localhost URL. Run `npm test` for the data-contract checks and
+`npm run build` for type checking and a production build in `web/dist/`.
+
+Use the [ZIP importer](docs/zip-import.md) to prepare the public daily CSVs without
+extracting them to disk, then the [quarterly exporter](docs/web-data.md) to generate
+the website data. Raw ZIPs, CSVs, Parquet caches, and `data/` are ignored by Git.
+Only aggregate JSON under `web/public/data/` is published; it contains no drive
+serial numbers. Illustrative test fixtures live separately in `web/test/fixtures/`.
+
+The initial 2026 Q2 release uses `drives_of_interest_regexes.json`, preserving the
+selected HDD population. The existing SMART-name normalization rules are shared
+through `drive_model_names.py`; the original analysis helper and AFR workbook keep
+their existing entry points. See [validation evidence](docs/web-validation.md).
+
+History-based measures use the supplied data window. A single quarter can show
+quarterly AFR and capacity, but cannot establish lifetime AFR or true deployments
+before that quarter. The interface displays the available coverage explicitly.
+
+For eventual Cloudflare Pages hosting, use `web` as the root directory,
+`npm run build` as the build command, and `dist` as the output directory. The
+included `_headers` keeps the quarter index fresh and caches hashed application
+assets. Deploying is a separate step; local development does not publish a site.
+
 ## Creating Quarterly AFR CSV
 
 ### System Requirements

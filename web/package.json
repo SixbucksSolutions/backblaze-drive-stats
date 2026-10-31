@@ -1,0 +1,19 @@
+{
+  "name": "backblaze-drive-stats-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "check": "tsc --noEmit",
+    "check:data": "node --experimental-strip-types scripts/check-data.mjs",
+    "test": "node --experimental-strip-types --test src/data.test.ts",
+    "build": "npm run check && npm run check:data && vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.5"
+  }
+}

@@ -1,0 +1,6 @@
+/data/index.json
+  Cache-Control: no-cache
+/data/*.json
+  Cache-Control: public, max-age=300, must-revalidate
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

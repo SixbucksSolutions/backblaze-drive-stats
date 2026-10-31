@@ -6,3 +6,10 @@ __pycache__/
 .venv/
 *.xlsx
 *_state.json
+web/node_modules/
+web/dist/
+web/.vite/
+/data/
+*.zip
+*.zip.part
+*.parquet.tmp
