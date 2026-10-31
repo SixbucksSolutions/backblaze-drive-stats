@@ -39,6 +39,8 @@ class LspError(RuntimeError):
 
 def windows_job(pid: int) -> tuple[Any, Any]:
     """Own the server tree even if its root exits before an unresponsive child."""
+    if sys.platform != "win32":
+        raise LspError("Windows process containment is only available on Windows")
     from ctypes import wintypes
 
     class Basic(ctypes.Structure):
@@ -108,6 +110,8 @@ def resume_windows_process(pid: int) -> None:
     that thread; OpenThread plus GetProcessIdOfThread verify its ownership before
     ResumeThread. CREATE_SUSPENDED prevents server code running in this interval.
     """
+    if sys.platform != "win32":
+        raise LspError("Windows process resumption is only available on Windows")
     from ctypes import wintypes
 
     class ThreadEntry(ctypes.Structure):

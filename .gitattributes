@@ -9,6 +9,7 @@
 /web/.oxlintrc.json text eol=lf
 /web/.prettierrc.json text eol=lf
 /.github/**/*.yml text eol=lf
+/fixtures/**/*.json text eol=lf
 
 # Preserve downloaded font/license bytes and the existing cache-bound normalizer.
 /web/public/fonts/** -text

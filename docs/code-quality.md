@@ -113,7 +113,7 @@ Non-null and narrowing-assertion bans are not enabled indiscriminately. Existing
 generated-DOM and versioned bundled-fixture invariants stay explicit; arbitrary
 public report JSON still passes runtime validation. Formatting rules belong to
 Prettier, rather than a second competing style engine. CI uses LF for formatter-owned
-web text; `.gitattributes` protects byte-sensitive exceptions.
+web text and canonical fixture JSON; `.gitattributes` protects byte-sensitive exceptions.
 
 typescript-eslint's published supported range currently excludes TypeScript 7.
 Oxlint's [type-aware backend](https://oxc.rs/docs/guide/usage/linter/type-aware.html)
