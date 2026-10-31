@@ -1,9 +1,36 @@
 # Historical cache transfer and snapshot publication
 
-Implemented for #0016 using local storage first. No B2 bucket was provisioned,
-no owner credentials were received, and no remote service calls have been run.
-The adapter's GetObject/PutObject behavior is tested with an injected client;
-actual B2 integration remains a gate when the owner supplies access.
+Implemented for #0016 using local storage first. On 2026-10-31, #0056 verified
+the adapter against the owner's private Backblaze B2 bucket with a dedicated,
+bucket- and prefix-restricted application key supplied outside the repository.
+Bulk cache migration remains separate from this connection check.
+
+## Real service verification
+
+The initial probe uploaded one 175-byte object, verified its SHA-256 by readback,
+repeated the transfer with zero writes and one verified reuse, then downloaded it
+to a separate local root and verified it again. The explicit transfer manifest
+and sanitized receipt remain in ignored `data/staging/0056/`. The object is kept
+as verification evidence; the probe performed no deletes or Parquet transfers.
+
+Native API inspection confirmed the exact intended bucket and `drive-stats/`
+key restriction, private access, SSE-B2/AES256 default encryption and empty
+lifecycle rules. S3 object metadata confirmed AES256 for the uploaded object.
+The key cannot inspect Object Lock configuration, so that setting is unverified
+by the probe. The recommendation for initial setup was to leave it disabled;
+immutable object naming and WORM retention are separate guarantees.
+
+The console's Read and Write preset includes additional capabilities such as
+object deletion. The application does not exercise those capabilities in this
+verification or cache transfer. Credential contents, IDs, authorization tokens
+and owner connection settings are not committed. The secret stays in the
+owner-provided local file and is passed to the SDK in memory.
+
+Before larger migration, enumerate completed retained objects in a private
+manifest, review its byte/object totals and preserve the local sources. Keep
+one writer per destination prefix. This roundtrip verifies the small-object
+GetObject/PutObject path and content checks; it does not establish multipart,
+large-object, distributed-writer or full-history performance behavior.
 
 ## Separate private processing from public delivery
 

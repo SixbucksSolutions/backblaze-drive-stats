@@ -28,6 +28,7 @@ prepares paired aggregate snapshots offline; its private caches support
 [explicit enriched metadata profile](docs/parquet-profile.md) with statistics,
 real sorting, page indexes/checksums and selective serial Bloom. Full history and
 primary integration retain their [separate execution gate](docs/history-verification-and-backfill.md).
+The first backward quarter, 2026 Q1, now has a [verified pilot result and repeatable audit](docs/quarter-pilot.md).
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's

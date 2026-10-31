@@ -1,7 +1,26 @@
 # Existing-quarter verification and proposed historical execution
 
-#0016 implementation evidence, 2026-10-31. This is a proposal for #0017's
-resource gate, not authorization to fetch history or run a full backfill.
+#0016 implementation evidence and #0017 execution status, 2026-10-31.
+The original full-history estimate is retained below; it does not authorize a
+full backfill.
+
+## Approved pilot and current gates
+
+The owner approved newest-first quarter cards and a single-quarter pilot.
+#0027 has imported and verified 2026 Q1; see the [measurements and acceptance
+audit](quarter-pilot.md). #0028–#0055 queue 2025 Q4 through the provisional
+2019 Q1 floor behind pilot acceptance. Wider parallel execution awaits the
+owner's next direction. No older-quarter archive was downloaded for the pilot.
+
+Continue backward until a complete quarter has zero observations of exact model
+HUH721212ALN604, extending the queue earlier if needed. Record first observation
+and first >=2,000-drive quarter separately. The old workbook compresses retained
+positions and does not establish its calendar anchor. One zero quarter is a
+bounded search endpoint, not proof against older deployments or reentry.
+
+#0056 verified the owner's private B2 connection with a small object and
+SHA-256 roundtrip. Parquet migration has not run; completed object manifests
+and byte totals must precede it. Local sources remain intact.
 
 ## Measured local verification
 
@@ -85,9 +104,10 @@ complete historical fleet coverage. #0022's language quality gates precede furth
 - Separate discovery inventory, the fixed published analysis cohort, purchase
   defaults and historical references in the #0017 contract amendment. A UI-only
   filter cannot remove the current generator's older-cohort history obligations.
-- Work backward in bounded batches, with 2026 Q1 the next proposed source after
-  the retained 2026 Q2 cache. Its catalog estimate is 1.3 GB ZIP / 12.02 GB CSV;
-  transfer limits and actual resources must be scoped before that batch executes.
+- Work backward in bounded batches. The 2026 Q1 pilot is verified after the
+  retained 2026 Q2 cache; 2025 Q4 (#0028) is next, pending pilot acceptance and
+  the owner's next execution direction. Recheck transfer limits and resources
+  before the next batch starts.
 - Establish each candidate's anchor and pre-eligibility exposure honestly. The
   first loaded qualifying quarter is not proof of the original anchor, and an
   earlier zero quarter does not exclude an older deployment followed by reentry.
@@ -96,9 +116,9 @@ complete historical fleet coverage. #0022's language quality gates precede furth
 - Extend only as far as the purchase cohort's validated history requires for the
   actionable release. Full-fleet/oldest-date completeness remains a later goal.
 
-No new archive has been transferred in the current inventory/planning pass. The
-prior cache measurements below remain evidence; the old source-order proposal is
-retained as superseded context.
+The Q1 pilot above supersedes the former inventory-only status. Earlier cache
+measurements remain evidence; the old source-order proposal below is retained
+as superseded context.
 
 ## Earlier bounded-sequence proposal (starting order superseded)
 
@@ -146,6 +166,8 @@ Earlier broad local execution envelope, still subject to separate approval:
   round trip succeeds. Local/fake-client tests are not that service verification.
   Cloudflare delivery and the long-term Glacier backup stay separate tasks.
 
-No historical archive, remote cache object, paid job or deployment was created
-by this implementation turn. #0017 remains Ready for Work with its prerequisite
-and resource gates; RFR for #0015/#0016 is not their owner acceptance.
+At the time of that earlier proposal, no historical archive or remote object had
+been created. The owner has since completed #0015/#0016/#0021/#0022/#0026.
+#0017 is now In Progress; the pilot and B2 status at the top of this document
+describe the current execution, with later history and production integration
+still pending.

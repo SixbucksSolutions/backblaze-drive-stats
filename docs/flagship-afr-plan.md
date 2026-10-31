@@ -320,9 +320,18 @@ not identify a procurement motive or a vendor confidence decision.
 
 Discover the earliest required history for the selected models and the cumulative
 denominators, estimate transfer/disk/processing needs, and present that bounded
-backfill scope before execution. ZIPs and Iceberg are equivalent source adapters
-for this purpose. No new historical download, paid compute or cloud provisioning
-is authorized by this plan.
+backfill scope before execution. ZIPs and Iceberg are alternative source adapters;
+actual source coverage must be checked. On 2026-10-31 the owner approved quarter
+cards and one newest-first pilot. #0027 imported and verified 2026 Q1 within its
+2 GiB source/10 GiB additional-disk envelope. See the [pilot result](quarter-pilot.md).
+No paid compute, broad historical fanout or production publication is implied.
+
+The provisional quarter queue reaches 2019 Q1. Continue earlier if necessary to
+find a fully covered quarter with zero HUH721212ALN604 observations across its
+evidenced aliases. Record first appearance and first >=2,000-drive quarter
+separately. Missing coverage is unknown; a single known-zero quarter meets the
+owner's bounded search rule without proving global inception or cumulative-history
+completeness. The workbook's retained relative positions do not prove calendar dates.
 Historical execution is bounded by the flagship's actual data requirements.
 Do not expand the fetch solely to reproduce the owner's contextual stories or
 populate a new supporting dashboard. Existing supporting reports must state the
@@ -333,9 +342,11 @@ coverage and population actually available to them.
 The approved phase order is unchanged. Initial years and working copies may use
 the D: SSD. **Backblaze B2 is the intended durable home for reusable Parquet,
 quarter summaries and their manifests; Cloudflare remains the CDN/delivery layer.**
-The owner will provide the B2 bucket, prefix, endpoint/region and access for remote
-integration. Keep the owner's cache configuration separate from Backblaze's
-official read-only source bucket. No bucket, token or remote data has been created.
+The owner supplied a private B2 bucket and locally stored scoped key. #0056
+verified one small upload, SHA-256 readback, reuse and separate download. Keep
+the owner's cache configuration separate from Backblaze's official read-only
+source bucket. Large cache migration requires its explicit manifest and verified
+transfer; the connection probe did not transfer Parquet.
 
 Design cache identity and relative object paths independently of storage location.
 Migration copies and verifies existing files/manifests rather than regenerating
@@ -385,6 +396,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r020**; r001–r019 are retained as history. Planned workers
+assignment revision is **r021**; r001–r020 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.
