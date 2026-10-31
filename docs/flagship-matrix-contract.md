@@ -41,23 +41,63 @@ the production versions are `flagship-metrics-v1`, `calendar-offset-v1`,
 `prior-eligible-v1` and `shared-scales-v1`. Golden numeric parity does not imply
 that unencoded workbook calendar/coverage facts have been proved.
 
-## Selection, identity and provenance
+## Seed selection, quarterly discovery, identity and provenance
 
-- Match the versioned personal HDD regular expressions against raw SMART model
-  strings before canonical normalization, preserving the current selection rule.
-  Record the patterns, their content SHA-256, normalization implementation/content
-  SHA-256, selection and normalization versions, and resolved exact model IDs.
+Owner clarification on 2026-10-30 supersedes the original closed-selection rule:
+`drives_of_interest_regexes.json` is a **2025 Q4 positive seed**, not an exhaustive
+allowlist. A normalized model matching it is known to be of interest; a non-match
+is not evidence that the model should be excluded. The seed is not an immutable
+list of vendors, families, capacities or model generations.
+
+- Preserve the versioned seed patterns and their content SHA-256, seed date,
+  normalization implementation/content hash, selection and classification versions.
+  Match seed patterns against the canonical `vendor + space + modelNumber` string.
+  A positive seed match establishes a known HDD of interest, not a waiver of the
+  2,000-drive matrix eligibility threshold. The unchanged legacy scripts and
+  workbook fixtures retain their original raw-name filtering behavior.
+- Every quarterly run inventories **all supplied models before selection**. Use
+  canonical aliases to count distinct model/serial identities in each complete
+  quarter, then discover every additional confirmed HDD that reaches at least
+  2,000 observed drives. No regex edit or membership in the initial three vendors
+  is required. Search supplied historical quarters too, so a model already below
+  threshold at the cutoff is not lost if it qualified earlier. New discoveries
+  need pre-eligibility history for their cumulative rates; missing required history
+  remains a coverage/resource gate, not permission to invent exposure.
+- `selection.inventory` audits canonical identities, vendor, `mediaClass` (`hdd`,
+  `non_hdd`, `unclassified`), classification evidence, seed match, maximum complete
+  quarterly Count, and the first complete quarter at or above 2,000. That threshold
+  quarter is population evidence even for non-HDD or unclassified entries; only
+  confirmed HDDs enter the matrix. Record unfamiliar vendors and names instead of
+  letting the old normalizer's recognized-name list discard them. Verify HDD/media
+  classification from versioned evidence; capacity or a large population alone
+  does not prove a device is an HDD.
+- Qualifying unclassified candidates stay visible in generation diagnostics with
+  their counts and the classification action needed. Do not silently exclude them,
+  invent a vendor/media class, or admit SSDs merely because Count is high. The
+  generator must finish classification for confirmed HDD admission; unresolved
+  candidates remain explicit in the audit inventory.
+- Backblaze's own new-vendor/model announcements provide additional discovery and
+  classification evidence. Reconcile them with raw observations; an announcement
+  triggers a candidate check, not automatic numerical qualification. Discovery
+  does not require a blog mention. SSDs remain outside this HDD comparison even
+  above threshold. See [primary context sources](backblaze-context-sources.md).
+- `resolvedModelIds` is the as-of cohort of known seed HDDs plus every discovered
+  qualifying HDD. Matrix blocks are exactly the historically qualifying HDDs in
+  that cohort. Seed models below 2,000 stay in supporting context without matrix
+  metrics. Model `admissionReason` is `seed` or `discovered`; later threshold exits
+  never remove a historically qualifying model or reset its anchor.
 - An identity is `(canonical normalized model, serial)`, private to processing.
   Canonical aliases may merge spelling/prefix variants of the same model. Distinct
   model numbers, including suffix variants, must remain separate. A serial moving
   between datacenters does not create another identity. Public JSON contains no
   serial numbers, per-drive dates, credentials or private object locations.
 - Each model carries stable `modelId`, exact `modelNumber`, raw model aliases and
-  a Seagate, Toshiba or WDC/HGST grouping label. Grouping does not merge histories.
-  Sort vendor blocks in that order, models lexically by exact model number.
+  a canonical vendor label. Grouping does not merge histories. Preserve Seagate,
+  Toshiba and WDC/HGST in that order, then additional vendors alphabetically;
+  sort models lexically within each vendor. Vendor names are open, not an enum.
 - Keep every selected model that ever has a complete qualifying quarter through
   the cutoff, even if currently below threshold. Models never known to qualify
-  remain in the declared selection/context population, outside matrix blocks.
+  can remain in the declared seed/context population, outside matrix blocks.
 - `provenance.sources` carries stable IDs, source revision identities and explicit
   content SHA-256 values. Hash the exact source bytes or a defined derived
   manifest, never an ETag assumed to be a content hash. `sourceManifestSha256`
@@ -302,7 +342,8 @@ unspecified edge rendering is evidence for these new policies.
 Store the resulting ordered, distinct knots, not an invalid zero-length interval.
 Show numeric values and units, a legend, accessible focus/detail text and a neutral
 color option. Vendor header colors (Seagate `#6EBE49`, Toshiba `#CC0000`, WDC/HGST
-`#00529F`) are category labels, never reliability scores. No composite score,
+`#00529F`) are category labels, never reliability scores. Additional vendors use a
+readable neutral category header until a deliberate palette is assigned. No composite score,
 automatic ranking, cliff detector or replacement prediction is defined.
 
 ## Immutable publication and validation
@@ -329,6 +370,11 @@ privacy. The generator's separate semantic validation must also verify:
   no post-cutoff input, unique model/source IDs and defined source-ID references.
 - All historically qualifying models retained; first/final qualifying quarters,
   Count threshold/state consistency, as-of status and original-anchor reentry.
+- All-source discovery before seed filtering, complete candidate inventory,
+  positive seed matches, classification evidence and exact admitted/resolved sets.
+  Include off-seed models/new vendors; exclude known non-HDDs; report unresolved
+  candidates. The aggregate validator checks internal admission consistency but
+  cannot prove an upstream inventory is exhaustive without source evidence.
 - Exact common row extent, calendar offsets, ordered quarter coverage and dates,
   real quarter day counts, cutoff boundary and accessible 20/24 guide metadata.
 - Integer component reconciliation, cumulative pre-eligibility retention, rate

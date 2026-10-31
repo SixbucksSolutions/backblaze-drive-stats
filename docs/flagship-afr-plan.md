@@ -35,9 +35,15 @@ automatic purchase or replacement-age recommendation.
 
 - Python + Polars generates static JSON offline. No request-time backend is needed.
 - Keep the personal HDD selection and canonical SMART model normalization.
+  Owner clarification, 2026-10-30: the regex list is a 2025 Q4 positive seed, not
+  an exhaustive allowlist. Each quarterly run discovers additional HDD models
+  and vendors from all supplied source data when they reach 2,000 observed drives;
+  seed non-matches must not be filtered out before discovery. Classification and
+  unfamiliar-name handling are specified in #0014's revised contract.
 - Compare exact model numbers. Family, generation and vendor labels organize
   models; they must not merge variant histories or imply equal reliability.
 - Group model columns under Seagate, Toshiba and WDC/HGST vendor headers.
+  Preserve those groups and permit additional discovered vendors.
 - Relative quarter 1 starts at the first calendar quarter with **at least 2,000
   observed drives** for the normalized model.
 - Eligibility applies in both directions. Below 2,000, the model leaves the
@@ -366,6 +372,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r005**; r001–r004 are retained as history. Planned workers
+assignment revision is **r006**; r001–r005 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

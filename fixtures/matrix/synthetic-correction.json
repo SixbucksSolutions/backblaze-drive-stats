@@ -14,24 +14,81 @@
     "time": "calendar-offset-v1",
     "delta": "prior-eligible-v1",
     "colors": "shared-scales-v1",
-    "selection": "synthetic-selection-v1",
+    "selection": "synthetic-seed-discovery-v2",
     "normalization": "synthetic-normalization-v1",
     "generator": "synthetic-fixture-v1"
   },
   "selection": {
     "id": "synthetic-selection",
-    "patternsSha256": "63d76fedaf8b5b54d057b9be674f06286a3210d76a67ea86a15f914524d1e446",
+    "patternsSha256": "b0ec44c75db68223ac6c71fb440d8849758b8f3a21b34cba4fcc2f03d5e507fe",
     "normalizationSha256": "7decc949f99c866fb754bc411f89b881d82c455543d03bb0a323fb4b079c60fc",
-    "rawMatchRule": "regex_search_raw_model_before_normalization",
+    "seedMatchRule": "regex_search_canonical_model",
+    "seedAsOfQuarter": "2025-Q4",
+    "discoveryRule": "all_source_hdd_complete_quarter_ge_2000",
+    "classificationVersion": "synthetic-classification-v1",
+    "classificationSha256": "2e38b7feadb06c2b6661e495032ee8526bb53e171dcd247dde13030c7be681cb",
     "patterns": [
-      "^ST12000NM000[78]$"
+      "^Seagate ST(?:12000NM000[78]|6000SYNTH)$"
     ],
-    "resolvedModels": [
+    "resolvedModelIds": [
       "ST12000NM0007",
-      "ST12000NM0008"
+      "ST12000NM0008",
+      "ST6000SYNTH"
+    ],
+    "inventory": [
+      {
+        "modelId": "ST12000NM0007",
+        "modelNumber": "ST12000NM0007",
+        "vendor": "Seagate",
+        "mediaClass": "hdd",
+        "classificationEvidence": "Fictional confirmed HDD classification for contract testing.",
+        "seedMatch": true,
+        "maxQuarterCount": 2300,
+        "firstQualifyingQuarter": "2024-Q1"
+      },
+      {
+        "modelId": "ST12000NM0008",
+        "modelNumber": "ST12000NM0008",
+        "vendor": "Seagate",
+        "mediaClass": "hdd",
+        "classificationEvidence": "Fictional confirmed HDD classification for contract testing.",
+        "seedMatch": true,
+        "maxQuarterCount": 2310,
+        "firstQualifyingQuarter": "2024-Q1"
+      },
+      {
+        "modelId": "ST6000SYNTH",
+        "modelNumber": "ST6000SYNTH",
+        "vendor": "Seagate",
+        "mediaClass": "hdd",
+        "classificationEvidence": "Fictional seed HDD that never reaches the threshold.",
+        "seedMatch": true,
+        "maxQuarterCount": 1999,
+        "firstQualifyingQuarter": null
+      },
+      {
+        "modelId": "SYNTH-SSD",
+        "modelNumber": "SYNTH-SSD",
+        "vendor": "ExampleVendor",
+        "mediaClass": "non_hdd",
+        "classificationEvidence": "Fictional confirmed solid-state device.",
+        "seedMatch": false,
+        "maxQuarterCount": 3000,
+        "firstQualifyingQuarter": "2024-Q1"
+      },
+      {
+        "modelId": "SYNTH-UNKNOWN",
+        "modelNumber": "SYNTH-UNKNOWN",
+        "vendor": "UnknownVendor",
+        "mediaClass": "unclassified",
+        "classificationEvidence": "Pending media classification; threshold alone does not establish HDD status.",
+        "seedMatch": false,
+        "maxQuarterCount": 2500,
+        "firstQualifyingQuarter": "2024-Q1"
+      }
     ],
     "identityRule": "normalized_model_and_serial",
-    "population": "personal_hdd_selection",
+    "population": "seed_plus_discovered_hdd",
     "minimumPopulation": 2000
   },
   "coverage": {
@@ -58,7 +115,7 @@
         "observedDays": 91,
         "observedStart": "2024-01-01",
         "observedEnd": "2024-03-31",
-        "rowCount": 364000,
+        "rowCount": 373100,
         "sourceIds": [
           "synthetic-input"
         ]
@@ -295,6 +352,7 @@
       "rawModelAliases": [
         "ST12000NM0007"
       ],
+      "admissionReason": "seed",
       "anchorQuarter": "2024-Q1",
       "finalEligibleQuarter": "2024-Q4",
       "asOfStatus": "eligible",
@@ -1036,6 +1094,7 @@
       "rawModelAliases": [
         "ST12000NM0008"
       ],
+      "admissionReason": "seed",
       "anchorQuarter": "2024-Q1",
       "finalEligibleQuarter": "2024-Q4",
       "asOfStatus": "eligible",

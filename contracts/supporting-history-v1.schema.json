@@ -21,7 +21,7 @@
     },
     "provenance": {
       "type": "object", "additionalProperties": false,
-      "required": ["kind", "sourceUrl", "attribution", "historyStart", "selectionPatterns", "selectionSha256", "notes"],
+      "required": ["kind", "sourceUrl", "attribution", "historyStart", "selectionPatterns", "selectionSha256", "seedAsOfQuarter", "discoveryRule", "classificationVersion", "selectedModelIds", "notes"],
       "properties": {
         "kind": {"enum": ["backblaze", "sample"]},
         "sourceUrl": {"type": "string", "format": "uri"},
@@ -29,6 +29,10 @@
         "historyStart": {"type": "string", "format": "date"},
         "selectionPatterns": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}},
         "selectionSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "seedAsOfQuarter": {"$ref": "#/$defs/quarter"},
+        "discoveryRule": {"const": "all_source_hdd_complete_quarter_ge_2000"},
+        "classificationVersion": {"$ref": "#/$defs/text"},
+        "selectedModelIds": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
         "notes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}}
       }
     },

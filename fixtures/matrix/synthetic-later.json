@@ -14,24 +14,92 @@
     "time": "calendar-offset-v1",
     "delta": "prior-eligible-v1",
     "colors": "shared-scales-v1",
-    "selection": "synthetic-selection-v1",
+    "selection": "synthetic-seed-discovery-v2",
     "normalization": "synthetic-normalization-v1",
     "generator": "synthetic-fixture-v1"
   },
   "selection": {
     "id": "synthetic-selection",
-    "patternsSha256": "63d76fedaf8b5b54d057b9be674f06286a3210d76a67ea86a15f914524d1e446",
+    "patternsSha256": "b0ec44c75db68223ac6c71fb440d8849758b8f3a21b34cba4fcc2f03d5e507fe",
     "normalizationSha256": "7decc949f99c866fb754bc411f89b881d82c455543d03bb0a323fb4b079c60fc",
-    "rawMatchRule": "regex_search_raw_model_before_normalization",
+    "seedMatchRule": "regex_search_canonical_model",
+    "seedAsOfQuarter": "2025-Q4",
+    "discoveryRule": "all_source_hdd_complete_quarter_ge_2000",
+    "classificationVersion": "synthetic-classification-v1",
+    "classificationSha256": "2e38b7feadb06c2b6661e495032ee8526bb53e171dcd247dde13030c7be681cb",
     "patterns": [
-      "^ST12000NM000[78]$"
+      "^Seagate ST(?:12000NM000[78]|6000SYNTH)$"
     ],
-    "resolvedModels": [
+    "resolvedModelIds": [
       "ST12000NM0007",
-      "ST12000NM0008"
+      "ST12000NM0008",
+      "FUTURE-HDD-01",
+      "ST6000SYNTH"
+    ],
+    "inventory": [
+      {
+        "modelId": "ST12000NM0007",
+        "modelNumber": "ST12000NM0007",
+        "vendor": "Seagate",
+        "mediaClass": "hdd",
+        "classificationEvidence": "Fictional confirmed HDD classification for contract testing.",
+        "seedMatch": true,
+        "maxQuarterCount": 2600,
+        "firstQualifyingQuarter": "2024-Q1"
+      },
+      {
+        "modelId": "ST12000NM0008",
+        "modelNumber": "ST12000NM0008",
+        "vendor": "Seagate",
+        "mediaClass": "hdd",
+        "classificationEvidence": "Fictional confirmed HDD classification for contract testing.",
+        "seedMatch": true,
+        "maxQuarterCount": 2610,
+        "firstQualifyingQuarter": "2024-Q1"
+      },
+      {
+        "modelId": "FUTURE-HDD-01",
+        "modelNumber": "FUTURE-HDD-01",
+        "vendor": "FutureVendor",
+        "mediaClass": "hdd",
+        "classificationEvidence": "Fictional confirmed HDD classification for contract testing.",
+        "seedMatch": false,
+        "maxQuarterCount": 2000,
+        "firstQualifyingQuarter": "2024-Q4"
+      },
+      {
+        "modelId": "ST6000SYNTH",
+        "modelNumber": "ST6000SYNTH",
+        "vendor": "Seagate",
+        "mediaClass": "hdd",
+        "classificationEvidence": "Fictional seed HDD that never reaches the threshold.",
+        "seedMatch": true,
+        "maxQuarterCount": 1999,
+        "firstQualifyingQuarter": null
+      },
+      {
+        "modelId": "SYNTH-SSD",
+        "modelNumber": "SYNTH-SSD",
+        "vendor": "ExampleVendor",
+        "mediaClass": "non_hdd",
+        "classificationEvidence": "Fictional confirmed solid-state device.",
+        "seedMatch": false,
+        "maxQuarterCount": 3000,
+        "firstQualifyingQuarter": "2024-Q1"
+      },
+      {
+        "modelId": "SYNTH-UNKNOWN",
+        "modelNumber": "SYNTH-UNKNOWN",
+        "vendor": "UnknownVendor",
+        "mediaClass": "unclassified",
+        "classificationEvidence": "Pending media classification; threshold alone does not establish HDD status.",
+        "seedMatch": false,
+        "maxQuarterCount": 2500,
+        "firstQualifyingQuarter": "2024-Q1"
+      }
     ],
     "identityRule": "normalized_model_and_serial",
-    "population": "personal_hdd_selection",
+    "population": "seed_plus_discovered_hdd",
     "minimumPopulation": 2000
   },
   "coverage": {
@@ -46,7 +114,7 @@
         "observedDays": 92,
         "observedStart": "2023-10-01",
         "observedEnd": "2023-12-31",
-        "rowCount": 368000,
+        "rowCount": 552000,
         "sourceIds": [
           "synthetic-input"
         ]
@@ -58,7 +126,7 @@
         "observedDays": 91,
         "observedStart": "2024-01-01",
         "observedEnd": "2024-03-31",
-        "rowCount": 364000,
+        "rowCount": 546000,
         "sourceIds": [
           "synthetic-input"
         ]
@@ -70,7 +138,7 @@
         "observedDays": 91,
         "observedStart": "2024-04-01",
         "observedEnd": "2024-06-30",
-        "rowCount": 364000,
+        "rowCount": 546000,
         "sourceIds": [
           "synthetic-input"
         ]
@@ -82,7 +150,7 @@
         "observedDays": 92,
         "observedStart": "2024-07-01",
         "observedEnd": "2024-09-30",
-        "rowCount": 368000,
+        "rowCount": 552000,
         "sourceIds": [
           "synthetic-input"
         ]
@@ -94,7 +162,7 @@
         "observedDays": 92,
         "observedStart": "2024-10-01",
         "observedEnd": "2024-12-31",
-        "rowCount": 368000,
+        "rowCount": 552000,
         "sourceIds": [
           "synthetic-input"
         ]
@@ -116,7 +184,7 @@
         "observedDays": 10,
         "observedStart": "2025-04-01",
         "observedEnd": "2025-04-10",
-        "rowCount": 40000,
+        "rowCount": 60000,
         "sourceIds": [
           "synthetic-input"
         ]
@@ -128,7 +196,7 @@
         "observedDays": 92,
         "observedStart": "2025-07-01",
         "observedEnd": "2025-09-30",
-        "rowCount": 368000,
+        "rowCount": 552000,
         "sourceIds": [
           "synthetic-input"
         ]
@@ -185,10 +253,10 @@
     "interpolation": "srgb_piecewise_linear_round_half_up",
     "domains": {
       "afr": {
-        "sampleCount": 6,
+        "sampleCount": 7,
         "observedMinimum": 0.13035714285714287,
-        "observedMedian": 0.28386424789514797,
-        "observedMaximum": 0.39866504854368934,
+        "observedMedian": 0.3896797153024911,
+        "observedMaximum": 0.9972677595628415,
         "knots": [
           {
             "value": 0.13035714285714287,
@@ -206,26 +274,26 @@
         "emptyColor": "#F2F2F2"
       },
       "afrDelta": {
-        "sampleCount": 6,
+        "sampleCount": 7,
         "observedMinimum": 0.001308905464373622,
-        "observedMedian": 0.024206517459840857,
-        "observedMaximum": 0.3896797153024911,
+        "observedMedian": 0.04073660714285712,
+        "observedMaximum": 0.9972677595628415,
         "knots": [
           {
             "value": 0,
             "color": "#FFFFFF"
           },
           {
-            "value": 0.3896797153024911,
+            "value": 0.9972677595628415,
             "color": "#FF0000"
           }
         ],
         "emptyColor": "#F2F2F2"
       },
       "count": {
-        "sampleCount": 8,
+        "sampleCount": 9,
         "observedMinimum": 2000,
-        "observedMedian": 2255.0,
+        "observedMedian": 2210,
         "observedMaximum": 2610,
         "knots": [
           {
@@ -233,7 +301,7 @@
             "color": "#FF0000"
           },
           {
-            "value": 2255.0,
+            "value": 2210,
             "color": "#FFFF00"
           },
           {
@@ -244,9 +312,9 @@
         "emptyColor": "#F2F2F2"
       },
       "populationDelta": {
-        "sampleCount": 8,
+        "sampleCount": 9,
         "observedMinimum": 100,
-        "observedMedian": 250.0,
+        "observedMedian": 300,
         "observedMaximum": 2010,
         "knots": [
           {
@@ -261,9 +329,9 @@
         "emptyColor": "#F2F2F2"
       },
       "new": {
-        "sampleCount": 8,
+        "sampleCount": 9,
         "observedMinimum": 21,
-        "observedMedian": 24.0,
+        "observedMedian": 24,
         "observedMaximum": 28,
         "knots": [
           {
@@ -299,9 +367,9 @@
         "emptyColor": "#F2F2F2"
       },
       "failed": {
-        "sampleCount": 8,
+        "sampleCount": 9,
         "observedMinimum": 0,
-        "observedMedian": 1.0,
+        "observedMedian": 1,
         "observedMaximum": 2,
         "knots": [
           {
@@ -309,7 +377,7 @@
             "color": "#00FF00"
           },
           {
-            "value": 1.0,
+            "value": 1,
             "color": "#FFFF00"
           },
           {
@@ -329,6 +397,7 @@
       "rawModelAliases": [
         "ST12000NM0007"
       ],
+      "admissionReason": "seed",
       "anchorQuarter": "2024-Q1",
       "finalEligibleQuarter": "2025-Q3",
       "asOfStatus": "eligible",
@@ -1100,6 +1169,7 @@
       "rawModelAliases": [
         "ST12000NM0008"
       ],
+      "admissionReason": "seed",
       "anchorQuarter": "2024-Q1",
       "finalEligibleQuarter": "2025-Q3",
       "asOfStatus": "eligible",
@@ -1836,6 +1906,736 @@
         },
         {
           "quarter": "2029-Q4",
+          "relativeQuarter": 24,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        }
+      ]
+    },
+    {
+      "modelId": "FUTURE-HDD-01",
+      "modelNumber": "FUTURE-HDD-01",
+      "vendor": "FutureVendor",
+      "rawModelAliases": [
+        "FUTURE-HDD-01"
+      ],
+      "admissionReason": "discovered",
+      "anchorQuarter": "2024-Q4",
+      "finalEligibleQuarter": "2024-Q4",
+      "asOfStatus": "below_threshold",
+      "historyStart": "2023-10-01",
+      "preEligibilityComponents": {
+        "failures": 3,
+        "driveDays": 1000,
+        "complete": true
+      },
+      "cells": [
+        {
+          "quarter": "2024-Q4",
+          "relativeQuarter": 1,
+          "state": "eligible",
+          "eligibility": "eligible",
+          "coverage": "complete",
+          "metrics": {
+            "afr": 0.9972677595628415,
+            "afrDelta": 0.9972677595628415,
+            "count": 2000,
+            "populationDelta": 2000,
+            "new": 23,
+            "retired": null,
+            "failed": 2
+          },
+          "observations": {
+            "count": 2000,
+            "new": 23,
+            "retired": null,
+            "failed": 2
+          },
+          "quarterComponents": {
+            "failures": 2,
+            "driveDays": 182000,
+            "complete": true
+          },
+          "cumulativeComponents": {
+            "failures": 5,
+            "driveDays": 183000,
+            "complete": true
+          },
+          "quarterAfr": 0.4010989010989011,
+          "deltaBaseline": {
+            "kind": "initial_zero",
+            "priorQuarter": null,
+            "elapsedQuarters": null,
+            "afr": 0,
+            "count": 0
+          },
+          "retirementInference": "unavailable",
+          "rateUnavailableReason": null
+        },
+        {
+          "quarter": "2025-Q1",
+          "relativeQuarter": 2,
+          "state": "source_missing",
+          "eligibility": "unknown",
+          "coverage": "missing",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": {
+            "failures": 0,
+            "driveDays": 0,
+            "complete": false
+          },
+          "cumulativeComponents": {
+            "failures": 5,
+            "driveDays": 183000,
+            "complete": false
+          },
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2025-Q2",
+          "relativeQuarter": 3,
+          "state": "source_incomplete",
+          "eligibility": "unknown",
+          "coverage": "incomplete",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": 2000,
+            "new": 25,
+            "retired": null,
+            "failed": 2
+          },
+          "quarterComponents": {
+            "failures": 2,
+            "driveDays": 12000,
+            "complete": false
+          },
+          "cumulativeComponents": {
+            "failures": 7,
+            "driveDays": 195000,
+            "complete": false
+          },
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2025-Q3",
+          "relativeQuarter": 4,
+          "state": "below_threshold",
+          "eligibility": "below_threshold",
+          "coverage": "complete",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": 1999,
+            "new": 26,
+            "retired": 3,
+            "failed": 3
+          },
+          "quarterComponents": {
+            "failures": 3,
+            "driveDays": 182000,
+            "complete": true
+          },
+          "cumulativeComponents": {
+            "failures": 10,
+            "driveDays": 377000,
+            "complete": false
+          },
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2025-Q4",
+          "relativeQuarter": 5,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2026-Q1",
+          "relativeQuarter": 6,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2026-Q2",
+          "relativeQuarter": 7,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2026-Q3",
+          "relativeQuarter": 8,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2026-Q4",
+          "relativeQuarter": 9,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2027-Q1",
+          "relativeQuarter": 10,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2027-Q2",
+          "relativeQuarter": 11,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2027-Q3",
+          "relativeQuarter": 12,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2027-Q4",
+          "relativeQuarter": 13,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2028-Q1",
+          "relativeQuarter": 14,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2028-Q2",
+          "relativeQuarter": 15,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2028-Q3",
+          "relativeQuarter": 16,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2028-Q4",
+          "relativeQuarter": 17,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2029-Q1",
+          "relativeQuarter": 18,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2029-Q2",
+          "relativeQuarter": 19,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2029-Q3",
+          "relativeQuarter": 20,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2029-Q4",
+          "relativeQuarter": 21,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2030-Q1",
+          "relativeQuarter": 22,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2030-Q2",
+          "relativeQuarter": 23,
+          "state": "snapshot_end",
+          "eligibility": "not_yet_observed",
+          "coverage": "outside_snapshot",
+          "metrics": {
+            "afr": null,
+            "afrDelta": null,
+            "count": null,
+            "populationDelta": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "observations": {
+            "count": null,
+            "new": null,
+            "retired": null,
+            "failed": null
+          },
+          "quarterComponents": null,
+          "cumulativeComponents": null,
+          "quarterAfr": null,
+          "deltaBaseline": null,
+          "retirementInference": "not_applicable",
+          "rateUnavailableReason": "not_displayed"
+        },
+        {
+          "quarter": "2030-Q3",
           "relativeQuarter": 24,
           "state": "snapshot_end",
           "eligibility": "not_yet_observed",

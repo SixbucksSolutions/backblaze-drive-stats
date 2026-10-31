@@ -39,10 +39,19 @@ publish signed source URLs. Parse JSON with duplicate-key rejection.
 
 Two fixed scope IDs are supported:
 
-- `selected_hdd`: apply the versioned personal regex list to raw SMART model
-  strings, then canonicalize model aliases. Publish the selection list/hash and
-  normalization version in generation metadata. All selected identities feed
-  model, manufacturer and selected total records, regardless of matrix eligibility.
+- `selected_hdd`: the snapshot's **seed-plus-discovery cohort**. Preserve the
+  2025 Q4 positive regex seed, match it against canonical normalized model names,
+  and add every confirmed HDD that qualifies at 2,000 in any complete supplied
+  quarter. The seed is not an exhaustive allowlist. Publish its patterns/hash,
+  seed date, classification version, discovery rule and `selectedModelIds`; these
+  match the matrix's `resolvedModelIds` for a paired generation. Seed models that
+  never reach 2,000 and historically admitted models now below it remain in
+  supporting context. Confirmed non-HDDs remain outside this cohort. Unclassified
+  qualifying candidates are explicit in the matrix inventory/generation report.
+  Discovery must see all-source inventory before filtering. The same versioned
+  canonical identities govern both contracts, with no three-vendor restriction.
+  Include **all aliases and pre-eligibility observations** for cohort models,
+  rather than discarding records that do not match the old seed patterns.
 - `all_supplied`: all valid source models, including boot/SSD models when present.
   Known aliases normalize; unsupported raw names remain distinct under `Unknown`
   manufacturer. This is all supplied source, not proof that Backblaze reported
@@ -62,7 +71,7 @@ Exact model variants stay separate. Family metadata never changes identity.
   Historical coverage gaps weaken deployment interpretation and must be disclosed.
 - `capacityTb`: `sum(model nominal capacity bytes × quarterly observed identities)
   / 10^12`. Nominal capacity is the mode of positive finite byte capacities among
-  daily source observations within that scope for that canonical model
+  all supplied daily source observations for that canonical model
   **through this as-of cutoff**;
   a tie chooses the smaller byte capacity. Frequency weighting is by observation,
   not unique drive. No future observations may alter an older snapshot. A model
@@ -70,11 +79,12 @@ Exact model variants stay separate. Family metadata never changes identity.
   counts remain available; do not silently drop it. A newer snapshot may revise
   earlier capacities under this documented as-of policy.
 
-  Selection is applied to source observations before canonicalization. Consequently,
-  unmatched aliases can leave selected history shorter than all-supplied history;
-  the capacity policy is common but its input frequencies can differ. A selected
-  model's observed population cannot exceed the matching all-supplied population;
-  its New or capacity value need not equal that model's all-supplied value.
+  Cohort selection follows canonical source aggregation, so each selected model's
+  counts, New and nominal capacity agree with its all-supplied row. A new as-of
+  cohort can add an off-seed model's earlier history and change historical totals
+  or shares; this is a declared cohort expansion, not necessarily fleet growth.
+  Preserve the earlier snapshot and expose cohort/version context when comparing
+  generations. Within one artifact, the as-of cohort stays fixed across quarters.
 - `capacityDeltaTb`: current minus **immediately previous calendar quarter** with
   complete, valid capacity and identical scope/semantic versions. First quarter,
   a missing predecessor, incomplete coverage or unavailable capacity yields null

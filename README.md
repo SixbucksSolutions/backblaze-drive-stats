@@ -55,7 +55,11 @@ Only aggregate JSON under `web/public/data/` is published; it contains no drive
 serial numbers. Illustrative test fixtures live separately in `web/test/fixtures/`.
 
 The initial 2026 Q2 release uses `drives_of_interest_regexes.json`, preserving the
-selected HDD population. The existing SMART-name normalization rules are shared
+selected HDD population. That list is a positive seed from 2025 Q4; the planned
+historical generator must also discover additional HDD models/vendors crossing
+2,000 drives, without requiring a regex change. The current explorer retains its
+existing fixed-filter behavior until that generator is implemented.
+The existing SMART-name normalization rules are shared
 through `drive_model_names.py`; the original analysis helper and AFR workbook keep
 their existing entry points. See [validation evidence](docs/web-validation.md).
 

@@ -3,6 +3,7 @@ from copy import deepcopy
 import importlib.util
 import json
 from pathlib import Path
+import re
 import unittest
 from tempfile import TemporaryDirectory
 
@@ -26,6 +27,7 @@ class MatrixContractTests(unittest.TestCase):
             self.assertEqual(validate_matrix(data), module.build(later))
             self.assertIn('SYNTHETIC TEST DATA', data['provenance']['dataSourceNotice'])
         self.assertEqual(validate_matrix(load('correction')), module.build(corrected=True))
+        self.assertEqual(validate_matrix(load('new-manufacturer')), module.build(new_manufacturer=True))
 
     def test_threshold_reentry_retains_calendar_age_and_previous_eligible(self):
         cells = load()['models'][0]['cells']
@@ -82,6 +84,79 @@ class MatrixContractTests(unittest.TestCase):
         self.assertNotEqual(data['models'][0]['cells'][0]['metrics'], data['models'][1]['cells'][0]['metrics'])
         self.assertEqual(data['display']['referenceGuidesAfterQuarters'], [20, 24])
         self.assertTrue(all(len(m['cells']) >= 24 and m['cells'][19]['state'] == 'snapshot_end' and m['cells'][23]['state'] == 'snapshot_end' for m in data['models']))
+
+    def test_seed_minimum_is_open_to_new_vendor_discovery_and_retains_exit(self):
+        earlier, later = load(), load('later')
+        self.assertNotIn('FUTURE-HDD-01', {m['modelId'] for m in earlier['models']})
+        model = next(m for m in later['models'] if m['modelId'] == 'FUTURE-HDD-01')
+        self.assertEqual(model['vendor'], 'FutureVendor')
+        self.assertEqual(model['admissionReason'], 'discovered')
+        self.assertEqual(model['anchorQuarter'], '2024-Q4')
+        self.assertEqual(model['cells'][0]['metrics']['count'], 2000)
+        self.assertEqual(model['finalEligibleQuarter'], '2024-Q4')
+        self.assertEqual(model['asOfStatus'], 'below_threshold')
+        self.assertEqual(model['cells'][3]['quarter'], '2025-Q3')
+        self.assertEqual(model['cells'][3]['observations']['count'], 1999)
+        self.assertTrue(all(value is None for value in model['cells'][3]['metrics'].values()))
+        self.assertIn(model['modelId'], later['selection']['resolvedModelIds'])
+
+    def test_classification_inventory_keeps_exclusions_and_pending_candidates_visible(self):
+        data = load('later')
+        selection = data['selection']
+        inventory = {m['modelId']: m for m in selection['inventory']}
+        published = {m['modelId'] for m in data['models']}
+        self.assertTrue(inventory['ST6000SYNTH']['seedMatch'])
+        self.assertIsNone(inventory['ST6000SYNTH']['firstQualifyingQuarter'])
+        self.assertEqual(inventory['ST6000SYNTH']['maxQuarterCount'], 1999)
+        self.assertIn('ST6000SYNTH', selection['resolvedModelIds'])
+        self.assertNotIn('ST6000SYNTH', published)
+        for model_id, media in [('SYNTH-SSD', 'non_hdd'), ('SYNTH-UNKNOWN', 'unclassified')]:
+            self.assertEqual(inventory[model_id]['mediaClass'], media)
+            self.assertGreaterEqual(inventory[model_id]['maxQuarterCount'], 2000)
+            self.assertTrue(inventory[model_id]['classificationEvidence'])
+            self.assertNotIn(model_id, selection['resolvedModelIds'])
+            self.assertNotIn(model_id, published)
+        self.assertIn('Pending', inventory['SYNTH-UNKNOWN']['classificationEvidence'])
+
+    def test_new_xyz_26tb_vendor_with_5000_drives_is_included_without_seed_match(self):
+        data = load('new-manufacturer')
+        model = next(m for m in data['models'] if m['modelId'] == 'XYZ26TB-01')
+        evidence = next(m for m in data['selection']['inventory'] if m['modelId'] == model['modelId'])
+        self.assertEqual(model['vendor'], 'XYZ')
+        self.assertEqual(model['admissionReason'], 'discovered')
+        self.assertFalse(evidence['seedMatch'])
+        self.assertFalse(any(re.search(pattern, f"{model['vendor']} {model['modelNumber']}") for pattern in data['selection']['patterns']))
+        self.assertIn('26 TB HDD', evidence['classificationEvidence'])
+        self.assertEqual(evidence['maxQuarterCount'], 5000)
+        self.assertEqual(model['anchorQuarter'], data['snapshot']['asOfQuarter'])
+        first = model['cells'][0]
+        self.assertEqual(first['relativeQuarter'], 1)
+        self.assertEqual(first['metrics']['count'], 5000)
+        self.assertEqual(first['metrics']['new'], 5000)
+        self.assertEqual(first['cumulativeComponents'], dict(failures=0, driveDays=5000, complete=True))
+        self.assertIn(model['modelId'], data['selection']['resolvedModelIds'])
+        self.assertEqual([m['vendor'] for m in data['models']], ['Seagate', 'Seagate', 'XYZ'])
+        self.assertNotEqual(data['snapshot']['immutablePath'], load()['snapshot']['immutablePath'])
+        self.assertNotEqual(data['provenance']['sourceManifestSha256'], load()['provenance']['sourceManifestSha256'])
+
+    def test_discovery_inventory_corruptions_are_rejected(self):
+        cases = [
+            ('missing discovered model', lambda d: d['models'].pop()),
+            ('missing candidate', lambda d: d['selection']['inventory'].pop(0)),
+            ('false seed match', lambda d: d['selection']['inventory'][-1].update(seedMatch=True)),
+            ('wrong admission', lambda d: d['models'][-1].update(admissionReason='seed')),
+            ('wrong qualifying quarter', lambda d: d['selection']['inventory'][0].update(firstQualifyingQuarter='2024-Q3')),
+            ('wrong maximum', lambda d: d['selection']['inventory'][0].update(maxQuarterCount=1999)),
+            ('SSD resolved', lambda d: d['selection']['resolvedModelIds'].append('SYNTH-SSD')),
+            ('unknown resolved', lambda d: d['selection']['resolvedModelIds'].append('SYNTH-UNKNOWN')),
+        ]
+        for label, mutate in cases:
+            with self.subTest(label=label):
+                data = load('later')
+                mutate(data)
+                data['colorScales']['domains'] = color_domains(data['models'])
+                with self.assertRaises(ValueError):
+                    validate_matrix(data)
 
     def test_corruptions_are_rejected(self):
         def change(path, value):
@@ -171,14 +246,17 @@ class MatrixContractTests(unittest.TestCase):
         for model in data['models']:
             model['asOfStatus'] = 'source_missing'
             model['finalEligibleQuarter'] = '2024-Q4'
-            cell = model['cells'][6]
+            cell_index = next(i for i, c in enumerate(model['cells']) if c['quarter'] == '2025-Q3')
+            cell = model['cells'][cell_index]
             cell.update(state='source_missing', eligibility='unknown', coverage='missing',
                         metrics={k: None for k in cell['metrics']},
                         observations={k: None for k in cell['observations']},
                         quarterComponents=dict(failures=0, driveDays=0, complete=False),
-                        cumulativeComponents=deepcopy(model['cells'][5]['cumulativeComponents']),
+                        cumulativeComponents=deepcopy(model['cells'][cell_index - 1]['cumulativeComponents']),
                         quarterAfr=None, deltaBaseline=None, retirementInference='not_applicable',
                         rateUnavailableReason='not_displayed')
+            inventory = next(m for m in data['selection']['inventory'] if m['modelId'] == model['modelId'])
+            inventory['maxQuarterCount'] = max(c['observations']['count'] for c in model['cells'] if c['coverage'] == 'complete')
         data['colorScales']['domains'] = color_domains(data['models'])
         # The selected population's June 10 maximum leaves only one usable
         # observed day, although the validated source window spans ten days.
@@ -209,6 +287,7 @@ class MatrixContractTests(unittest.TestCase):
         population = 100000000000
         cell['metrics']['count'] = float(population)
         cell['observations']['count'] = float(population + 1)
+        data['selection']['inventory'][0]['maxQuarterCount'] = population + 1
         cell['quarterComponents']['driveDays'] = population + 1
         cell['cumulativeComponents']['driveDays'] = population + 100001
         # JSON Schema treats integer-valued floats as mathematical integers.

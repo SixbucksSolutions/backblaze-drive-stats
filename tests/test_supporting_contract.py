@@ -96,6 +96,29 @@ class SupportingContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Duplicate JSON key"):
                 load_supporting(path)
 
+    def test_seed_plus_discovery_cohort_is_explicit_and_not_silently_filtered(self):
+        self.assertEqual(self.fixture["provenance"]["seedAsOfQuarter"], "2025-Q4")
+        self.assertEqual(self.fixture["provenance"]["discoveryRule"], "all_source_hdd_complete_quarter_ge_2000")
+        malformed = deepcopy(self.fixture)
+        malformed["provenance"]["selectedModelIds"].remove("SAMPLE-HDD-B")
+        with self.assertRaisesRegex(ValueError, "outside resolved discovery cohort"):
+            validate_supporting(malformed)
+        malformed = deepcopy(self.fixture)
+        # A resolved model present in all-source data cannot be omitted by a
+        # seed-only view while its locally adjusted totals still reconcile.
+        malformed["provenance"]["selectedModelIds"].append("SAMPLE-SSD")
+        with self.assertRaisesRegex(ValueError, "silently omitted"):
+            validate_supporting(malformed)
+
+    def test_selected_cohort_retains_all_canonical_alias_observations(self):
+        malformed = deepcopy(self.fixture)
+        selected = malformed["quarters"][0]["scopes"][0]
+        selected["models"][0]["measures"]["newDrives"] -= 1
+        selected["totals"]["newDrives"] -= 1
+        selected["manufacturers"][0]["measures"]["newDrives"] -= 1
+        with self.assertRaisesRegex(ValueError, "all canonical alias observations"):
+            validate_supporting(malformed)
+
 
 if __name__ == "__main__":
     unittest.main()

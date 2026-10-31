@@ -9,6 +9,7 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 import json
 import math
+import re
 from pathlib import Path
 import statistics
 from urllib.parse import urlsplit
@@ -172,15 +173,44 @@ def validate_matrix(data):
     check(any(q['observedStart'] is not None and q['observedStart'] <= newest <= q['observedEnd'] for q in qs), 'newest selected observation outside coverage')
     by_q = {q['quarter']: q for q in qs}
     ids = [m['modelId'] for m in data['models']]
-    names = [m['modelNumber'] for m in data['models']]
-    check(len(ids) == len(set(ids)) and len(names) == len(set(names)), 'duplicate model identity')
+    identities = [(m['vendor'], m['modelNumber']) for m in data['models']]
+    check(len(ids) == len(set(ids)) and len(identities) == len(set(identities)), 'duplicate model identity')
     vendor_order = {'Seagate': 0, 'Toshiba': 1, 'WDC/HGST': 2}
-    check(data['models'] == sorted(data['models'], key=lambda m: (vendor_order[m['vendor']], m['modelNumber'])), 'model block ordering')
-    check(set(names) <= set(data['selection']['resolvedModels']), 'resolved model inventory')
+    check(data['models'] == sorted(data['models'], key=lambda m: (vendor_order.get(m['vendor'], 3), m['vendor'], m['modelNumber'])), 'model block ordering')
+    selection = data['selection']
+    inventory = selection['inventory']
+    inventory_ids = [m['modelId'] for m in inventory]
+    check(len(inventory_ids) == len(set(inventory_ids)), 'duplicate inventory model ID')
+    inventory_names = [(m['vendor'], m['modelNumber']) for m in inventory]
+    check(len(inventory_names) == len(set(inventory_names)), 'duplicate inventory canonical identity')
+    try:
+        patterns = [re.compile(pattern) for pattern in selection['patterns']]
+    except re.error as error:
+        raise ValueError('invalid seed regex') from error
+    resolved, qualifying = set(), {}
+    for item in inventory:
+        match = any(pattern.search(f"{item['vendor']} {item['modelNumber']}") for pattern in patterns)
+        equal(item['seedMatch'], match, 'seed positive match')
+        check(not match or item['mediaClass'] == 'hdd', 'positive seed must retain known HDD classification')
+        first = item['firstQualifyingQuarter']
+        check((first is not None) == (item['maxQuarterCount'] >= 2000), 'inventory qualification threshold')
+        if first is not None:
+            check(coverage['historyStart'] <= first <= snap['asOfQuarter'] and by_q[first]['status'] == 'complete', 'inventory qualifying coverage')
+        if item['mediaClass'] == 'hdd':
+            if match or first is not None:
+                resolved.add(item['modelId'])
+            if first is not None:
+                qualifying[item['modelId']] = item
+    equal(set(selection['resolvedModelIds']), resolved, 'resolved seed-plus-discovery inventory')
+    equal(set(ids), set(qualifying), 'all qualifying HDDs must have model blocks')
     check(data['display']['maxRelativeQuarter'] >= max([24] + [cutoff - ordinal(m['anchorQuarter']) + 1 for m in data['models']]), 'display horizon before cutoff')
     known_drive_days = {q['quarter']: 0 for q in qs}
     preanchor_drive_days = 0
     for model in data['models']:
+        item = qualifying[model['modelId']]
+        equal((model['vendor'], model['modelNumber']), (item['vendor'], item['modelNumber']), 'inventory canonical identity')
+        equal(model['admissionReason'], 'seed' if item['seedMatch'] else 'discovered', 'model admission reason')
+        equal(model['anchorQuarter'], item['firstQualifyingQuarter'], 'inventory anchor')
         anchor = ordinal(model['anchorQuarter'])
         check(anchor >= ordinal(coverage['historyStart']) and anchor <= cutoff, 'anchor coverage')
         cells = model['cells']
@@ -263,6 +293,7 @@ def validate_matrix(data):
         check(eligible and eligible[0] == model['anchorQuarter'], 'first qualifying anchor')
         equal(model['finalEligibleQuarter'], eligible[-1], 'final eligible quarter')
         equal(model['asOfStatus'], cells[cutoff - anchor]['state'], 'asof status')
+        equal(item['maxQuarterCount'], max(c['observations']['count'] for c in cells if c['coverage'] == 'complete'), 'inventory maximum complete-quarter population')
     for q in qs:
         check(known_drive_days[q['quarter']] <= q['rowCount'], 'selected exposure exceeds source rows ' + q['quarter'])
     for boundary in sorted({ordinal(m['anchorQuarter']) for m in data['models']}):

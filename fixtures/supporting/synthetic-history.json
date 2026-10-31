@@ -5,7 +5,7 @@
   "asOfQuarter": "2025-Q2",
   "sourceManifestSha256": "4d8b95b23c3eef99d115145cdc9582199dbdeb4dd8169d9e7941504312c064b9",
   "versions": {
-    "selection": "synthetic-selection-v1",
+    "selection": "synthetic-seed-discovery-v2",
     "normalization": "synthetic-normalization-v1",
     "metrics": "supporting-v1",
     "capacity": "positive-observation-mode-tie-smallest-v1"
@@ -21,7 +21,15 @@
     "selectionSha256": "aaa3c3e21e6c7f2b0b373e9c61244913d6319b7e062ab6ff2f60c4bfb737ffbd",
     "notes": [
       "All numbers and model names are synthetic. Manifest hash identifies a synthetic test description, not a downloaded source.",
-      "Includes a 500-drive model below the matrix threshold, all-supplied SSDs, unknown location, zero population, missing/incomplete coverage and unavailable capacity."
+      "Includes a 500-drive model below the matrix threshold, all-supplied SSDs, unknown location, zero population, missing/incomplete coverage and unavailable capacity.",
+      "The fictional seed and resolved cohort illustrate positive selection plus dynamic discovery, not an exhaustive real model filter."
+    ],
+    "seedAsOfQuarter": "2025-Q4",
+    "discoveryRule": "all_source_hdd_complete_quarter_ge_2000",
+    "classificationVersion": "synthetic-media-registry-v1",
+    "selectedModelIds": [
+      "SAMPLE-HDD-A",
+      "SAMPLE-HDD-B"
     ]
   },
   "quarters": [

@@ -91,6 +91,7 @@ def validate_supporting(value: dict) -> None:
                 expected = None if any(v is None for v in values) else sum(values)
                 _require(totals[metric] == expected if metric != "capacityTb" else _equal(totals[metric], expected), f"model total mismatch: {metric}")
             if selected:
+                _require({m["id"] for m in models} <= set(value["provenance"]["selectedModelIds"]), "model outside resolved discovery cohort")
                 _require(not scope["datacenters"] and scope["knownLocationShare"] is None, "selected scope has no datacenter rollup")
                 names = {m["manufacturer"] for m in models}
                 _require({m["manufacturer"] for m in scope["manufacturers"]} == names and len(scope["manufacturers"]) == len(names), "manufacturer set mismatch")
@@ -131,7 +132,11 @@ def validate_supporting(value: dict) -> None:
             all_rows = {m["id"]: m for m in next(s for s in scopes if s["scopeId"] == "all_supplied")["models"]}
             for model in chosen["models"]:
                 full = all_rows.get(model["id"])
-                _require(full is not None and full["manufacturer"] == model["manufacturer"] and full["model"] == model["model"] and model["measures"]["driveCount"] <= full["measures"]["driveCount"], "selected population is not a subset of all supplied")
+                _require(full is not None and full["manufacturer"] == model["manufacturer"] and full["model"] == model["model"], "selected population is not a subset of all supplied")
+                for metric in ("driveCount", "newDrives", "capacityTb"):
+                    _require(model["measures"][metric] == full["measures"][metric] if metric != "capacityTb" else _equal(model["measures"][metric], full["measures"][metric]), "selected model must retain all canonical alias observations")
+            expected = set(value["provenance"]["selectedModelIds"]) & set(all_rows)
+            _require({m["id"] for m in chosen["models"]} == expected, "selected cohort model silently omitted")
 
 
 if __name__ == "__main__":

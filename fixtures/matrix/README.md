@@ -1,8 +1,9 @@
 # Synthetic production-contract fixtures
 
-All figures in this directory are invented aggregate test values. Model names
-identify exact real-world suffix variants only to test identity separation; the
-values make **no claims about observed Backblaze performance**. These artifacts
+All figures in this directory are invented aggregate test values. The two
+Seagate names identify exact real-world suffix variants to test identity
+separation; other model and vendor names are fictional. The values make
+**no claims about observed Backblaze performance**. These artifacts
 are separate from the measured legacy workbook extractions in `../workbooks`.
 
 - `synthetic-earlier.json`: 2024 Q4 cutoff, complete supplied history beginning
@@ -13,10 +14,38 @@ are separate from the measured legacy workbook extractions in `../workbooks`.
   cells. Reentry shows known Count/New/Failed and quarterly AFR while cumulative
   AFR/Delta remain unavailable. Later coverage uncertainty revises old inferred
   retirement counts to unavailable, preserving the earlier artifact.
+  A fictional confirmed HDD from `FutureVendor`, absent from the seed patterns,
+  first qualifies at exactly 2,000 in 2024 Q4. Its row remains tracked after
+  falling to 1,999 in 2025 Q3, with the original anchor and hidden exit metrics.
 - `synthetic-correction.json`: a separate generation at the same 2024 Q4 cutoff,
   with revised synthetic input/manifest identities. Earlier 2024 Q1 inferred
   Retired changes from 6 to 4 for `ST12000NM0007` and 5 to 3 for its suffix variant;
   the predecessor path remains unchanged. This is a source-correction example.
+- `synthetic-new-manufacturer.json`: a separate 2024 Q4 snapshot with complete
+  supplied history, adding an entirely new fictional manufacturer, `XYZ`, with
+  5,000 `XYZ26TB-01` 26 TB HDDs in the cutoff quarter. This off-seed model is
+  included at relative quarter 1, with New = 5,000, no pre-eligibility exposure
+  and 5,000 recorded drive-days. Its synthetic source and manifest identities
+  differ from the earlier snapshot. Capacity is stated only in the synthetic
+  classification evidence; it does not add a capacity field to the contract.
+
+Selection metadata treats the seed patterns as a 2025 Q4 minimum, with all-source
+HDD discovery independent of regex matching. The synthetic seed is deliberately
+small; it does not reproduce the owner's complete seed file. Classification
+version, digest and per-model evidence identify the fictional classification
+audit. Every snapshot also includes these inventory cases:
+
+- A seed HDD that never reaches 2,000 stays in the resolved supporting cohort
+  but has no flagship matrix row.
+- A confirmed non-HDD exceeds 2,000 and remains excluded from both cohorts.
+- An unclassified model exceeds 2,000 and remains an explicit pending candidate,
+  with classification evidence explaining why it has no flagship row.
+
+The later snapshot adds the off-seed future-vendor HDD to the resolved cohort and
+matrix. Inventory qualification records use complete-quarter population maxima;
+the first threshold quarter remains recorded even for excluded non-HDD and
+pending candidates. These aggregates illustrate the discovery contract, without
+claiming that a daily-source scan or classification research was performed.
 
 Every model has 24 calendar-aligned cells, retaining snapshot-ended distance to
 the guides after quarters 20 and 24. The first model's first eligible quarter has
@@ -24,9 +53,10 @@ zero current failures but a nonzero cumulative AFR from pre-eligibility exposure
 and failures. Deltas use the previous eligible row and record elapsed calendar
 quarters; sub-threshold exposure still contributes to subsequent cumulative AFR.
 
-`build_synthetic.py` deterministically regenerates the three files. The public
+`build_synthetic.py` deterministically regenerates the four files. The public
 contract validator checks structure, finite arithmetic, coverage metadata,
-thresholds, offsets, baselines, retirement status and shared color domains.
+thresholds, classification inventory, seed/discovery admission, open vendor
+ordering, offsets, baselines, retirement status and shared color domains.
 Tests also cover empty/tied/constant/zero-only color domains and exact encoded
 sRGB interpolation. The validator cannot prove the underlying daily observations,
 source hashes, anchor discovery or last-seen identity computations: those require
@@ -38,5 +68,5 @@ Run from the repository root:
 ```powershell
 .\.venv\Scripts\python.exe fixtures/matrix/build_synthetic.py
 .\.venv\Scripts\python.exe -m unittest tests.test_matrix_contract
-.\.venv\Scripts\python.exe tools/validate_matrix_contract.py fixtures/matrix/synthetic-earlier.json fixtures/matrix/synthetic-later.json fixtures/matrix/synthetic-correction.json
+.\.venv\Scripts\python.exe tools/validate_matrix_contract.py fixtures/matrix/synthetic-earlier.json fixtures/matrix/synthetic-later.json fixtures/matrix/synthetic-correction.json fixtures/matrix/synthetic-new-manufacturer.json
 ```

@@ -115,12 +115,17 @@
         "id",
         "patternsSha256",
         "normalizationSha256",
-        "rawMatchRule",
         "patterns",
-        "resolvedModels",
         "identityRule",
         "population",
-        "minimumPopulation"
+        "minimumPopulation",
+        "seedMatchRule",
+        "seedAsOfQuarter",
+        "discoveryRule",
+        "classificationVersion",
+        "classificationSha256",
+        "resolvedModelIds",
+        "inventory"
       ],
       "properties": {
         "id": {
@@ -135,9 +140,6 @@
           "type": "string",
           "pattern": "^[a-f0-9]{64}$"
         },
-        "rawMatchRule": {
-          "const": "regex_search_raw_model_before_normalization"
-        },
         "patterns": {
           "type": "array",
           "items": {
@@ -146,7 +148,32 @@
           },
           "minItems": 1
         },
-        "resolvedModels": {
+        "identityRule": {
+          "const": "normalized_model_and_serial"
+        },
+        "population": {
+          "const": "seed_plus_discovered_hdd"
+        },
+        "minimumPopulation": {
+          "const": 2000
+        },
+        "seedMatchRule": {
+          "const": "regex_search_canonical_model"
+        },
+        "seedAsOfQuarter": {
+          "$ref": "#/$defs/quarter"
+        },
+        "discoveryRule": {
+          "const": "all_source_hdd_complete_quarter_ge_2000"
+        },
+        "classificationVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "classificationSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "resolvedModelIds": {
           "type": "array",
           "items": {
             "type": "string",
@@ -154,14 +181,12 @@
           },
           "uniqueItems": true
         },
-        "identityRule": {
-          "const": "normalized_model_and_serial"
-        },
-        "population": {
-          "const": "personal_hdd_selection"
-        },
-        "minimumPopulation": {
-          "const": 2000
+        "inventory": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inventoryModel"
+          },
+          "minItems": 1
         }
       }
     },
@@ -1148,7 +1173,8 @@
         "asOfStatus",
         "historyStart",
         "preEligibilityComponents",
-        "cells"
+        "cells",
+        "admissionReason"
       ],
       "properties": {
         "modelId": {
@@ -1160,11 +1186,8 @@
           "minLength": 1
         },
         "vendor": {
-          "enum": [
-            "Seagate",
-            "Toshiba",
-            "WDC/HGST"
-          ]
+          "type": "string",
+          "minLength": 1
         },
         "rawModelAliases": {
           "type": "array",
@@ -1204,6 +1227,12 @@
             "$ref": "#/$defs/cell"
           },
           "minItems": 24
+        },
+        "admissionReason": {
+          "enum": [
+            "seed",
+            "discovered"
+          ]
         }
       }
     },
@@ -1276,6 +1305,62 @@
         },
         "emptyColor": {
           "const": "#F2F2F2"
+        }
+      }
+    },
+    "inventoryModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelId",
+        "modelNumber",
+        "vendor",
+        "mediaClass",
+        "classificationEvidence",
+        "seedMatch",
+        "maxQuarterCount",
+        "firstQualifyingQuarter"
+      ],
+      "properties": {
+        "modelId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modelNumber": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vendor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mediaClass": {
+          "enum": [
+            "hdd",
+            "non_hdd",
+            "unclassified"
+          ]
+        },
+        "classificationEvidence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "seedMatch": {
+          "type": "boolean"
+        },
+        "maxQuarterCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "firstQualifyingQuarter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/quarter"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     }

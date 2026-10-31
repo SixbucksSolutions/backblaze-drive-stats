@@ -15,31 +15,39 @@ def digest(text):
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def build(later=False, corrected=False):
+def build(later=False, corrected=False, new_manufacturer=False):
     asof = '2025-Q3' if later else '2024-Q4'
     sid = 'synthetic-later-v1' if later else 'synthetic-earlier-v1'
     if corrected:
         sid = 'synthetic-correction-v1'
+    if new_manufacturer:
+        sid = 'synthetic-new-manufacturer-v1'
     quarters = []
     for n in range(ordinal('2023-Q4'), ordinal(asof) + 1):
         q = quarter(n)
         start, end = bounds(q)
         status = {'2025-Q1': 'missing', '2025-Q2': 'incomplete'}.get(q, 'complete')
         observed = (end - start).days + 1 if status == 'complete' else (0 if status == 'missing' else 10)
+        # Q1 also has enough unfiltered rows for the non-displayed inventory
+        # candidates; keep the earlier pre-anchor source budget unchanged.
         quarters.append(dict(quarter=q, status=status, expectedDays=(end - start).days + 1,
                              observedDays=observed, observedStart=str(start) if observed else None,
                              observedEnd=str(end if status == 'complete' else start + timedelta(days=observed - 1)) if observed else None,
-                             rowCount=observed * 4000, sourceIds=['synthetic-input'] if observed else []))
+                             rowCount=observed * (6000 if later else (4100 if q == '2024-Q1' else 4000)), sourceIds=['synthetic-input'] if observed else []))
     models = []
-    for variant in (0, 1):
-        number = f'ST12000NM000{7 + variant}'
-        model = dict(modelId=number, modelNumber=number, vendor='Seagate', rawModelAliases=[number],
-                     anchorQuarter='2024-Q1', finalEligibleQuarter=asof, asOfStatus='eligible', historyStart='2023-10-01',
-                     preEligibilityComponents=dict(failures=1 + variant, driveDays=100000, complete=True), cells=[])
+    for variant in ([0, 1, 3] if new_manufacturer else range(3 if later else 2)):
+        discovered = variant >= 2
+        newest_vendor = variant == 3
+        number = 'XYZ26TB-01' if newest_vendor else ('FUTURE-HDD-01' if discovered else f'ST12000NM000{7 + variant}')
+        anchor = asof if newest_vendor else ('2024-Q4' if discovered else '2024-Q1')
+        model = dict(modelId=number, modelNumber=number, vendor='XYZ' if newest_vendor else ('FutureVendor' if discovered else 'Seagate'), rawModelAliases=[number],
+                     admissionReason='discovered' if discovered else 'seed',
+                     anchorQuarter=anchor, finalEligibleQuarter=anchor if discovered else asof, asOfStatus='below_threshold' if variant == 2 else 'eligible', historyStart=str(bounds(asof)[0]) if newest_vendor else '2023-10-01',
+                     preEligibilityComponents=dict(failures=0 if newest_vendor else 1 + variant, driveDays=0 if newest_vendor else (1000 if discovered else 100000), complete=True), cells=[])
         cumulative = deepcopy(model['preEligibilityComponents'])
         prior = None
         for relative in range(1, 25):
-            q = quarter(ordinal('2024-Q1') + relative - 1)
+            q = quarter(ordinal(anchor) + relative - 1)
             blank = {m: None for m in METRICS}
             obs = dict(count=None, new=None, retired=None, failed=None)
             if ordinal(q) > ordinal(asof):
@@ -49,7 +57,13 @@ def build(later=False, corrected=False):
             count = (1999 if relative == 2 else 2000 + 100 * (relative - 1)) + variant * 10
             if relative == 2:
                 count = 1999 - variant
+            if discovered:
+                count = 1999 if q == asof else 2000
+            if newest_vendor:
+                count = 5000
             failed = (0 if relative == 1 else relative % 3) + variant
+            if newest_vendor:
+                failed = 0
             # Later evidence revises an earlier last-seen inference. The source
             # gap also makes that inference unavailable in the later snapshot.
             retired = (6 - variant if relative == 1 else 10 + variant)
@@ -63,10 +77,12 @@ def build(later=False, corrected=False):
                 state, eligibility = 'source_missing', 'unknown'
                 qc = dict(failures=0, driveDays=0, complete=False)
             else:
-                obs = dict(count=count, new=20 + relative + variant, retired=retired, failed=failed)
+                obs = dict(count=count, new=5000 if newest_vendor else 20 + relative + variant, retired=retired, failed=failed)
                 state = 'source_incomplete' if coverage == 'incomplete' else ('eligible' if count >= 2000 else 'below_threshold')
                 eligibility = 'unknown' if coverage == 'incomplete' else state
                 qc = dict(failures=failed, driveDays=(10000 if coverage == 'incomplete' else 180000) + variant * 1000, complete=coverage == 'complete')
+                if newest_vendor:
+                    qc['driveDays'] = 5000
             cumulative = dict(failures=cumulative['failures'] + qc['failures'], driveDays=cumulative['driveDays'] + qc['driveDays'], complete=cumulative['complete'] and qc['complete'])
             baseline, qafr, inference, reason = None, None, 'not_applicable', 'not_displayed'
             if state == 'eligible':
@@ -83,12 +99,34 @@ def build(later=False, corrected=False):
             if state == 'eligible':
                 prior = cell
         models.append(model)
+    inventory = [dict(modelId=m['modelId'], modelNumber=m['modelNumber'], vendor=m['vendor'],
+                      mediaClass='hdd', classificationEvidence='Synthetic proof for contract testing only: fictional XYZ 26 TB HDD.' if m['vendor'] == 'XYZ' else 'Fictional confirmed HDD classification for contract testing.',
+                      seedMatch=m['admissionReason'] == 'seed',
+                      maxQuarterCount=max(c['observations']['count'] for c in m['cells'] if c['coverage'] == 'complete'),
+                      firstQualifyingQuarter=m['anchorQuarter']) for m in models]
+    inventory.extend([
+        dict(modelId='ST6000SYNTH', modelNumber='ST6000SYNTH', vendor='Seagate', mediaClass='hdd',
+             classificationEvidence='Fictional seed HDD that never reaches the threshold.', seedMatch=True,
+             maxQuarterCount=1999, firstQualifyingQuarter=None),
+        dict(modelId='SYNTH-SSD', modelNumber='SYNTH-SSD', vendor='ExampleVendor', mediaClass='non_hdd',
+             classificationEvidence='Fictional confirmed solid-state device.', seedMatch=False,
+             maxQuarterCount=3000, firstQualifyingQuarter='2024-Q1'),
+        dict(modelId='SYNTH-UNKNOWN', modelNumber='SYNTH-UNKNOWN', vendor='UnknownVendor', mediaClass='unclassified',
+             classificationEvidence='Pending media classification; threshold alone does not establish HDD status.', seedMatch=False,
+             maxQuarterCount=2500, firstQualifyingQuarter='2024-Q1'),
+    ])
+    patterns = [r'^Seagate ST(?:12000NM000[78]|6000SYNTH)$']
     result = dict(artifactType='flagship_matrix', contractVersion='1.0.0',
-        snapshot=dict(id=sid, asOfQuarter=asof, cutoffDate=str(bounds(asof)[1]), generatedAt='2026-10-30T12:00:00Z', revisionOf='synthetic-earlier-v1' if later or corrected else None, immutablePath=f'synthetic/{sid}/matrix.json'),
-        versions=dict(metrics='flagship-metrics-v1', time='calendar-offset-v1', delta='prior-eligible-v1', colors='shared-scales-v1', selection='synthetic-selection-v1', normalization='synthetic-normalization-v1', generator='synthetic-fixture-v1'),
-        selection=dict(id='synthetic-selection', patternsSha256=digest('^ST12000NM000[78]$'), normalizationSha256=digest('synthetic exact identity'), rawMatchRule='regex_search_raw_model_before_normalization', patterns=['^ST12000NM000[78]$'], resolvedModels=[m['modelNumber'] for m in models], identityRule='normalized_model_and_serial', population='personal_hdd_selection', minimumPopulation=2000),
+        snapshot=dict(id=sid, asOfQuarter=asof, cutoffDate=str(bounds(asof)[1]), generatedAt='2026-10-30T12:00:00Z', revisionOf='synthetic-earlier-v1' if later or corrected or new_manufacturer else None, immutablePath=f'synthetic/{sid}/matrix.json'),
+        versions=dict(metrics='flagship-metrics-v1', time='calendar-offset-v1', delta='prior-eligible-v1', colors='shared-scales-v1', selection='synthetic-seed-discovery-v2', normalization='synthetic-normalization-v1', generator='synthetic-fixture-v1'),
+        selection=dict(id='synthetic-selection', patternsSha256=digest(patterns[0]), normalizationSha256=digest('synthetic exact identity'),
+                       seedMatchRule='regex_search_canonical_model', seedAsOfQuarter='2025-Q4',
+                       discoveryRule='all_source_hdd_complete_quarter_ge_2000', classificationVersion='synthetic-classification-v1',
+                       classificationSha256=digest('fictional media classification v1'), patterns=patterns,
+                       resolvedModelIds=[m['modelId'] for m in inventory if m['mediaClass'] == 'hdd' and (m['seedMatch'] or m['firstQualifyingQuarter'] is not None)],
+                       inventory=inventory, identityRule='normalized_model_and_serial', population='seed_plus_discovered_hdd', minimumPopulation=2000),
         coverage=dict(historyStart='2023-Q4', throughQuarter=asof, anchorSearchComplete=True, quarters=quarters, newestObservationDate=str(bounds(asof)[1])),
-        provenance=dict(sources=[dict(id='synthetic-input', kind='derived_manifest', publicUrl=None, sha256=digest('fictional corrected aggregate input v1' if corrected else 'fictional aggregate input v1'), revision='synthetic-correction-v1' if corrected else 'synthetic-v1')], sourceManifestSha256=digest('fictional corrected aggregate manifest v1' if corrected else 'fictional aggregate manifest v1'), dataSourceNotice='SYNTHETIC TEST DATA. All values are invented; no observed Backblaze figures.', projectAttribution='Independent Backblaze Drive Stats analysis project; synthetic contract example.', datasetAttribution='No Backblaze dataset records are included in this synthetic example.'),
+        provenance=dict(sources=[dict(id='synthetic-input', kind='derived_manifest', publicUrl=None, sha256=digest('fictional XYZ aggregate input v1' if new_manufacturer else ('fictional corrected aggregate input v1' if corrected else 'fictional aggregate input v1')), revision=sid if new_manufacturer or corrected else 'synthetic-v1')], sourceManifestSha256=digest('fictional XYZ aggregate manifest v1' if new_manufacturer else ('fictional corrected aggregate manifest v1' if corrected else 'fictional aggregate manifest v1')), dataSourceNotice='SYNTHETIC TEST DATA. All values are invented; no observed Backblaze figures.', projectAttribution='Independent Backblaze Drive Stats analysis project; synthetic contract example.', datasetAttribution='No Backblaze dataset records are included in this synthetic example.'),
         display=dict(quarterLabel='YYYY Qn', maxRelativeQuarter=24, defaultGuideAfterQuarter=20, referenceGuidesAfterQuarters=[20, 24], metricOrder=list(METRICS), units=dict(afr='percent', afrDelta='percentage_points', count='drives', populationDelta='drives', new='drives', retired='drives', failed='daily_failure_flags', exposure='recorded_drive_days')),
         colorScales=dict(scope='all_numeric_eligible_cells_in_snapshot', percentile='inclusive_linear_n_minus_1', interpolation='srgb_piecewise_linear_round_half_up', domains=color_domains(models)), models=models)
     validate_matrix(result)
@@ -100,3 +138,4 @@ if __name__ == '__main__':
         data = build(later)
         (Path(__file__).parent / ('synthetic-later.json' if later else 'synthetic-earlier.json')).write_text(json.dumps(data, indent=2, allow_nan=False) + '\n', encoding='utf-8')
     (Path(__file__).parent / 'synthetic-correction.json').write_text(json.dumps(build(corrected=True), indent=2, allow_nan=False) + '\n', encoding='utf-8')
+    (Path(__file__).parent / 'synthetic-new-manufacturer.json').write_text(json.dumps(build(new_manufacturer=True), indent=2, allow_nan=False) + '\n', encoding='utf-8')
