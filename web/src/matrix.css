@@ -52,6 +52,14 @@
 .comparison-matrix .guide-label{position:absolute;inset:0 -1px 0 auto;display:block;width:var(--matrix-frozen-size,124px);box-sizing:border-box;transform:none;margin:0;text-align:center}
 .matrix-filters #matrix-guide{width:56px;padding-inline:6px;text-align:center;text-align-last:center}
 .matrix-options-heading{margin:0;padding:16px 18px 0;color:#243d36;font-size:14px;font-weight:600;line-height:1.3}
+.matrix-table-footer{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:12px 18px}
+.matrix-table-footer>.matrix-states{flex:1 1 430px;min-width:0;padding:0}
+.matrix-table-footer>.matrix-tools{flex:0 0 auto;margin:0 0 0 auto;border:0;background:transparent}
+.matrix-table-footer .matrix-options-heading{margin:0 0 6px;padding:0;font-size:11px}
+.matrix-table-footer .matrix-filters{padding:0;gap:14px}
+.matrix-table-footer .matrix-filters>label:first-child{display:flex;align-items:center;gap:7px;width:auto}
+.matrix-table-footer .matrix-filters #matrix-guide{height:30px;margin:0}
+.matrix-table-footer .matrix-filters .matrix-check{height:30px;font-size:11px}
 
 /* Native scrollbar rails bound only the movable rows/columns. The single table
    keeps its accessible structure, sticky headings and wheel/touch scrolling. */

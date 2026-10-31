@@ -167,7 +167,9 @@ Provide one horizontal deployment-history guide using a compact, centered
 **Guide after year** dropdown with choices 1–6, defaulting to **6**. The owner's
 final 2026-10-31 refinement replaces the former pair of guides. Place the single
 guide after Q4 of the chosen relative year; year 6 means quarter 24. Its label
-spans the frozen Year and Quarter columns. Keep the age axis and guide reachable even when
+spans the frozen Year and Quarter columns. Group the dropdown and **Show data colors**
+under **Table display** at the footer's right side, beside the state legends;
+wrap below them on narrow screens. Keep the age axis and guide reachable even when
 all visible candidates have shorter histories; for example, the 14-quarter
 promising reference still needs its unobserved distance to the target visible.
 Future/unobserved age cells must not look like confirmed threshold exits.

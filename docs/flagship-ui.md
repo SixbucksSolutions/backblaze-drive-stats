@@ -280,10 +280,11 @@ Evidence under `data/staging/ui-0015/typography/`:
 
 ## Final guide and color controls
 
-The owner closed this UI review round after these final refinements:
+The owner's final controls review requested these refinements:
 
-- **Table display** titles the guide/color control section and labels its region
-  for assistive technology.
+- **Table display** titles the guide/color controls at the bottom right of the
+  table footer, beside the state legends, and labels their region for assistive
+  technology. On narrow screens the controls wrap below the legends.
 - **Guide after year** is a 56 px native dropdown with centered values 1–6 and a
   default of 6. It draws one guide after that year's Q4, replacing both former
   simultaneous guides. Choosing 1 or 5 moves it to quarter 4 or 20; 6 uses 24.
@@ -304,3 +305,7 @@ golden fixtures and existing immutable artifact metadata were not rewritten.
 Final evidence: `data/staging/ui-0015/typography/year-guide-and-data-colors-final.png`
 and `year-guide-six-narrow-final.png` in the same directory. The final titled
 section is captured in `table-display-final-signoff.png`.
+The subsequent footer placement is captured in `table-display-footer-desktop-final.png`
+and `table-display-footer-narrow.png`. Browser checks confirm desktop alignment,
+narrow containment, native dropdown keyboard focus through changes and unchanged
+guide/color behavior. The former standalone control card above the table is removed.
