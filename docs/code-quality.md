@@ -52,6 +52,9 @@ The build additionally validates published aggregates, cross-view scope/filter/C
 consistency through `check:integrated-release`, the pinned font assets and the
 static Pages upload boundary through `check:hosting`. The Vite build manifest
 is retained outside `dist`; local Pages response checks use `check:hosting:serve`.
+`check:minimized` also enforces compact HTML/JSON, enabled Oxc/Lightning CSS and
+absence of served source maps. Derived fictional JSON references are rebound
+before Vite hashes the assets; golden fixture bytes remain unchanged.
 Use `uv run --frozen --no-sync ruff format .` and `npm run format` to apply formatting;
 Ruff's safe fixes are available separately with `ruff check --fix`. Review fixes;
 unsafe automatic fixes are not part of the normal workflow.

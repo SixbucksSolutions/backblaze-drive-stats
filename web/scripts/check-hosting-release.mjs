@@ -6,6 +6,7 @@ import { basename, dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { format } from 'prettier';
 import { checkProductionData } from './check-production-data.mjs';
+import { expectedPublicBytes } from './minimize-public-json.mjs';
 
 export const immutable = 'public, max-age=31536000, immutable';
 const shortCache = 'public, max-age=300, must-revalidate';
@@ -82,7 +83,8 @@ export async function hostingFiles(directory, prefix = '') {
 }
 
 // Public JSON's schema, reachable graph and content hashes are checked separately
-// through the production browser reader. This audit enforces the package boundary.
+// through the production browser reader. This audit enforces the package boundary
+// against exact reviewed build representations derived from public source bytes.
 export function auditHostingInventory(publicFiles, distFiles, buildManifest) {
   const required = [
     '_headers',
@@ -175,7 +177,14 @@ export async function checkHostingRelease(webRoot, distDirectory = resolve(webRo
     }),
   );
   assertHostingPolicy(config, headers);
-  const publicFiles = await hostingFiles(resolve(webRoot, 'public'));
+  const publicFiles = new Map(
+    await Promise.all(
+      [...(await hostingFiles(resolve(webRoot, 'public')))].map(async ([path, bytes]) => [
+        path,
+        await expectedPublicBytes(path, bytes),
+      ]),
+    ),
+  );
   const buildManifest = JSON.parse(
     await readFile(resolve(webRoot, 'hosting-vite-manifest.json'), 'utf8'),
   );
@@ -241,6 +250,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     await writeHostingEvidence(webRoot, process.argv[2], manifest);
   }
   console.log(
-    `Hosting release verified: ${manifest.assets.length} files, exact public bytes and reachable production graph.`,
+    `Hosting release verified: ${manifest.assets.length} files, reviewed public representations and reachable production graph.`,
   );
 }

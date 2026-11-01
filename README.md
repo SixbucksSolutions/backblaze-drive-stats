@@ -73,7 +73,7 @@ Explore [capacity history](docs/explore-capacity.md) at `?view=capacity`,
 [manufacturer shares](docs/explore-manufacturers.md) at `?view=manufacturers`, and
 [datacenters](docs/explore-datacenters.md) at `?view=datacenters`. Capacity history
 and datacenters use all supplied observations; model and manufacturer reports
-use the separate selected-HDD context. The private rolling plan is r039.
+use the separate selected-HDD context. The private rolling plan is r040.
 The original quarterly reliability view remains at `?view=reliability`;
 explicit `legacy=1` preserves the original report routes for comparison.
 
@@ -146,6 +146,11 @@ with no Worker scripts or Functions. `npm run build` verifies its inventory and
 immutable public data; `npm run preview:hosting` and `npm run check:hosting:serve`
 check the local Pages runtime. Account/project/hostname details remain pending;
 local preparation does not publish a site.
+
+The [asset minimization record](docs/asset-minimization.md) documents the compact
+HTML/JSON pipeline, pinned JavaScript/CSS minifiers and exact immutable-data
+preservation. The reviewed static directory is 179,204 bytes smaller; source
+fixtures and font/license bytes remain unchanged.
 
 ## Python generator environment
 

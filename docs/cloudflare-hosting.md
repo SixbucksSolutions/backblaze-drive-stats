@@ -28,7 +28,7 @@ npm run check:hosting -- ../data/staging/0007/release-manifest.json
 
 The upload directory is **`web/dist`**. The Vite build manifest is retained as
 `web/hosting-vite-manifest.json`, outside that directory. The hosting gate verifies
-the output inventory, public source byte identity, production graph, attribution,
+the output inventory, reviewed minimized public representations, production graph, attribution,
 cache rules and absence of unexpected files, Functions or Worker entry points.
 Its optional private release manifest records file sizes and SHA-256 hashes for
 the complete upload directory. Keep both manifests and retained release bundles
@@ -36,7 +36,9 @@ outside the served directory.
 
 Private B2 processing objects, raw data, credentials, staging evidence and source
 Parquet are never upload inputs. The existing 161 production JSON files keep
-their exact bytes and calculation semantics. Asset minimization is later #0097.
+their exact bytes and calculation semantics. #0097's
+[asset minimization](asset-minimization.md) changes only reviewed build copies;
+its 199-file bundle supersedes the earlier 190-file local candidate once accepted.
 
 ## Verify the actual local Pages server
 

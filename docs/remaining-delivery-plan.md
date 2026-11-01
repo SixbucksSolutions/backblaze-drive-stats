@@ -76,7 +76,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r039**. The
+Current rolling author/reviewer assignments are in private plan **r040**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
@@ -87,8 +87,9 @@ Terry explicitly accepted #0017, with its RFR lane held for his later move.
 verified. It will be Needs Terry for the account, hostname and any existing Pages
 project details he will supply in the morning. Target-specific configuration and
 hosted verification remain unfinished; no deployment authority is inferred.
-#0097's dependencies were removed at Terry's request. It stays Ready for Work
-and is planned next turn, without waiting for hosting. Carryover hosting and
-minimization remain planned;
-pending owner inputs stay visible. The roster starts no workers and does not treat RFR alone
-as approval.
+#0097's dependencies were removed at Terry's request. Its
+[minimized static build](asset-minimization.md) is ready for owner review without
+waiting for hosting. Only unfinished #0007 target configuration and hosted
+verification remain planned; its missing owner inputs stay visible. Use an
+explicitly accepted bundle when a later upload is authorized. The roster starts
+no workers and does not treat RFR alone as approval.

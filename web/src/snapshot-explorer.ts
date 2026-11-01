@@ -22,6 +22,7 @@ import { renderDeployments } from './deployment-report.ts';
 import { renderDistribution } from './distribution-report.ts';
 import { matrixHref, snapshotReport } from './app-route.ts';
 import type { SnapshotReport } from './app-route.ts';
+import { exampleUrls, exampleIndexName } from 'virtual:minimized-example-json';
 
 const reportNames = {
   reliability: 'Reliability',
@@ -86,17 +87,9 @@ const capacity = (value: number | null) =>
       ? `${decimal.format(value / 1_000_000)} EB`
       : `${decimal.format(value / 1000)} PB`;
 
-/** The explicit example route emits every immutable example byte unchanged in a build. */
+/** The build derives a compact fictional graph with its own byte-bound references. */
 function exampleTransport() {
-  const assets = import.meta.glob<string>('../../fixtures/production-v2/*.json', {
-    query: '?url',
-    import: 'default',
-    eager: true,
-  });
-  const byName = new Map(
-    Object.entries(assets).map(([path, url]) => [path.split('/').at(-1)!, url]),
-  );
-  const indexName = [...byName.keys()].find((name) => name.startsWith('sample-index.'))!;
+  const byName = new Map(Object.entries(exampleUrls));
   const base = new URL(`${import.meta.env.BASE_URL}examples/`, location.origin);
   const fetcher: typeof fetch = (input, init) => {
     const url = new URL(input instanceof Request ? input.url : String(input), location.href);
@@ -107,7 +100,7 @@ function exampleTransport() {
     }
     return fetch(asset, init);
   };
-  return new SnapshotLoader(new URL(indexName, base).href, fetcher);
+  return new SnapshotLoader(new URL(exampleIndexName, base).href, fetcher);
 }
 
 export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
