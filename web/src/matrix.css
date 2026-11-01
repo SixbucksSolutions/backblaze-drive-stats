@@ -376,6 +376,9 @@
 .state-source_incomplete {
   background: #fff5e3;
 }
+.state-unpublished {
+  background: repeating-linear-gradient(0deg, #e9edf4, #e9edf4 4px, #dbe1ed 4px, #dbe1ed 5px);
+}
 .state-below_threshold {
   background: #e4e9e0;
 }

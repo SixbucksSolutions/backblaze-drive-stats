@@ -1,9 +1,46 @@
-# Flagship comparison preview
+# Flagship comparison interface
 
-Ticket #0015 implements a local, fixture-backed comparison at `?view=matrix`.
-The default route and all six existing Explore reports retain their published
-calendar-quarter bundles. Primary navigation and real generated matrix integration
-remain gated by #0017; this preview does not run a backfill or publish a Site.
+Ticket #0015 established the fixture-backed comparison; #0087 connects the same
+interface to validated real v2 production history. Explore presentation and release
+validation retain their separately authorized work. No backfill or publishing is
+performed by the browser.
+
+## Real v2 production matrix (#0087)
+
+The primary matrix now reads the immutable v2 generation index through the shared
+validated `SnapshotLoader`. The default is its `latestSnapshotId`; an advertised
+as-of generation can be selected with `?view=matrix&snapshot=<snapshotId>`. Only the
+chosen descriptor and full matrix are fetched. A snapshot switch validates before
+replacing the old matrix, aborts stale requests and keeps the previous validated
+comparison visible if loading fails. Invalid IDs fail visibly rather than silently
+substituting a different generation.
+
+The public rate label is **Observed-history AFR**. The explicit v2 presentation
+adapter maps recorded-exposure metrics and retains current coverage, known
+components, threshold lower bounds/proofs, complete-history availability,
+completeness limitations and actual delta baseline/span in the cell inspector.
+Partial anchors and calendar gaps consume relative positions. Rates can remain
+available on a later complete eligible row after a historical gap; missing days
+are never imputed. Retired inference and the provisional cutoff Failed proxy are
+identified separately. Source IDs/hashes and Backblaze attribution remain visible.
+
+All analysis IDs in the selected snapshot start selected: the accepted real
+2025 Q3/Q4 snapshots each contain 21 and 2026 Q2 contains 22. Supporting context
+is separate. Purchase and historical-reference default sets remain empty; no
+recommendation is inferred. Color domains are derived once from every numeric
+eligible value in that selected matrix, following the accepted palette/edge rules,
+and remain fixed through model filtering. Existing accessibility, frozen axes,
+checkbox hierarchy, native rails, fonts and guide-after-year-6 defaults remain.
+
+Historical workbook and invented v1 references are explicitly separate at
+`?view=matrix&reference=1`. Append their existing `snapshot` IDs to that URL to
+select one directly; their source files, values and original semantics are intact.
+The older verification notes below document that reference work and its evidence.
+
+`matrix-production.test.ts` checks every displayed value against all three real
+v2 matrices, the fictional partial-anchor/gap/reentry case, complete-history nulls,
+threshold evidence, baseline distance, color edge rules and stale/canceled loads.
+Run `npm run quality`, `npm test` and `npm run build` from `web` for integration.
 
 ## Evidence and labels
 

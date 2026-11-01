@@ -1,5 +1,8 @@
 import './matrix.css';
 import './matrix-selection.css';
+import { initializedBaselineLabel, MatrixProductionReader } from './matrix-production.ts';
+import { SnapshotLoader } from './snapshot-loader.ts';
+import type { SnapshotEntry } from './production-data.ts';
 import { deltaDisplay, metricFieldWidths, yearRowGroups } from './matrix-display.ts';
 import { patchContent } from './matrix-render.ts';
 import { heatmapPaint } from './matrix-contrast.ts';
@@ -42,8 +45,18 @@ const esc = (value: unknown) =>
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
   );
 const quarter = (value: string | null | undefined) =>
-  value ? value.replace('-Q', ' Q') : 'Unknown in workbook';
+  value
+    ? value.replace('-Q', ' Q')
+    : snapshot.kind === 'reference'
+      ? 'Unknown in workbook'
+      : 'Unavailable';
 let snapshots: MatrixSnapshot[] = [];
+let productionChoices: SnapshotEntry[] = [];
+let reader: MatrixProductionReader | undefined;
+let routeSignal: AbortSignal | undefined;
+let pendingSnapshot = '';
+let snapshotError = '';
+let referenceMode = false;
 let snapshot: MatrixSnapshot;
 let stories: { id: string; models: string[]; owner_reading: string }[] = [];
 let search = '',
@@ -59,7 +72,17 @@ const empty = (value: unknown) =>
 
 export async function initMatrix(signal?: AbortSignal) {
   signal?.throwIfAborted();
-  document.title = 'Drive Stats — Matrix reference preview';
+  referenceMode = new URLSearchParams(location.search).get('reference') === '1';
+  routeSignal = signal;
+  document.title = referenceMode
+    ? 'Drive Stats — Matrix reference preview'
+    : 'Drive Stats — Observed-history AFR matrix';
+  if (!referenceMode) {
+    await initProduction(signal);
+    return;
+  }
+  reader = undefined;
+  productionChoices = [];
   app.innerHTML = '<div class="matrix-loading" role="status">Loading comparison references…</div>';
   try {
     const [loaded, storyData] = await Promise.all([
@@ -96,8 +119,80 @@ export async function initMatrix(signal?: AbortSignal) {
     if (signal?.aborted) {
       throw error;
     }
-    app.innerHTML = `<div class="matrix-loading" role="alert"><h1>Comparison preview unavailable</h1><p>${esc(error instanceof Error ? error.message : error)}</p><a href="?">Return to Explore</a></div>`;
+    app.innerHTML = `<div class="matrix-loading" role="alert"><h1>Comparison preview unavailable</h1><p>${esc(error instanceof Error ? error.message : error)}</p><a href="?view=explore">Return to Explore</a></div>`;
   }
+}
+async function initProduction(signal?: AbortSignal) {
+  app.innerHTML = '<div class="matrix-loading" role="status">Validating production snapshot…</div>';
+  try {
+    reader = new MatrixProductionReader(
+      new SnapshotLoader(`${import.meta.env.BASE_URL}data/production/index.json`),
+    );
+    const index = await reader.loader.loadIndex(signal);
+    productionChoices = index.snapshots;
+    const id = new URLSearchParams(location.search).get('snapshot') ?? index.latestSnapshotId;
+    const loaded = await reader.select(id, signal);
+    signal?.throwIfAborted();
+    if (!loaded) {
+      return;
+    }
+    snapshot = loaded;
+    snapshots = [];
+    stories = [];
+    resetSnapshot();
+    render();
+  } catch (error) {
+    if (signal?.aborted) {
+      throw error;
+    }
+    app.innerHTML = `<div class="matrix-loading" role="alert"><h1>Production comparison unavailable</h1><p>${esc(error instanceof Error ? error.message : error)}</p><a href="?view=matrix">Retry latest snapshot</a> · <a href="?view=matrix&reference=1">Workbook and synthetic references</a></div>`;
+  }
+}
+function resetSnapshot() {
+  selected = new Set(snapshot.models.map((m) => m.id));
+  search = '';
+  selection = undefined;
+  activeRow = 0;
+  pendingSnapshot = '';
+  snapshotError = '';
+}
+async function changeSnapshot(id: string) {
+  if (!reader) {
+    snapshot = snapshots.find((s) => s.id === id)!;
+    resetSnapshot();
+  } else {
+    pendingSnapshot = id;
+    snapshotError = '';
+    render();
+    try {
+      const loaded = await reader.select(id, routeSignal);
+      if (!loaded || routeSignal?.aborted) {
+        return;
+      }
+      snapshot = loaded;
+      resetSnapshot();
+    } catch (error) {
+      if (routeSignal?.aborted) {
+        return;
+      }
+      pendingSnapshot = '';
+      snapshotError = `Snapshot switch failed. Still showing ${snapshot.label}. ${error instanceof Error ? error.message : String(error)}`;
+      render();
+      return;
+    }
+  }
+  const url = new URL(location.href);
+  url.searchParams.set('snapshot', snapshot.id);
+  history.replaceState(null, '', url);
+  render();
+}
+function labelForMetric(index: number) {
+  return snapshot.rateLabel && index < 2
+    ? `${snapshot.rateLabel}${index === 1 ? ' delta' : ''}`
+    : metricLabels[index]!;
+}
+function productionMethod() {
+  return `<p><strong>Observed-history AFR</strong> = recorded failure flags ÷ recorded drive-days × 36500. It includes recorded pre-anchor and below-threshold history. Missing days are not imputed or assumed representative. It is not lifetime AFR, complete-history AFR or individual-drive survival.</p><p>Each model starts at its earliest proven ≥2,000-drive quarter in supplied history, including a partial-quarter lower-bound proof. Earlier qualification can remain possible. Gaps, below-threshold quarters and reentry consume positions; the clock never resets. Relative history is not physical drive age.</p><p>Current partial, missing and unpublished rows have unavailable display metrics. A later complete eligible row can have Observed-history AFR despite a past gap. Inspect complete-history availability and source completeness separately. A numeric zero is an observed value; a dash is unavailable.</p><p>Deltas compare the prior eligible complete quarter at this rate basis and disclose its actual calendar quarter and elapsed distance. The first eligible deltas are initialized to zero; no prior AFR or Count baseline is asserted. A gap-spanning difference is not a quarter-over-quarter rate. Count is distinct observed identities during a complete quarter. New means first recorded observation, including the initial observed fleet. Failed counts failure flags. Retired is inferred from last observations, becomes unavailable when gaps obstruct inference, and uses a provisional Retired = Failed proxy at the selected cutoff. Population Delta does not equal New minus Retired.</p><p>All accepted analysis models start selected. Supporting context is wider than this matrix; filters do not change its denominator. Purchase and historical-reference defaults remain unassigned in the current generation. Deployment evidence is not a manufacturing, retail availability, NAS compatibility or purchase recommendation.</p><p>The single guide defaults to after relative year 6 (quarter 24), with choices 1–6. It is a reading reference, not a lifetime or replacement prediction. The full history remains visible beyond it.</p><p>Colors use all numeric eligible cells in the selected snapshot, including initialization, with the accepted reference palette and edge rules. Selection never recalculates domains. Vendor colors identify categories; no composite ranking is calculated.</p>`;
 }
 function modelNavigation(models: MatrixModel[]) {
   const query = search.trim().toLowerCase();
@@ -153,12 +248,13 @@ function render() {
   const models = visibleModels(snapshot, selected);
   patchContent(
     app,
-    `<div class="matrix-page"><header class="matrix-top"><a class="matrix-brand" href="?">▰ DriveStats <span>BY SIXBUCKS SOLUTIONS</span></a><a href="?">Explore calendar-quarter reports ↗</a></header>
-  <section class="matrix-heading"><div><p class="eyebrow">THE FULL TRAJECTORY</p><h1>Reliability through deployment history.</h1><p>Compare cumulative AFR, population and turnover together. Each model keeps its seven workbook columns.</p></div><label class="snapshot-control">AS-OF EVIDENCE<select id="matrix-snapshot">${snapshots.map((s) => `<option value="${esc(s.id)}" ${s === snapshot ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select></label></section>
-  <aside class="matrix-notice ${snapshot.kind}"><strong>${snapshot.kind === 'reference' ? 'WORKBOOK REFERENCE · NOT A PRODUCTION SNAPSHOT' : 'SYNTHETIC SAMPLE · INVENTED FIGURES'}</strong><span>${esc(snapshot.notice)}</span></aside>
+    `<div class="matrix-page"><header class="matrix-top"><a class="matrix-brand" href="?">▰ DriveStats <span>BY SIXBUCKS SOLUTIONS</span></a><a href="${snapshot.rateLabel ? `?view=explore&snapshot=${esc(snapshot.id)}` : '?view=explore'}">Explore calendar-quarter reports ↗</a></header>
+  <section class="matrix-heading"><div><p class="eyebrow">THE FULL TRAJECTORY</p><h1>Reliability through deployment history.</h1><p>${snapshot.rateLabel ? 'Compare Observed-history AFR, population and turnover. Seven adjacent metrics retain the evidence behind each value.' : 'Compare cumulative AFR, population and turnover together. Each model keeps its seven workbook columns.'}</p></div><label class="snapshot-control">AS-OF EVIDENCE<select id="matrix-snapshot">${(referenceMode ? snapshots : productionChoices.map((entry) => ({ id: entry.snapshotId, label: `${entry.asOfQuarter.replace('-Q', ' Q')} · observed history` }))).map((s) => `<option value="${esc(s.id)}" ${s.id === (pendingSnapshot || snapshot.id) ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select></label></section>
+  <aside class="matrix-notice ${snapshot.kind}"><strong>${snapshot.kind === 'production' ? 'BACKBLAZE OBSERVED HISTORY · V2' : snapshot.kind === 'reference' ? 'WORKBOOK REFERENCE · NOT A PRODUCTION SNAPSHOT' : 'SYNTHETIC SAMPLE · INVENTED FIGURES'}</strong><span>${esc(snapshot.notice)}</span></aside>
+  ${pendingSnapshot ? '<p role="status">Validating selected snapshot… The previous validated matrix remains visible.</p>' : ''}${snapshotError ? `<p role="alert">${esc(snapshotError)}</p>` : ''}
   <div class="matrix-source">Dataset and reports: <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a> · <a href="https://www.backblaze.com/blog/category/hard-drive-stats/">Official reports</a> · Independent analysis by <a href="https://github.com/SixbucksSolutions">Sixbucks Solutions</a>. Software MIT; dataset retains its own terms.</div>
 
-  <section class="matrix-workspace"><div class="matrix-caption"><div><strong>${models.length} models · ${esc(snapshot.label)}</strong><span>${snapshot.kind === 'reference' ? 'Relative retained-row positions' : 'Calendar offsets from first ≥2,000-drive quarter'} · guide after year ${guideYear} · scroll for the full history</span></div><a href="#matrix-legend">Color legend ↓</a></div>
+  <section class="matrix-workspace"><div class="matrix-caption"><div><strong>${models.length} models · ${esc(snapshot.label)}</strong><span>${snapshot.kind === 'reference' ? 'Relative retained-row positions' : snapshot.rateLabel ? 'Calendar offsets from earliest proven ≥2,000-drive quarter' : 'Calendar offsets from first ≥2,000-drive quarter'} · guide after year ${guideYear} · scroll for the full history</span></div><a href="#matrix-legend">Color legend ↓</a></div>
   <p class="matrix-instruction" id="matrix-help">Focus, click or hover any value for details. Arrow keys move between cells; Home/End move across a row. The same relative row is outlined across models. Relative history is not individual drive age.</p>
   <div class="matrix-comparison-layout">${modelNavigation(models)}<div class="matrix-table-area"><div class="matrix-pane">
     <div class="matrix-scroll" id="matrix-data" tabindex="0" role="region" aria-label="Deployment history matrix, scroll horizontally and vertically" aria-describedby="matrix-help">${models.length ? table(models) : '<div class="matrix-empty">No models selected. Choose a brand or model to display.</div>'}</div>
@@ -166,10 +262,10 @@ function render() {
     <div class="matrix-hscroll" tabindex="0" role="region" aria-label="Scroll drive model columns horizontally" aria-controls="matrix-data"><div class="matrix-scroll-size" aria-hidden="true"></div></div>
     <div class="matrix-scroll-corner" aria-hidden="true"></div>
   </div></div></div>
-  <div class="matrix-table-footer"><div class="matrix-states">${['below_threshold', 'source_missing', 'source_incomplete', 'snapshot_end', 'trailing_blank_unknown'].map((s) => `<span class="state-key state-${s}" title="${esc(stateInfo(s).description)}">${stateInfo(s).label}</span>`).join('')}<span>— on an eligible row = metric unavailable; inspect for the reason</span></div>${tableDisplayOptions()}</div></section>
+  <div class="matrix-table-footer"><div class="matrix-states">${(snapshot.rateLabel ? ['below_threshold', 'source_missing', 'source_incomplete', 'unpublished', 'snapshot_end'] : ['below_threshold', 'source_missing', 'source_incomplete', 'snapshot_end', 'trailing_blank_unknown']).map((s) => `<span class="state-key state-${s}" title="${esc(stateInfo(s).description)}">${stateInfo(s).label}</span>`).join('')}<span>— on an eligible row = metric unavailable; inspect for the reason</span></div>${tableDisplayOptions()}</div></section>
   <aside class="matrix-inspector" id="matrix-inspector" aria-label="Cell details">${selection ? inspector() : '<p class="eyebrow">CELL INSPECTOR</p><h2>Read a value in context.</h2><p>Focus, click or hover a matrix cell for its exact value, calendar context, exposure and baseline.</p>'}</aside>
-  ${legend()}${exampleComparisons()}<details class="matrix-method"><summary>How to read this comparison & source context</summary><p>AFR is cumulative through the displayed quarter, in percent; AFR delta is in percentage points. Count means distinct drives observed anywhere in a quarter, not the installed population at quarter end. New means first seen in supplied history. Failed sums daily failure flags.</p><p>Retired is inferred from last observations and may include failures. A newest-quarter Failed proxy, when identified by production metadata, is provisional. Neither is proof of voluntary retirement or its cause. Large population and continuing additions provide deployment context, not a spending measurement.</p><p>All seven scales use the full eligible snapshot population. Model selection and neutral colors never recalculate them. The malformed New source color is normalized to intended white. No composite ranking is calculated.</p><p>${snapshot.kind === 'reference' ? 'Workbook first-row deltas subtract zero; subsequent rows subtract the prior retained row. Calendar, pre-eligibility exposure and cutoff are unknown. Nonzero cumulative AFR with zero current Failed can reflect earlier contributions, but those components cannot be reconstructed here.' : 'Production examples retain real calendar offsets and the original anchor after reentry. Delta subtracts the prior eligible row and states its elapsed span. Pre-eligibility contributions remain in cumulative AFR; coverage gaps can make cumulative rates unavailable while Count remains known.'}</p><p>The guide marks the end of the selected relative year (four quarters per year). It is a deployment-history reference and does not predict an individual drive’s lifetime or recommend a replacement date.</p><p>Snapshot: ${esc(snapshot.id)} · ${esc(snapshot.versions)}.</p><p class="matrix-hash">Source SHA-256 / manifest: ${esc(snapshot.sourceHash)}</p>${snapshot.sourceUrl ? `<a href="${esc(snapshot.sourceUrl)}">Original owner-supplied workbook ↗</a>` : '<p>Invented aggregate contract example; no observed Backblaze performance is represented.</p>'}</details>
-  <footer>Local comparison preview · Production generation and primary navigation remain separately gated.<a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a><a href="?">Back to Explore ↗</a></footer></div>`,
+  ${legend()}${exampleComparisons()}<details class="matrix-method"><summary>How to read this comparison & source context</summary>${snapshot.rateLabel ? productionMethod() : `<p>AFR is cumulative through the displayed quarter, in percent; AFR delta is in percentage points. Count means distinct drives observed anywhere in a quarter, not the installed population at quarter end. New means first seen in supplied history. Failed sums daily failure flags.</p><p>Retired is inferred from last observations and may include failures. A newest-quarter Failed proxy, when identified by production metadata, is provisional. Neither is proof of voluntary retirement or its cause. Large population and continuing additions provide deployment context, not a spending measurement.</p><p>All seven scales use the full eligible snapshot population. Model selection and neutral colors never recalculate them. The malformed New source color is normalized to intended white. No composite ranking is calculated.</p><p>${snapshot.kind === 'reference' ? 'Workbook first-row deltas subtract zero; subsequent rows subtract the prior retained row. Calendar, pre-eligibility exposure and cutoff are unknown. Nonzero cumulative AFR with zero current Failed can reflect earlier contributions, but those components cannot be reconstructed here.' : 'Production examples retain real calendar offsets and the original anchor after reentry. Delta subtracts the prior eligible row and states its elapsed span. Pre-eligibility contributions remain in cumulative AFR; coverage gaps can make cumulative rates unavailable while Count remains known.'}</p><p>The guide marks the end of the selected relative year (four quarters per year). It is a deployment-history reference and does not predict an individual drive’s lifetime or recommend a replacement date.</p>`}<p>Snapshot: ${esc(snapshot.id)} · ${esc(snapshot.versions)}.</p><p class="matrix-hash">Source SHA-256 / manifest: ${esc(snapshot.sourceHash)}</p>${snapshot.sourceUrl ? `<a href="${esc(snapshot.sourceUrl)}">${snapshot.rateLabel ? 'Backblaze public dataset ↗' : 'Original owner-supplied workbook ↗'}</a>` : '<p>Invented aggregate contract example; no observed Backblaze performance is represented.</p>'}</details>
+  <footer>${snapshot.rateLabel ? 'Recorded Backblaze history · Independent Sixbucks Solutions analysis. <a href="?view=matrix&reference=1">Workbook & synthetic references</a>' : 'Historical and synthetic comparison references. <a href="?view=matrix">Production matrix</a>'}<a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a><a href="${snapshot.rateLabel ? `?view=explore&snapshot=${esc(snapshot.id)}` : '?view=explore'}">Back to Explore ↗</a></footer></div>`,
   );
   bind();
   const nextScroll = app.querySelector('.matrix-scroll');
@@ -202,8 +298,8 @@ function table(models: MatrixModel[]) {
     )
     .join('')}</tr>
   <tr class="model-row">${models.map((m) => `<th colspan="7" class="model-header" data-render-key="model-${esc(m.id)}" style="background:${vendorPaint(m.vendor).background};color:${vendorPaint(m.vendor).foreground}"><span class="model-label-track"><span class="model-name">${esc(m.name)}</span></span></th>`).join('')}</tr>
-  <tr class="family-row">${models.map(() => '<th colspan="2" class="model-start">AFR</th><th colspan="5">Drives</th>').join('')}</tr>
-  <tr class="metric-row">${models.map(() => ['Value %', 'Delta pp', 'Count', 'Delta', 'New', 'Retired', 'Failed'].map((v, i) => `<th class="${i === 0 ? 'model-start' : ''} ${i < 2 ? 'metric-rate' : 'metric-count'}" title="${metricLabels[i]}">${v}</th>`).join('')).join('')}</tr></thead>${yearRowGroups(
+  <tr class="family-row">${models.map(() => `<th colspan="2" class="model-start">${snapshot.rateLabel ? 'Observed-history AFR' : 'AFR'}</th><th colspan="5">Drives</th>`).join('')}</tr>
+  <tr class="metric-row">${models.map(() => ['Value %', 'Delta pp', 'Count', 'Delta', 'New', 'Retired', 'Failed'].map((v, i) => `<th class="${i === 0 ? 'model-start' : ''} ${i < 2 ? 'metric-rate' : 'metric-count'}" title="${labelForMetric(i)}">${v}</th>`).join('')).join('')}</tr></thead>${yearRowGroups(
     extent,
   )
     .map(
@@ -225,7 +321,7 @@ function cellHtml(m: MatrixModel, c: MatrixCell, metric: Metric, mi: number) {
           ? ' percentage points'
           : ''
       : '';
-  const detail = `${m.name}, relative quarter ${c.relativeQuarter}, ${quarter(c.quarter)}, ${metricLabels[mi]}: ${text}${unit}. ${info.description}`;
+  const detail = `${m.name}, relative quarter ${c.relativeQuarter}, ${quarter(c.quarter)}, ${labelForMetric(mi)}: ${text}${unit}. ${info.description}`;
   return `<td data-render-key="cell-${esc(m.id)}-${metric}" class="${mi < 2 ? 'metric-rate' : 'metric-count'} ${mi === 0 ? 'model-start' : ''} ${observed ? 'observed' : `unavailable state-${c.state}`}"><button id="${controlId('cell', `${m.id}-${c.relativeQuarter}-${metric}`)}" class="matrix-cell" tabindex="${c.relativeQuarter === 1 && mi === 0 ? '0' : '-1'}" data-cell="${esc(m.id)}" data-q="${c.relativeQuarter}" data-metric="${metric}" style="${neutral || !observed ? '' : `background:${heatmapPaint(interpolate(value, snapshot.domains[metric])).background};color:${heatmapPaint(interpolate(value, snapshot.domains[metric])).foreground}`}" aria-label="${esc(detail)}" aria-controls="matrix-inspector" title="${esc(detail)}">${observed ? `<span class="numeric-field" style="width:var(--field-${metric})">${metric === 'afrDelta' && value !== null && deltaDisplay(value).reserveSign ? '<span class="pp-sign-space" aria-hidden="true">−</span>' : ''}${esc(text)}</span>` : esc(text)}</button></td>`;
 }
 function inspector() {
@@ -233,15 +329,15 @@ function inspector() {
   const mi = metrics.indexOf(metric),
     value = c.metrics[metric];
   const component = (label: string, v: MatrixCell['quarterComponents']) =>
-    `<div><dt>${label}</dt><dd>${v ? `${v.failures.toLocaleString()} failure flags / ${v.driveDays.toLocaleString()} recorded drive-days${v.complete ? '' : ' · incomplete'}` : 'Unknown in workbook'}</dd></div>`;
+    `<div><dt>${label}</dt><dd>${v ? `${v.failures.toLocaleString()} failure flags / ${v.driveDays.toLocaleString()} recorded drive-days${v.complete ? '' : ' · incomplete'}` : snapshot.rateLabel ? 'Unavailable: no recorded components for this position' : 'Unknown in workbook'}</dd></div>`;
   const baseline = c.deltaBaseline;
-  return `<div class="inspector-title"><div><p class="eyebrow">CELL INSPECTOR · ${esc(stateInfo(c.state).label)}</p><h2><span class="model-id">${esc(m.name)}</span> <small>${esc(m.vendor)}</small></h2></div><strong>${esc(metricLabels[mi])}: ${value === null ? 'Unavailable' : esc(c.raw?.[mi] ?? value)} ${metric === 'afr' ? '%' : metric === 'afrDelta' ? 'pp' : 'drives / flags'}</strong></div><p>${esc(stateInfo(c.state).description)}</p><dl class="inspector-grid"><div><dt>Relative position</dt><dd>Year ${Math.ceil(c.relativeQuarter / 4)} · Q${((c.relativeQuarter - 1) % 4) + 1} · quarter ${c.relativeQuarter}</dd></div><div><dt>Actual calendar quarter</dt><dd>${quarter(c.quarter)}</dd></div><div><dt>Anchor / last eligible</dt><dd>${quarter(m.anchor)} / ${quarter(m.finalEligible)}</dd></div><div><dt>As-of cutoff / source coverage</dt><dd>${snapshot.cutoff ?? 'Unknown in workbook'} / ${esc(c.coverage ?? 'Unknown in workbook')}</dd></div>${component('Current-quarter exposure', c.quarterComponents)}${component('Cumulative exposure', c.cumulativeComponents)}${component('Pre-eligibility contribution', m.preEligibility)}<div><dt>Quarter-only AFR (detail only)</dt><dd>${c.quarterAfr == null ? 'Unavailable' : `${esc(c.quarterAfr)}%`}</dd></div><div><dt>Delta baseline / span</dt><dd>${snapshot.kind === 'reference' ? (c.state !== 'reference_observed' ? 'Unknown for blank row' : c.relativeQuarter === 1 ? 'Initialization: subtract zero' : `Previous retained row (${c.relativeQuarter - 1}); elapsed calendar span unknown`) : baseline ? `${esc(baseline.kind)} · ${baseline.priorQuarter ? quarter(baseline.priorQuarter) : 'initial zero'} · ${baseline.elapsedQuarters ?? 'initial'} quarter span · AFR ${empty(baseline.afr)}%, Count ${empty(baseline.count)}` : 'Not applicable to unavailable row'}</dd></div><div><dt>Rate availability / retirement</dt><dd>${esc(c.rateUnavailableReason ?? (snapshot.kind === 'reference' ? 'Unknown workbook components' : 'Available'))} / ${esc(c.retirementInference ?? 'Unknown workbook inference/proxy status')}</dd></div>${c.observations ? `<div><dt>Inspector observations (not display metrics)</dt><dd>Count ${empty(c.observations.count)} · New ${empty(c.observations.new)} · Retired ${empty(c.observations.retired)} · Failed ${empty(c.observations.failed)}</dd></div>` : ''}<div><dt>Snapshot / source cell</dt><dd>${esc(snapshot.id)} · ${esc(c.coordinates?.[mi] ?? 'Aggregate contract cell')}</dd></div></dl><p>${snapshot.kind === 'reference' ? 'Cumulative AFR retains prior history. The workbook cannot establish the pre-eligibility failures or exposure; zero current Failed does not establish zero earlier losses.' : 'AFR = cumulative failure flags ÷ cumulative recorded drive-days × 365 × 100. Reentry keeps the original calendar anchor; unavailable cumulative rates never become zero.'}</p><p class="matrix-hash">${snapshot.sourceUrl ? `<a href="${esc(snapshot.sourceUrl)}">Source workbook ↗</a> · ` : 'SYNTHETIC SAMPLE · '}SHA-256 / manifest ${esc(snapshot.sourceHash)}</p>`;
+  return `<div class="inspector-title"><div><p class="eyebrow">CELL INSPECTOR · ${esc(stateInfo(c.state).label)}</p><h2><span class="model-id">${esc(m.name)}</span> <small>${esc(m.vendor)}</small></h2></div><strong>${esc(labelForMetric(mi))}: ${value === null ? 'Unavailable' : esc(c.raw?.[mi] ?? value)} ${metric === 'afr' ? '%' : metric === 'afrDelta' ? 'pp' : 'drives / flags'}</strong></div><p>${esc(stateInfo(c.state).description)}</p><dl class="inspector-grid"><div><dt>Relative position</dt><dd>Year ${Math.ceil(c.relativeQuarter / 4)} · Q${((c.relativeQuarter - 1) % 4) + 1} · quarter ${c.relativeQuarter}</dd></div><div><dt>Actual calendar quarter</dt><dd>${quarter(c.quarter)}</dd></div><div><dt>Anchor / last eligible</dt><dd>${quarter(m.anchor)} / ${quarter(m.finalEligible)}</dd></div><div><dt>As-of cutoff / source coverage</dt><dd>${snapshot.cutoff ?? 'Unknown in workbook'} / ${esc(c.coverage ?? 'Unknown in workbook')}</dd></div>${component('Current-quarter exposure', c.quarterComponents)}${component(snapshot.rateLabel ? 'Cumulative recorded exposure' : 'Cumulative exposure', c.cumulativeComponents)}${component(snapshot.rateLabel ? 'Pre-anchor recorded contribution' : 'Pre-eligibility contribution', m.preEligibility)}<div><dt>Quarter-only AFR (detail only)</dt><dd>${c.quarterAfr == null ? 'Unavailable' : `${esc(c.quarterAfr)}%`}</dd></div><div><dt>Delta baseline / span</dt><dd>${snapshot.kind === 'reference' ? (c.state !== 'reference_observed' ? 'Unknown for blank row' : c.relativeQuarter === 1 ? 'Initialization: subtract zero' : `Previous retained row (${c.relativeQuarter - 1}); elapsed calendar span unknown`) : initializedBaselineLabel(baseline) ? esc(initializedBaselineLabel(baseline)) : baseline ? `${esc(baseline.kind)} · ${baseline.priorQuarter ? quarter(baseline.priorQuarter) : 'initial zero'} · ${baseline.elapsedQuarters ?? 'initial'} quarter span · AFR ${empty(baseline.afr)}%, Count ${empty(baseline.count)}` : 'Not applicable to unavailable row'}</dd></div><div><dt>Rate availability / retirement</dt><dd>${esc(c.rateUnavailableReason ?? (snapshot.kind === 'reference' ? 'Unknown workbook components' : 'Available'))} / ${esc(c.retirementInference ?? 'Unknown workbook inference/proxy status')}</dd></div>${c.observations ? `<div><dt>Inspector observations (not display metrics)</dt><dd>Count ${empty(c.observations.count)} · New ${empty(c.observations.new)} · Retired ${empty(c.observations.retired)} · Failed ${empty(c.observations.failed)}</dd></div>` : ''}${c.productionEvidence?.map((detail) => `<div><dt>${esc(detail.label)}</dt><dd>${esc(detail.value)}</dd></div>`).join('') ?? ''}<div><dt>Snapshot / source cell</dt><dd>${esc(snapshot.id)} · ${esc(c.coordinates?.[mi] ?? 'Aggregate contract cell')}</dd></div></dl><p>${snapshot.kind === 'reference' ? 'Cumulative AFR retains prior history. The workbook cannot establish the pre-eligibility failures or exposure; zero current Failed does not establish zero earlier losses.' : 'AFR = cumulative failure flags ÷ cumulative recorded drive-days × 365 × 100. Reentry keeps the original calendar anchor; unavailable cumulative rates never become zero.'}</p><p class="matrix-hash">${snapshot.kind === 'production' ? 'BACKBLAZE OBSERVED HISTORY · ' : snapshot.sourceUrl ? `<a href="${esc(snapshot.sourceUrl)}">Source workbook ↗</a> · ` : 'SYNTHETIC SAMPLE · '}SHA-256 / manifest ${esc(snapshot.sourceHash)}</p>`;
 }
 function legend() {
   return `<details class="matrix-legend" id="matrix-legend"><summary>Shared snapshot color scales · ${snapshot.models.length} full model blocks</summary><p>Colors compare all numeric eligible cells in this snapshot. Warm AFR flags higher rates; green Count means larger observed population. Vendor header colors identify categories only. Numeric values remain visible; neutral mode removes metric colors. High contrast display preserves thresholds.</p><div class="legend-grid">${metrics
     .map((m, i) => {
       const d = snapshot.domains[m];
-      return `<article><strong>${metricLabels[i]}${m === 'afr' ? ' (%)' : m === 'afrDelta' ? ' (pp)' : ''}</strong><div class="legend-swatches">${d.knots.map((k) => `<span style="background:${heatmapPaint(k.color).background};color:${heatmapPaint(k.color).foreground}">${formatMetric(k.value, m)}</span>`).join('')}</div><small>n=${d.sampleCount} · min ${empty(d.observedMinimum)} · P50 ${empty(d.observedMedian)} · max ${empty(d.observedMaximum)}</small></article>`;
+      return `<article><strong>${labelForMetric(i)}${m === 'afr' ? ' (%)' : m === 'afrDelta' ? ' (pp)' : ''}</strong><div class="legend-swatches">${d.knots.map((k) => `<span style="background:${heatmapPaint(k.color).background};color:${heatmapPaint(k.color).foreground}">${formatMetric(k.value, m)}</span>`).join('')}</div><small>n=${d.sampleCount} · min ${empty(d.observedMinimum)} · P50 ${empty(d.observedMedian)} · max ${empty(d.observedMaximum)}</small></article>`;
     })
     .join(
       '',
@@ -268,15 +364,7 @@ function inspect(button: HTMLButtonElement) {
 }
 function bind() {
   app.querySelector<HTMLElement>('#matrix-snapshot')!.onchange = (event) => {
-    snapshot = snapshots.find((s) => s.id === (event.target as HTMLSelectElement).value)!;
-    selected = new Set(snapshot.models.map((m) => m.id));
-    search = '';
-    selection = undefined;
-    activeRow = 0;
-    const url = new URL(location.href);
-    url.searchParams.set('snapshot', snapshot.id);
-    history.replaceState(null, '', url);
-    render();
+    void changeSnapshot((event.target as HTMLSelectElement).value);
   };
   app.querySelector<HTMLElement>('#matrix-search')!.oninput = (event) => {
     search = (event.target as HTMLInputElement).value;

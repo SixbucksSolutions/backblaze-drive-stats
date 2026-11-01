@@ -117,8 +117,10 @@ npm run build
 npm run dev
 ```
 
-Open `?view=explore` for the real shared model context. Snapshot as-of and Explore
-calendar quarter are independent selections. Explicit fictional examples remain
-at `?view=explore&example=1`. The production matrix and five specialized Explore
-views still require their separately accepted integration tickets; the current
-default site is preserved until that work is completed.
+Open the landing page or `?view=matrix` for the real flagship, `?view=deployments`
+for first recorded additions, and `?view=distribution` for observed population.
+The shared model context stays at `?view=explore`. Snapshot as-of and Explore
+calendar quarter remain independent selections. Explicit fictional examples stay
+at `?view=explore&example=1`; immutable workbook previews use
+`?view=matrix&reference=1`. The remaining specialized Explore views and integrated
+release validation retain their separate tickets. No deployment is implied.

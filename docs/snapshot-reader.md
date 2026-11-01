@@ -2,8 +2,9 @@
 
 #0088 implements the browser reader for the owner-accepted
 [production v2 contracts](production-data-v2.md). Real artifacts and individual
-report integrations remain #0086, #0087 and #0089–#0093. The current quarterly
-explorer remains the default.
+report integrations retain their own tickets. #0087 now makes the real matrix the
+landing view. #0089 deployments and #0090 distribution use this shared shell;
+the remaining capacity/manufacturer/datacenter integrations stay queued.
 
 ## Local review
 
@@ -18,8 +19,8 @@ the application base. #0086 supplies the [real aggregate release](production-rel
 for 2026 Q2 and the two workbook cutoffs. A missing index produces an error/retry
 state and an explicit example link; the
 reader never substitutes fictional values for a missing real dataset. Navigation
-links lead to the implemented current quarterly reports. Specialized v2 report
-views retain their own tickets.
+links connect the real matrix, deployments, distribution and shared context.
+Other quarterly report links retain their existing implementations.
 
 ## Reader API and boundaries
 
@@ -48,7 +49,9 @@ Snapshot as-of and Explore calendar-quarter selectors are independent, with
 year-first labels. Switching snapshots resets filters; a requested quarter
 survives only when included in the new descriptor. Initial context includes every
 supporting HDD, including seeds below the flagship threshold. Purchase and
-historical presets are explicit subsets. Vendor/model search and nullable sorting
+historical presets are explicit subsets on the overview only. Deployments and
+distribution always start from the whole context, independent of those presets.
+Model checkboxes, vendor/model search and nullable sorting
 do not change the whole-context or all-supplied denominators shown alongside.
 
 The accessible numeric table preserves zero separately from unavailable values
@@ -57,8 +60,9 @@ missing/unpublished periods have no fabricated rows. Source credit, coverage,
 cutoff, publication boundary and location-field availability remain visible.
 Shared helpers can be reused by later report views.
 
-CSV uses the visible rows and carries data kind, snapshot, as-of, reporting
-quarter, coverage, scope, whole-context count and attribution. Unavailable values
+CSV uses the visible rows and carries data kind, report, filters, snapshot, as-of,
+reporting quarter, coverage, scope, whole-context Count/New and attribution.
+Empty selections disable export. Unavailable values
 remain explicit. Formula-like text, including formulas after leading whitespace,
 is neutralized. Numeric negative values remain numeric. No serial field or
 individual-drive selector is introduced.

@@ -49,6 +49,7 @@ export type MatrixCell = {
   retirementInference?: string;
   rateUnavailableReason?: string | null;
   coverage?: string;
+  productionEvidence?: { label: string; value: string }[];
   observations?: {
     count: number | null;
     new: number | null;
@@ -69,7 +70,8 @@ export type MatrixModel = {
 export type MatrixSnapshot = {
   id: string;
   label: string;
-  kind: 'reference' | 'sample';
+  kind: 'reference' | 'sample' | 'production';
+  rateLabel?: string;
   sourceUrl: string | null;
   sourceHash: string;
   cutoff: string | null;
@@ -242,6 +244,11 @@ export const states: Record<string, { label: string; description: string }> = {
     label: 'Below 2k',
     description:
       'Out of displayed service under the comparison threshold. Some drives may remain in the source fleet; this is not a physical fleet exit.',
+  },
+  unpublished: {
+    label: 'Unpublished',
+    description:
+      'Before the published source domain; no observations or zero population are implied.',
   },
   source_missing: {
     label: 'Source gap',

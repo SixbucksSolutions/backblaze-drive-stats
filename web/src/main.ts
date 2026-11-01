@@ -1,4 +1,5 @@
 import './style.css';
+import { appRoute } from './app-route.ts';
 import { waitForFonts, waitForPresentation, withStartupDeadline } from './font-ready.ts';
 import { csv, groupManufacturers, parseBundle, parseManifest, summarize } from './data.ts';
 import type { Bundle, Manifest, Model, Quarter } from './data.ts';
@@ -347,7 +348,14 @@ function datacenterTable() {
 function bindEvents() {
   document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((button) =>
     button.addEventListener('click', () => {
-      view = button.dataset.view as View;
+      const next = button.dataset.view as View;
+      if (params.get('legacy') !== '1' && (next === 'deployments' || next === 'distribution')) {
+        const url = new URL(location.href);
+        url.searchParams.set('view', next);
+        location.assign(url);
+        return;
+      }
+      view = next;
       syncUrl();
       render();
     }),
@@ -555,12 +563,12 @@ async function start() {
   const startup = new AbortController();
   const rendering = withStartupDeadline(
     () =>
-      params.get('view') === 'matrix'
+      appRoute(params) === 'matrix'
         ? import('./matrix.ts').then((module) => {
             startup.signal.throwIfAborted();
             return module.initMatrix(startup.signal);
           })
-        : params.get('view') === 'explore'
+        : appRoute(params) === 'snapshot'
           ? import('./snapshot-explorer.ts').then((module) => {
               startup.signal.throwIfAborted();
               return module.initSnapshotExplorer(startup.signal);

@@ -14,7 +14,7 @@
     "check:data": "node --experimental-strip-types scripts/check-data.mjs",
     "check:production-data": "node --experimental-strip-types scripts/check-production-data.mjs public/data/production 2026-Q2 2026-Q2,2025-Q3,2025-Q4",
     "check:fonts": "node scripts/check-font-assets.mjs",
-    "test": "node --experimental-strip-types --test src/data.test.ts src/matrix-data.test.ts src/matrix-contrast.test.ts src/matrix-display.test.ts src/font-ready.test.ts src/matrix-scroll.test.ts src/matrix-selection.test.ts src/production-data.test.ts src/snapshot-loader.test.ts src/snapshot-selection.test.ts scripts/check-production-data.test.mjs",
+    "test": "node --experimental-strip-types --test src/data.test.ts src/matrix-data.test.ts src/matrix-contrast.test.ts src/matrix-display.test.ts src/font-ready.test.ts src/matrix-scroll.test.ts src/matrix-selection.test.ts src/production-data.test.ts src/snapshot-loader.test.ts src/snapshot-selection.test.ts src/app-route.test.ts src/matrix-production.test.ts src/deployment-report.test.ts src/distribution-report.test.ts scripts/check-production-data.test.mjs",
     "build": "npm run check && npm run check:data && npm run check:production-data && npm run check:fonts && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "lint": "oxlint --type-aware --deny-warnings src && oxlint --deny-warnings scripts",

@@ -54,6 +54,30 @@ await test('null is never summed as zero and sorts after measured zero in both d
   assert.deepEqual(selectionTotals([rows[1]!], true), { count: 0, new: 0, capacityTB: 0 });
   assert.deepEqual(selectionTotals([], false), { count: null, new: null, capacityTB: null });
 });
+await test('explicit model checkboxes intersect vendor/search filters without pruning the context', () => {
+  const selected = selectRows(rows, inventory, selection, {
+    ...defaultFilter(),
+    modelIds: new Set(['small']),
+  });
+  assert.deepEqual(
+    selected.map((row) => row.modelId),
+    ['small'],
+  );
+  assert.deepEqual(selectionTotals(selected, true), { count: 0, new: 0, capacityTB: 0 });
+  assert.equal(selection.contextModelIds.length, 3);
+  assert.deepEqual(
+    selectRows(rows, inventory, selection, { ...defaultFilter(), modelIds: new Set() }),
+    [],
+  );
+  assert.deepEqual(
+    selectRows(rows, inventory, selection, {
+      ...defaultFilter(),
+      vendor: 'New vendor',
+      modelIds: new Set(['small']),
+    }),
+    [],
+  );
+});
 await test('URLs retain independent snapshot and calendar-quarter selection and example context', () => {
   const url = exploreUrl(
     'https://example.org/?view=explore&example=1',

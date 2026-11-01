@@ -11,18 +11,22 @@ Their ongoing work makes these comparisons possible. Please visit their
 [official Drive Stats reports](https://www.backblaze.com/blog/category/hard-drive-stats/)
 for Backblaze's own analysis and context.
 
-The current site provides calendar-quarter exploration using real 2026 Q2 data.
-The planned flagship is a vendor-grouped comparison aligned by relative quarter,
-preserving the AFR workbook's seven adjacent metrics and conditional colors.
+The site opens a real-data, vendor-grouped AFR comparison aligned by relative
+quarter, preserving seven adjacent metrics and conditional colors. The latest
+snapshot is 2026 Q2. Explore deployments and drive distribution use the paired
+calendar-quarter data, while the other supporting views retain their existing
+quarterly explorer until their individual integration tickets are accepted.
 See the [flagship plan](docs/flagship-afr-plan.md) for scope and implementation gates.
 
-The approved [matrix contract](docs/flagship-matrix-contract.md) and
-[supporting-report contract](docs/supporting-report-contract.md) define the next
-data products. [Golden workbook fixtures](docs/flagship-workbook-fixtures.md)
+The accepted [v2 contracts](docs/production-data-v2.md) define production data;
+the original [matrix](docs/flagship-matrix-contract.md) and
+[supporting-report](docs/supporting-report-contract.md) contracts remain v1
+references. [Golden workbook fixtures](docs/flagship-workbook-fixtures.md)
 preserve both owner-supplied references, separately from explicitly synthetic
-production edge cases. A [fixture comparison preview](docs/flagship-ui.md) is
-available at `?view=matrix`, with full workbook references and clearly labeled
-synthetic edge cases. The [historical generator](docs/historical-generator.md)
+production edge cases. The [production comparison](docs/flagship-ui.md) is the
+landing view and is available at `?view=matrix`. Full workbook references and
+clearly labeled synthetic examples remain at `?view=matrix&reference=1`, with
+their original values. The [historical generator](docs/historical-generator.md)
 prepares paired aggregate snapshots offline; its private caches support
 [verified local/B2 transfer](docs/history-storage.md). Parquet uses an
 [explicit enriched metadata profile](docs/parquet-profile.md) with statistics,
@@ -61,9 +65,12 @@ real-artifact generation and individual report adoption retain their own gates.
 The [real production v2 aggregate release](docs/production-release.md) now supplies
 2026 Q2 and the 2025 Q3/Q4 workbook cutoffs, with explicit
 [workbook reconciliation limits](docs/production-workbook-reconciliation.md).
-Review its shared model context at `?view=explore`; specialized report integration
-remains queued. The private rolling plan is r033.
-The current explorer remains the default.
+The real matrix is now the default. Explore [deployments](docs/explore-deployments.md)
+at `?view=deployments` and [drive distribution](docs/explore-distribution.md) at
+`?view=distribution`; the shared model context remains at `?view=explore`.
+The private rolling plan is r034. The original quarterly reliability view remains
+at `?view=reliability`; explicit `legacy=1` preserves its deployments/distribution
+routes for comparison.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's
 source data, name, branding and other third-party material retain their own rights

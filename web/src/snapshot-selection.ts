@@ -109,6 +109,10 @@ export function selectionCsv(
     sourceUrl: string;
     scope: ScopeName;
     contextCount: number | null;
+    contextNew?: number | null;
+    report?: string;
+    filterDescription?: string;
+    sourceHistoryStart?: string;
   },
 ) {
   return csv([
@@ -127,6 +131,11 @@ export function selectionCsv(
       'Whole scope observed drives',
       'Data source',
       'Source URL',
+      'Report',
+      'Visible row filters',
+      'Whole scope first recorded',
+      'Supplied history starts',
+      'Observation interpretation',
     ],
     ...rows.map((row) => [
       row.vendor,
@@ -143,6 +152,11 @@ export function selectionCsv(
       metadata.contextCount ?? 'Unavailable',
       'Backblaze Drive Stats; independent Sixbucks Solutions analysis',
       metadata.sourceUrl,
+      metadata.report ?? 'overview',
+      metadata.filterDescription ?? 'Whole context',
+      metadata.contextNew ?? 'Unavailable',
+      metadata.sourceHistoryStart ?? 'See source coverage',
+      'Count is observed anywhere in the quarter, not quarter-end stock. First recorded includes the initial observed fleet; publication boundaries and source gaps prevent inferring physical installation dates.',
     ]),
   ]);
 }
