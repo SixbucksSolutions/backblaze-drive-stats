@@ -34,12 +34,11 @@ satisfies the dependent acceptance gate. Terry also approved #0087, #0089 and
 #0090 while reserving their later lane moves. #0091, #0092 and #0093 now implement
 the remaining capacity, manufacturer and datacenter views; those cards are now
 owner-Completed. #0095's [maintained refresh workflow](quarterly-refresh.md) is
-explicitly owner-approved, with its RFR lane held for Terry's later move. #0094's
+owner-Completed. #0094's
 [integrated localhost review packet](integrated-release-validation.md) now records
-the accepted release validation. Terry explicitly approved #0094; its RFR lane
-is held for his later move. Terry also explicitly accepted parent #0017's
-[integrated handoff](integrated-production-handoff.md), with its RFR lane held for
-his later move. See the
+the accepted release validation; #0094 is owner-Completed. Parent #0017's
+[integrated handoff](integrated-production-handoff.md) is also owner-Completed.
+See the
 [producer documentation](historical-generator.md) and
 [shared reader handoff](snapshot-reader.md).
 
@@ -64,8 +63,9 @@ every historical cutoff before the first production release.
 Fresh independent review, meaningful numerical/accessibility checks, Backblaze
 attribution and the maintained Python/web quality gates are part of handoff.
 Parent #0017 and its integrated validation are accepted. Cloudflare #0007 remains
-separate and is being handed off Needs Terry for concrete account/domain/project
-inputs. Local preparation does not authorize live deployment or account changes.
+separate; the owner has now supplied its exact account/token/project target for
+the requested static deployment. Unrelated account, DNS and resource changes
+remain outside that deployment scope.
 
 Terry accepted #0096 for the **cool B2 us-west replication setup**. Initial copy
 completion and restore integrity remain unverified. The storage hierarchy
@@ -76,33 +76,34 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r044**. The
+Current rolling author/reviewer assignments are in private plan **r045**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
 ten-quarter source-batch exceptions do not expand this implementation limit.
 
-Terry explicitly accepted #0017, with its RFR lane held for his later move.
-#0007's [static Pages package](cloudflare-hosting.md) is prepared and locally
-verified. It will be Needs Terry for the account, hostname and any existing Pages
-project details he will supply in the morning. Target-specific configuration and
-hosted verification remain unfinished; no deployment authority is inferred.
+Terry has moved #0017 and #0097–#0100 to Completed.
+For #0007 he supplied the account, token file and
+`backblaze-drive-stats-analysis` target for the requested pages.dev deployment.
+The [static Pages package](cloudflare-hosting.md) is configured for production
+branch `main`. The hosting card records its qualified release, project/deployment
+receipt and actual hosted verification. Credentials remain outside Git and the
+served bundle. Future commits do not automatically authorize or trigger uploads.
 #0097's dependencies were removed at Terry's request. Its
-[minimized static build](asset-minimization.md) is explicitly owner-approved,
-with its RFR lane held for Terry's later move. Only unfinished #0007 target configuration and hosted
-verification remain planned; its missing owner inputs stay visible. Use an
+[minimized static build](asset-minimization.md) is owner-Completed.
+Hosting qualification remains tracked under #0007. Use an
 explicitly accepted bundle when a later upload is authorized. The roster starts
 no workers and does not treat RFR alone as approval.
 
 Separate follow-up #0098's [whole-project review](project-review-0098.md) is
-explicitly owner-approved, with its RFR lane held for Terry. A Sol / High lead curated three Astra / Medium packets and
+owner-Completed. A Sol / High lead curated three Astra / Medium packets and
 fresh Sol / High validation challenged the findings for evidence and practical
 value. Three P3 defects survived, with one conditional test follow-on; no broad
 refactor, language-modernization pass or test deletion was justified.
 
 #0099's user-focused README, linked navigation/legacy records and reference URLs
-are ready for review. #0100's captured datacenter availability, consistent UI/CSV
-wording and focused cold/retained regressions are also ready for review. Existing
+are owner-Completed. #0100's captured datacenter availability, consistent UI/CSV
+wording and focused cold/retained regressions are also owner-Completed. Existing
 immutable artifacts and cache identity remain unchanged. Ambiguous modern
 all-Unknown legacy inputs require verified capture evidence for new generations;
 mixed captures preserve valid known locations.

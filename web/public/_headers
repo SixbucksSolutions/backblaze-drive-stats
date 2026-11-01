@@ -4,6 +4,8 @@
   Cache-Control: no-cache
 /404.html
   Cache-Control: no-cache
+/404
+  Cache-Control: no-cache
 /data/index.json
   Cache-Control: no-cache
 /data/2026-Q2.json

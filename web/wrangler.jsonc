@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "backblaze-drive-stats-local",
+  "name": "backblaze-drive-stats-analysis",
   "compatibility_date": "2026-10-23",
   "pages_build_output_dir": "./dist",
 }

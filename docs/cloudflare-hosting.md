@@ -5,12 +5,13 @@ contains HTML, JavaScript, CSS, public aggregate JSON, fonts and attribution.
 There is no Worker script, Pages Function, database or runtime Python service.
 Wrangler is the pinned local verification and eventual upload tool.
 
-Terry accepted parent #0017. He will supply the Cloudflare account, intended
-hostname and any existing Pages project in the morning. The committed name
-`backblaze-drive-stats-local` is a local template, not a chosen remote resource.
-Target-specific configuration and hosted verification remain unfinished until
-those details arrive. No Cloudflare account, DNS or resource changes have been
-made and no files have been uploaded.
+The owner-selected target is the **`backblaze-drive-stats-analysis`** Pages
+project, production branch **`main`**, at
+<https://backblaze-drive-stats-analysis.pages.dev/>. The account and credential
+are supplied privately at release time; no token is stored in this repository.
+The hosting card #0007 records the actual project/deployment receipt, qualified
+release commit and hosted verification. This runbook describes the repeatable
+build and publication procedure; a configured URL alone is not a deployment receipt.
 
 ## Build and inspect
 
@@ -64,6 +65,8 @@ The six views use query URLs at the origin root, including historical selections
 such as `/?view=capacity&snapshot=2025-Q4-v2-567907ee122370721c8f1a09`.
 No catch-all rewrite is needed. Root `404.html` disables Pages' automatic SPA
 fallback so a missing aggregate URL returns 404 instead of the app shell.
+The canonical `/404` page and `/404.html` path both have explicit revalidation
+headers, accounting for Pages' HTML-extension redirects.
 
 ## Cache policy
 
@@ -81,38 +84,58 @@ account's DNS, TLS, cache-rule overrides or live CDN behavior. The probe accepts
 loopback URLs only. After an authorized upload, verify the same properties on
 the actual approved preview/hostname with read-only HTTP and browser checks.
 
-## Target-specific finishing steps
+## Publish and verify an explicitly requested release
 
-Once Terry provides the account, hostname and existing project information:
+The owner supplies `CLOUDFLARE_ACCOUNT_ID` and a Pages Write token for the intended
+account. Load the token only into the deployment process; keep it out of command
+arguments, Git, build files, cards and logs. The local operator-specific runner
+and sanitized receipts are private evidence under `data/staging/0007/`.
 
-1. Recheck #0007's lane and move In Progress before resuming. Identify the correct
-   account and project, deployment mode and production branch. Preserve an
-   existing Git-integrated Pages project rather than assuming it can become a
-   Direct Upload project. Do not create resources to discover these answers.
-2. Finish and review the target-specific configuration. Use the existing
-   authorized login or arrange the concrete missing access privately. Do not
-   put credentials into a card, source file or build artifact.
-3. Retain the exact validated release bundle and manifest. Record its Git commit
-   and the previous production deployment ID, if any. A Pages dashboard upload
-   or pinned Wrangler direct upload can send this static directory; no Worker
-   or Functions are needed.
-4. Only after the separately required upload/resource authorization, deploy an
-   approved preview or production target. Do not enable automatic Git deploys
-   merely by connecting the repository. Verify all six views, historical links,
-   aggregate hashes, cache headers, missing JSON, custom fonts, attribution,
-   narrow layouts and keyboard behavior on the actual hosted URL.
-5. Record the resulting deployment ID, hostname and verification. Finish the
-   hosting card only when its target-specific acceptance criteria are satisfied.
+1. Recheck the card lane and owner-requested release scope before work. Use
+   read-only Pages API lookup to confirm account access and project settings.
+   An existing project/source integration must be preserved. First-time Direct
+   Upload creation selects this exact project name and `main` production branch;
+   it does not add a Git integration, custom domain, DNS record or Function.
+2. Qualify the current revision with the documented build/quality gates and
+   Windows/Linux CI. Keep the exact release manifest outside `dist` and verify
+   every byte again immediately before upload. Record the prior production
+   deployment ID, if any; an initial deployment has no rollback predecessor.
+3. Use a clean child environment with the production Cloudflare API endpoint,
+   process-only account/token, telemetry/error reporting and Wrangler disk logs
+   disabled. Reject unreviewed dotenv/config redirects and Functions/Worker
+   entry points at publication time. Keep the reviewed `wrangler.jsonc` target.
+4. Upload only the validated static directory. The pinned Wrangler command uses
+   `--force` to remain on Pages instead of its automatic Pages-to-Workers
+   delegation path. No Worker scripts or Pages Functions are part of this build.
+   Existing CI remains quality-only; commits do not automatically publish.
+5. Confirm the API reports a successful production deployment for the exact
+   project, branch and release commit. Run the public verification below, then
+   check all six views, historical links, fonts, attribution and narrow/keyboard
+   behavior in the browser. Record the deployment ID, hostname and results.
 
-For a later authorized Direct Upload, the concrete command will have this form
-after replacing the target values with reviewed project settings:
+The equivalent publication command, after the owner-requested release and
+credential/environment checks, is:
 
 ```console
-node node_modules/wrangler/bin/wrangler.js pages deploy dist --project-name APPROVED_PROJECT --branch APPROVED_BRANCH
+node node_modules/wrangler/bin/wrangler.js pages deploy dist --project-name backblaze-drive-stats-analysis --branch main --commit-hash REVIEWED_COMMIT --commit-dirty=false --force
 ```
 
-Do not execute that template during local preparation. Pages supports distinct
-Git integration and Direct Upload project modes; confirm the existing mode first.
+Supply the reviewed commit hash. Local preparation does not itself execute this
+command. Pages supports distinct Git integration and Direct Upload project modes;
+Direct Upload does not later become automatic Git integration in place.
+
+After publication, from `web/`:
+
+```console
+npm run check:hosting:remote -- https://backblaze-drive-stats-analysis.pages.dev/
+```
+
+This credential-free verifier checks every served release file against its local
+manifest, including decoded byte lengths, SHA-256, cache headers and media types.
+It checks navigation queries, canonical HTML redirects and genuine custom 404s.
+Requests are limited to this HTTPS project origin or a single deployment/branch
+label beneath it, with bounded concurrency, response sizes and timeouts. It does
+not authenticate or deploy. The separate local verifier remains loopback-only.
 
 ## Rollback
 

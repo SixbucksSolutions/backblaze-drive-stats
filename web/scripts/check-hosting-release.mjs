@@ -36,6 +36,7 @@ export const headerRules = [
   ['/', 'no-cache'],
   ['/index.html', 'no-cache'],
   ['/404.html', 'no-cache'],
+  ['/404', 'no-cache'],
   ['/data/index.json', 'no-cache'],
   ['/data/2026-Q2.json', shortCache],
   ['/data/production/index.json', 'no-cache'],
@@ -49,11 +50,11 @@ export function assertHostingPolicy(config, headers) {
     config,
     {
       $schema: './node_modules/wrangler/config-schema.json',
-      name: 'backblaze-drive-stats-local',
+      name: 'backblaze-drive-stats-analysis',
       compatibility_date: '2026-10-23',
       pages_build_output_dir: './dist',
     },
-    'Hosting template must remain static Pages without Functions until its target is approved',
+    'Hosting configuration must match the approved static Pages target without Functions',
   );
   const expected = headerRules.flatMap(([path, policy]) => [path, `Cache-Control: ${policy}`]);
   const actual = headers
