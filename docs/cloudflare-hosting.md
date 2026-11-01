@@ -88,8 +88,9 @@ must never change. The one-year immutable policy encourages long-lived reuse;
 it cannot force a browser or CDN to retain an object forever.
 
 `Cache-Control: public` also supplies freshness instructions to shared caches.
-Pages already provides [built-in Tiered Cache](https://developers.cloudflare.com/pages/configuration/serving-pages/#caching-and-performance),
-ETags and transport compression. This package does not add account-level cache
+Pages already provides [built-in Tiered Cache](https://developers.cloudflare.com/pages/configuration/serving-pages/#caching-and-performance)
+and transport compression. JSON and fonts expose native ETags; the current HTML
+delivery path does not, as described below. This package does not add account-level cache
 rules or a Worker. Actual edge residency is separate from browser freshness and
 can end before a TTL; observed edge hits are verification evidence, not a promise
 of permanent residency. Cloudflare's default cache key includes the
@@ -103,6 +104,34 @@ navigation and absent/private paths. Local checks cannot establish the eventual
 account's DNS, TLS, cache-rule overrides or live CDN behavior. The probe accepts
 loopback URLs only. After an authorized upload, verify the same properties on
 the actual approved preview/hostname with read-only HTTP and browser checks.
+
+### HTML reload validation (#0112)
+
+Normal navigation can reuse fresh HTML locally. Chrome reloads instead send
+`Cache-Control: max-age=0` and ask for validation. In this Pages configuration,
+HTML responses do not expose ETag or Last-Modified, even though the native asset
+service accepts its exact strong/weak asset key and returns an empty `304`.
+
+Actual Pages previews tested native ETag overrides, Last-Modified, targeted CDN
+headers and two HTML versions. With transforms allowed, overridden ETags were
+still stripped; displayed
+Last-Modified did not cause conditional `304`s. Ordinary `no-transform` restored
+the native ETag and automatic Chrome revalidation, but also disabled HTML gzip
+and Brotli. No validated static-only option preserving both was found.
+
+For the same preview HTML, raw encoded bodies measured about 95 KB with Brotli
+and 352 KB with `no-transform`; the latter's unchanged conditional response had
+no body. Those are body-byte measurements, excluding headers, not a latency
+comparison. Chrome/Lighthouse automatically supplied the validator in a forced
+revalidation diagnostic; this was not a manual UI reload test. Changed HTML
+rejected the previous validator and returned its new body.
+
+Production remains compressed. Choosing the larger fresh HTML response to obtain
+native `304`s requires the owner's decision on #0112. The tested candidate needs
+no custom hashing or Worker: Pages already stores and compares its uploaded asset
+key. Diagnostic use of Wrangler's existing BLAKE3 dependency added no installation
+or browser dependency. Detailed evidence is retained in `data/staging/0112/` and
+`data/staging/0112-preview/`.
 
 ## Publish and verify an explicitly requested release
 
