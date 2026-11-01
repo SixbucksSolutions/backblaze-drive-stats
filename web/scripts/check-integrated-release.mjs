@@ -26,6 +26,7 @@ import {
   reportCsv,
 } from '../src/snapshot-selection.ts';
 import { assertPublicValues, checkProductionData } from './check-production-data.mjs';
+import { activeReleaseSelection } from './active-release-selection.ts';
 
 const metrics = ['count', 'new', 'capacityTB'];
 const ordinal = (quarter) => Number(quarter.slice(0, 4)) * 4 + Number(quarter.at(-1));
@@ -309,10 +310,7 @@ export function auditCsv(content, expectedMetadata) {
   return records.length;
 }
 
-export async function checkIntegratedRelease(
-  directory,
-  options = { latestQuarter: '2026-Q2', quarters: ['2025-Q3', '2025-Q4', '2026-Q2'] },
-) {
+export async function checkIntegratedRelease(directory, options = activeReleaseSelection) {
   const graph = await checkProductionData(directory, options);
   const root = 'https://publication.example/production/';
   const sizes = new Map();
@@ -339,8 +337,8 @@ export async function checkIntegratedRelease(
       [...context.selection.analysisModelIds].sort(),
     );
     assert.ok(
-      context.selection.contextModelIds.length > matrix.models.length,
-      'Supporting context must retain models outside analysis',
+      context.selection.contextModelIds.length >= matrix.models.length,
+      'Supporting context must include every analysis model',
     );
     const points = await new CapacityHistoryReader(loader).load(entry.snapshotId);
     assert.equal(

@@ -9,6 +9,7 @@ import {
   selectionCsv,
   selectionTotals,
   reportCsv,
+  customerHddScopeDescription,
 } from './snapshot-selection.ts';
 import type { ModelFilter, ModelSort, ReportCsvMetadata } from './snapshot-selection.ts';
 import { CapacityHistoryReader, renderCapacity, capacityCsvRows } from './capacity-report.ts';
@@ -23,6 +24,11 @@ import { renderDistribution } from './distribution-report.ts';
 import { matrixHref, snapshotReport } from './app-route.ts';
 import type { SnapshotReport } from './app-route.ts';
 import { exampleUrls, exampleIndexName } from 'virtual:minimized-example-json';
+import {
+  snapshotAvailable,
+  snapshotChoices,
+  snapshotUnavailableReason,
+} from './snapshot-availability.ts';
 
 const reportNames = {
   reliability: 'Reliability',
@@ -155,6 +161,15 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
         : undefined;
     const context = descriptor?.context;
     const currentReport = snapshotReports[report];
+    const hddScopeDescription = context
+      ? customerHddScopeDescription(
+          context.versions.selection,
+          context.selection,
+          context.inventory,
+        )
+      : undefined;
+    const viewUnavailable =
+      !example && context?.kind === 'backblaze' && !snapshotAvailable(context.asOfQuarter, report);
     document.title = `Drive Stats — ${currentReport.label}`;
     const deployments = report === 'deployments';
     const allSupplied = report === 'capacity' || report === 'datacenters';
@@ -179,11 +194,12 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
                   ? renderDistribution(visible, payload?.status === 'complete')
                   : '';
     const canExport =
-      report === 'capacity'
+      !viewUnavailable &&
+      (report === 'capacity'
         ? capacityHistory.length > 0
         : report === 'datacenters'
           ? payload !== null
-          : payload !== null && visible.length > 0;
+          : payload !== null && visible.length > 0);
     const vendors = [
       ...new Set(
         context?.inventory
@@ -215,11 +231,11 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
       ${example || context?.kind === 'sample' ? '<div class="sample-banner"><strong>SAMPLE DATA</strong> Fictional examples for exploring coverage and selection. These are not Backblaze results.</div>' : ''}
       <div class="snapshot-controls"><label>Snapshot as of<select id="snapshot-choice" ${!index ? 'disabled' : ''}>${
         index
-          ? [...index.snapshots]
+          ? (example ? [...index.snapshots] : snapshotChoices(index.snapshots, report, snapshotId))
               .sort((a, b) => b.asOfQuarter.localeCompare(a.asOfQuarter))
               .map(
                 (entry) =>
-                  `<option value="${esc(entry.snapshotId)}" ${entry.snapshotId === snapshotId ? 'selected' : ''}>${quarterLabel(entry.asOfQuarter)} · ${esc(entry.snapshotId)}</option>`,
+                  `<option value="${esc(entry.snapshotId)}" ${!example && !snapshotAvailable(entry.asOfQuarter, report) ? 'disabled' : ''} ${entry.snapshotId === snapshotId ? 'selected' : ''}>${quarterLabel(entry.asOfQuarter)} · ${!example && !snapshotAvailable(entry.asOfQuarter, report) ? 'unavailable for this view' : esc(entry.snapshotId)}</option>`,
               )
               .join('')
           : '<option>Loading snapshots…</option>'
@@ -240,9 +256,12 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
           : error
             ? `<div class="state-panel error" role="alert"><h2>Snapshot unavailable</h2><p>${esc(error)}</p><button id="snapshot-retry" class="button">Try again</button>${!example ? '<p><a href="?view=explore&example=1">Explore clearly labeled fictional examples</a></p>' : ''}</div>`
             : context
-              ? `
+              ? viewUnavailable
+                ? `<div class="state-panel" role="status"><h2>${quarterLabel(context.asOfQuarter)} · ${currentReport.label} unavailable</h2><p>${esc(snapshotUnavailableReason(report))}</p><a href="${esc(exploreUrl(location.href, context.snapshotId, quarter, 'capacity'))}">View total capacity at this cutoff</a></div>`
+                : `
       <div class="coverage-banner"><strong>${esc(coverage?.status ?? 'Unavailable')} source coverage · ${quarterLabel(quarter)}</strong><span>${esc(coverage?.reason ?? '')} ${coverage ? `${coverage.observedDays}/${coverage.expectedDays} calendar days observed.` : ''} Snapshot cutoff: ${esc(context.cutoffDate)}. Full-quarter metrics remain unavailable for incomplete coverage.</span></div>
       ${renderScopeMetrics(report, totals, payload, coverage, visible.length)}
+      ${!allSupplied && hddScopeDescription ? `<p class="snapshot-note">${esc(hddScopeDescription)}</p>` : ''}
       <section class="panel table-panel"><div class="panel-header"><div><p class="eyebrow">${allSupplied ? 'ALL SUPPLIED OBSERVATIONS' : 'COMPLETE SELECTED-HDD RESULTS'}</p><h2>${specialized ? currentReport.label : deployments ? 'First recorded additions by model' : 'Selected HDD observations'}</h2></div><button id="snapshot-download" class="button" ${!canExport ? 'disabled' : ''}>Download CSV</button></div>
       ${
         !allSupplied
@@ -427,7 +446,7 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
           report,
           filterDescription: allSupplied
             ? 'All supplied observations; HDD model/vendor filters do not apply'
-            : `Vendor: ${filter.vendor || 'all'}; search: ${filter.search || 'none'}; model selection: ${filter.modelIds ? [...filter.modelIds].join(' ') : 'all context'}; model set: ${report === 'overview' ? filter.preset : 'context'}`,
+            : `${customerHddScopeDescription(descriptor.context.versions.selection, descriptor.context.selection, descriptor.context.inventory) ?? 'Whole HDD context'} Vendor: ${filter.vendor || 'all'}; search: ${filter.search || 'none'}; model selection: ${filter.modelIds ? [...filter.modelIds].join(' ') : 'all context'}; model set: ${report === 'overview' ? filter.preset : 'context'}`,
           sourceHistoryStart: descriptor.context.sourceDomain.historyStartQuarter,
         };
         let content: string;

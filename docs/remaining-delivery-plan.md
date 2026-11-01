@@ -76,7 +76,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r046**. The
+Current rolling author/reviewer assignments are in private plan **r047**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
@@ -118,12 +118,17 @@ implied by the completed review.
 and two Python transitive updates. #0103's
 [metric reconciliation](afr-metric-reconciliation-0103.md) implements versioned
 quarterly unique Failed/AFR counts, final-observed Retired with a censored terminal
-quarter, and original-code delta baselines. Both are prepared for owner review;
-existing public generations and the live site retain their previous semantics.
+quarter, and original-code delta baselines. Terry approved both #0102 and #0103
+and moved them to Completed. The separate
+[full-history refresh #0104](full-history-refresh-0104.md) publishes all 53
+retained cutoffs with per-view evidence bounds across all six views and calculation
+2.1.0; the exact old graph remains in an unserved archive.
 
 Terry explicitly held #0101 for its own turn. It remains Ready for Work and has
-not started. New #0104 tracks a separate, consistent full-history production
-refresh and deployment after #0103 acceptance; hosting #0007 is accepted.
-Creating it did not start that work. The roster lists that future turn and
-#0101's dedicated held turn separately. It does not authorize source moves,
-downloads, ETL, B2 publication or a Pages deployment.
+not started. Terry separately authorized #0104 for this turn, including the
+consistent full-history refresh and existing-target Pages deployment. Its
+handoff records the final verification and actual deployment receipt. Terry
+requested new #0106 for next turn to document the durable historical time-warp
+intent; that card is created only and unstarted. The remaining roster lists
+#0106 followed by #0101's dedicated held turn. Planning does not start either
+card or authorize #0101's source moves, downloads, ETL or publication.

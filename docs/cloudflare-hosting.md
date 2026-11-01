@@ -36,8 +36,11 @@ the complete upload directory. Keep both manifests and retained release bundles
 outside the served directory.
 
 Private B2 processing objects, raw data, credentials, staging evidence and source
-Parquet are never upload inputs. The existing 161 production JSON files keep
-their exact bytes and calculation semantics. #0097's
+Parquet are never upload inputs. #0104's [full-history refresh](full-history-refresh-0104.md)
+replaces the active production selector with 53 source-bounded cutoffs using
+consistently bound calculation 2.1.0. The original 161-file 2.0 graph is preserved
+outside the served tree.
+#0097's
 [asset minimization](asset-minimization.md) changes only reviewed build copies;
 its 199-file bundle supersedes the earlier 190-file local candidate once accepted.
 
@@ -62,7 +65,7 @@ Ctrl+C when finished. A Vite preview remains useful for UI development, but it
 does not prove Cloudflare's header or missing-file behavior.
 
 The six views use query URLs at the origin root, including historical selections
-such as `/?view=capacity&snapshot=2025-Q4-v2-567907ee122370721c8f1a09`.
+such as `/?view=capacity&snapshot=2025-Q4-v2-569fc69a7d6c1e0bd62c2e4c`.
 No catch-all rewrite is needed. Root `404.html` disables Pages' automatic SPA
 fallback so a missing aggregate URL returns 404 instead of the app shell.
 The canonical `/404` page and `/404.html` path both have explicit revalidation

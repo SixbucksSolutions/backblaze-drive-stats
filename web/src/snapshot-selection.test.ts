@@ -2,13 +2,92 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { csv } from './data.ts';
 import {
+  snapshotAvailable,
+  snapshotChoices,
+  snapshotUnavailableReason,
+} from './snapshot-availability.ts';
+import { activeReleaseSelection } from '../scripts/active-release-selection.ts';
+import {
   defaultFilter,
   exploreUrl,
   quarterLabel,
   selectRows,
   selectionCsv,
   selectionTotals,
+  customerHddScopeDescription,
 } from './snapshot-selection.ts';
+
+void test('historical customer-fleet labels use descriptor capacity/exclusions and separate AFR qualification', () => {
+  const description = customerHddScopeDescription(
+    '2.1.0',
+    {
+      minimumCapacityTB: 1,
+      excludedModelIds: ['a'.repeat(64), 'b'.repeat(64)],
+    },
+    [
+      { modelId: 'a'.repeat(64), modelNumber: 'WD800LB' },
+      { modelId: 'b'.repeat(64), modelNumber: 'DELL "BOSS"' },
+    ],
+  );
+  assert.match(description!, /observed by this snapshot cutoff.*≥1 TB/);
+  assert.match(description!, /Owner-designated exclusions: WD800LB, DELL "BOSS"/);
+  assert.doesNotMatch(description!, /[ab]{64}|boot\/system/);
+  assert.match(csv([[description!]]), /DELL ""BOSS""/);
+  const unnamed = customerHddScopeDescription('2.1.0', {
+    minimumCapacityTB: 1,
+    excludedModelIds: ['a'.repeat(64)],
+  });
+  assert.match(unnamed!, /Owner-designated exclusions: 1 model/);
+  assert.doesNotMatch(unnamed!, /a{64}/);
+  assert.match(
+    description!,
+    /Smaller populations.*AFR comparison separately requires at least 2,000/,
+  );
+  assert.match(description!, /partial capture.*AFR values remain unavailable/);
+  assert.equal(customerHddScopeDescription('2.0.0', {}), undefined);
+  assert.equal(customerHddScopeDescription('2.0.0', { minimumCapacityTB: 1 }), undefined);
+});
+
+void test('six views offer only cutoffs with their reviewed evidence availability', () => {
+  for (const [view, expected, first] of [
+    ['matrix', 53, '2013-Q2'],
+    ['deployments', 53, '2013-Q2'],
+    ['distribution', 53, '2013-Q2'],
+    ['manufacturers', 53, '2013-Q2'],
+    ['capacity', 53, '2013-Q2'],
+    ['datacenters', 12, '2023-Q3'],
+  ] as const) {
+    const available = activeReleaseSelection.quarters.filter((quarter) =>
+      snapshotAvailable(quarter, view),
+    );
+    assert.equal(available.length, expected, view);
+    assert.equal(available[0], first, view);
+    assert.equal(available.at(-1), '2026-Q2', view);
+  }
+  assert.equal(snapshotAvailable('2013-Q1', 'matrix'), false);
+  assert.equal(snapshotAvailable('2023-Q2', 'datacenters'), false);
+  assert.match(snapshotUnavailableReason('matrix'), /evidenced HDD models.*Total capacity/);
+  assert.match(
+    snapshotUnavailableReason('datacenters'),
+    /July 2023.*Earlier calendar periods remain unavailable/,
+  );
+});
+
+void test('unavailable direct URLs retain their exact cutoff while other unavailable choices are excluded', () => {
+  const entries = activeReleaseSelection.quarters.map((asOfQuarter) => ({
+    snapshotId: asOfQuarter,
+    asOfQuarter,
+  }));
+  const entriesBefore = structuredClone(entries);
+  const choices = snapshotChoices(entries, 'datacenters', '2014-Q1');
+  assert.equal(choices.length, 13);
+  assert.equal(choices[0]!.snapshotId, '2014-Q1');
+  assert.equal(snapshotAvailable(choices[0]!.asOfQuarter, 'datacenters'), false);
+  assert.ok(choices.slice(1).every((entry) => snapshotAvailable(entry.asOfQuarter, 'datacenters')));
+  assert.deepEqual(entries, entriesBefore);
+  assert.equal(snapshotChoices(entries, 'matrix', '2026-Q2').length, 53);
+  assert.equal(snapshotChoices(entries, 'capacity', '2014-Q1').length, 53);
+});
 
 const inventory = [
   { modelId: 'large', vendor: 'New vendor', modelNumber: 'LARGE' },

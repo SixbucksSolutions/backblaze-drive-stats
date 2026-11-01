@@ -2,6 +2,7 @@ import type { ProductionMatrix, SnapshotDescriptor } from './production-data.ts'
 import type { Domain, Knot, MatrixCell, MatrixSnapshot, Metric } from './matrix-data.ts';
 import { metrics } from './matrix-data.ts';
 import { SnapshotLoader } from './snapshot-loader.ts';
+import { customerHddScopeDescription } from './snapshot-selection.ts';
 
 const green = '#00FF00',
   yellow = '#FFFF00',
@@ -78,6 +79,11 @@ export function adaptProductionV2(
   matrix: ProductionMatrix,
 ): MatrixSnapshot {
   const { context } = descriptor;
+  const hddScopeDescription = customerHddScopeDescription(
+    context.versions.selection,
+    context.selection,
+    context.inventory,
+  );
   if (
     matrix.contractVersion !== '2.0.0' ||
     !['2.0.0', '2.1.0'].includes(context.versions.rate) ||
@@ -251,6 +257,7 @@ export function adaptProductionV2(
     kind: context.kind === 'backblaze' ? 'production' : 'sample',
     rateLabel: matrix.rateLabel,
     matrixCalculationVersion: context.versions.rate,
+    ...(hddScopeDescription === undefined ? {} : { hddScopeDescription }),
     sourceUrl: context.provenance.url,
     sourceHash: context.sourceManifestSha256,
     cutoff: context.cutoffDate,

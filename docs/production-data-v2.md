@@ -6,6 +6,12 @@
 keep their existing behavior. This is a public aggregate contract;
 its version is independent of the private processing store named `cache-v2`.
 
+#0104 adds selection/cohort **2.1.0** for historical customer-HDD fleets, with
+the independently versioned **2.1.0** distinct-failure rate calculation. The
+structural contract and capacity version remain 2.0.0. Legacy generations keep
+their original interpretation; the active release is described in the
+[full-history refresh](full-history-refresh-0104.md).
+
 The [remaining delivery plan](remaining-delivery-plan.md) assigns implementation,
 real-artifact generation and each visualization separately. The normative schema
 is [production-v2.schema.json](../contracts/production-v2.schema.json); its small
@@ -14,7 +20,7 @@ Neither schema conformance nor a synthetic example certifies source truth.
 
 ## Accepted decisions
 
-The accepted v2 family makes three explicit changes:
+The originally accepted v2 family made three explicit changes:
 
 1. Keep the supporting HDD context separate from the narrower flagship analysis
    cohort. Purchase defaults never remove supporting context or change its
@@ -23,7 +29,8 @@ The accepted v2 family makes three explicit changes:
    partial-quarter lower bound. Preserve uncertainty about an earlier crossing;
    do not label this physical drive age or first-ever deployment.
 3. Add **Observed-history AFR**, explicitly calculated from recorded failure
-   flags and recorded exposure. It remains useful after a past source gap without
+   flags (rate 2.0) or quarterly distinct failing identities (rate 2.1), over
+   recorded exposure. It remains useful after a past source gap without
    claiming complete history or lifetime exposure. Current partial-quarter rates
    and full-quarter population stay unavailable.
 
@@ -43,24 +50,32 @@ aliases, vendor, media classification and evidence. Unknown vendors and
 unclassified devices stay visible in the inventory. A high population alone is
 not evidence that a model is an HDD; a regex nonmatch never excludes a new vendor.
 
-| Selection set | Meaning |
+| Selection set | Current selection/cohort 2.1 meaning |
 | --- | --- |
-| `contextModelIds` | Every confirmed HDD with a positive seed match or an evidenced >=2,000 threshold proof in supplied history |
-| `analysisModelIds` | Explicit versioned subset of context used for flagship blocks; every member needs threshold proof |
+| `contextModelIds` | Every observed, evidenced HDD with known cutoff-bounded nominal capacity at least `minimumCapacityTB`, minus explicit `excludedModelIds` |
+| `analysisModelIds` | Every context HDD with an evidenced >=2,000 threshold proof through this cutoff; a frozen modern subset is rejected |
 | `purchaseDefaultModelIds` | Initial visible purchase-comparison subset of analysis |
 | `historicalReferenceModelIds` | Separate historical-reference subset of analysis |
+| `minimumCapacityTB` | Required positive finite customer-HDD capacity floor; current owner policy is 1.0 decimal TB |
+| `excludedModelIds` | Required explicit list, possibly empty; unique observed model IDs excluded by owner policy, independently of media classification |
 
 The two default subsets are disjoint. Both stay within analysis, which stays
-within context. A seeded HDD that never qualifies still belongs to supporting
-context. Its absence from the matrix is not permission to drop its supporting
-observations. Confirmed SSDs and unresolved media cannot enter the HDD comparison.
+within context. A policy-eligible HDD with a smaller population still belongs
+to supporting context. Its absence from the matrix is not permission to drop
+its supporting observations. Confirmed SSDs, unresolved media, unknown nominal
+capacity and sub-floor HDDs cannot enter the customer-HDD comparison. Inventory
+and all-supplied source budgets retain those observations.
 
-The current analysis decision preserves the 22-model research accepted in #0063.
-That number is not a permanent schema constraint. A later quarterly refresh must
+Legacy selection/cohort 2.0 preserves the seed-plus-qualified context and the
+explicit research subset accepted under #0063. It omits the new capacity and
+exclusion fields. Selection/cohort 2.1 instead reconstructs the actual historical
+fleet, including older models outside that modern research cohort. The current
+latest snapshot has 30 analysis models and 111 customer-HDD context models;
+neither number is a permanent schema constraint. A later quarterly refresh must
 discover fully evidenced new qualifying HDDs, including new vendors, and admit
 them through a new versioned generation; it cannot silently retain a closed
 regex-only list. Earlier generations remain immutable. Changes to explicit
-analysis/default/reference decisions are recorded, rather than inferred from
+analysis/default/reference, capacity-floor and exclusion decisions are recorded, rather than inferred from
 filter state. Deployment does not establish current manufacturing, retail stock,
 NAS compatibility or a purchase recommendation.
 

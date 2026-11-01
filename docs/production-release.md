@@ -1,5 +1,13 @@
 # Real production v2 aggregate release
 
+The active graph now uses calculation **2.1.0** across all 53 retained cutoffs
+and their full historical spans, with evidence-bound selection in all six views.
+See the [full-history refresh](full-history-refresh-0104.md)
+for view availability and the 1,538-file inventory.
+The original 2.0 qualification below remains historical evidence; its exact
+artifacts are preserved in `release-archive/production-rate-2.0/`, outside the
+served directory.
+
 #0086 prepares real, source-backed aggregate JSON under
 `web/public/data/production/`. It uses the accepted retained summaries through
 2026 Q2 and the [accepted v2 contracts](production-data-v2.md). It does not

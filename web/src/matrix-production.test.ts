@@ -16,6 +16,7 @@ import {
   productionDomain,
 } from './matrix-production.ts';
 import { axisExtent, cellAt, metrics, visibleModels } from './matrix-data.ts';
+import { activeReleaseSelection } from '../scripts/active-release-selection.ts';
 
 function localLoader(directory: URL, indexName = 'index.json') {
   const calls: string[] = [];
@@ -29,6 +30,23 @@ function localLoader(directory: URL, indexName = 'index.json') {
 const production = new URL('../public/data/production/', import.meta.url);
 const samples = new URL('../../fixtures/production-v2/', import.meta.url);
 const sampleIndex = (await readdir(samples)).find((name) => name.startsWith('sample-index.'))!;
+
+void test('customer fleet metadata reaches the matrix without changing legacy presentations', async () => {
+  const { loader } = localLoader(samples, sampleIndex);
+  const index = await loader.loadIndex();
+  const descriptor = await loader.loadSnapshot(index.latestSnapshotId);
+  const matrix = await loader.loadMatrix(descriptor);
+  assert.equal(adaptProductionV2(descriptor, matrix).hddScopeDescription, undefined);
+  const labeled = structuredClone(descriptor);
+  labeled.context.versions.selection = '2.1.0';
+  labeled.context.selection.minimumCapacityTB = 1;
+  labeled.context.selection.excludedModelIds = [labeled.context.inventory[0]!.modelId];
+  const view = adaptProductionV2(labeled, matrix);
+  assert.match(view.hddScopeDescription!, /observed by this snapshot cutoff.*≥1 TB/);
+  assert.ok(view.hddScopeDescription!.includes(labeled.context.inventory[0]!.modelNumber));
+  assert.match(view.hddScopeDescription!, /AFR comparison separately requires at least 2,000/);
+  assert.deepEqual(view.models, adaptProductionV2(descriptor, matrix).models);
+});
 
 void test('2.1 calculation semantics subtract synthetic zero while legacy zero deltas remain versioned', async () => {
   const { loader } = localLoader(samples, sampleIndex);
@@ -125,10 +143,15 @@ void test('2.1 calculation semantics subtract synthetic zero while legacy zero d
   assert.throws(() => parseProductionMatrix(matrixBytes, legacyDescriptor), /rate basis\/label/);
 });
 
-void test('real three-snapshot matrix maps every v2 display value without changing source semantics or shared domains', async () => {
+void test('all 53 historical matrices preserve 2.1 display values, source semantics and shared domains', async () => {
   const { loader, calls } = localLoader(production);
   const index = await loader.loadIndex();
   assert.equal(calls.length, 1);
+  assert.equal(index.snapshots.length, activeReleaseSelection.requiredSnapshotCount);
+  assert.deepEqual(
+    index.snapshots.map((entry) => entry.asOfQuarter).sort(),
+    [...activeReleaseSelection.quarters].sort(),
+  );
   assert.equal(
     index.snapshots.find((s) => s.snapshotId === index.latestSnapshotId)?.asOfQuarter,
     '2026-Q2',
@@ -138,8 +161,9 @@ void test('real three-snapshot matrix maps every v2 display value without changi
     const matrix = await loader.loadMatrix(descriptor);
     const view = adaptProductionV2(descriptor, matrix);
     assert.equal(view.kind, 'production');
-    assert.equal(view.rateLabel, 'Observed-history AFR');
-    assert.equal(view.models.length, entry.asOfQuarter === '2026-Q2' ? 22 : 21);
+    assert.equal(view.rateLabel, 'Observed-history AFR (quarterly unique failures)');
+    assert.equal(view.matrixCalculationVersion, activeReleaseSelection.requiredRateVersion);
+    assert.equal(view.models.length, descriptor.context.selection.analysisModelIds.length);
     assert.equal(descriptor.context.selection.purchaseDefaultModelIds.length, 0);
     assert.equal(descriptor.context.selection.historicalReferenceModelIds.length, 0);
     assert.deepEqual(
@@ -182,11 +206,11 @@ void test('real three-snapshot matrix maps every v2 display value without changi
         )
         .toSorted((a, b) => a - b);
       assert.equal(view.domains[metric].sampleCount, values.length);
-      assert.equal(view.domains[metric].observedMinimum, values[0]);
-      assert.equal(view.domains[metric].observedMaximum, values.at(-1));
+      assert.equal(view.domains[metric].observedMinimum, values[0] ?? null);
+      assert.equal(view.domains[metric].observedMaximum, values.at(-1) ?? null);
     }
     const domains = structuredClone(view.domains);
-    visibleModels(view, new Set([view.models[0]!.id]));
+    visibleModels(view, new Set(view.models.slice(0, 1).map((model) => model.id)));
     assert.deepEqual(view.domains, domains);
     assert.ok(axisExtent(view, 6) >= 24);
     assert.throws(
@@ -196,8 +220,8 @@ void test('real three-snapshot matrix maps every v2 display value without changi
   }
   assert.equal(
     calls.length,
-    7,
-    'index and only three selected descriptor/matrix pairs, no supporting quarter fetches',
+    1 + 2 * activeReleaseSelection.requiredSnapshotCount,
+    'index and one descriptor/matrix pair per cutoff, no supporting quarter fetches',
   );
 });
 

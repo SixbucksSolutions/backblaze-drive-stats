@@ -5,12 +5,94 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { inspect } from 'node:util';
-import { assertPublicValues, checkProductionData } from './check-production-data.mjs';
+import {
+  assertPublicValues,
+  assertSnapshotAvailability,
+  assertMinimumCapacity,
+  checkProductionData,
+} from './check-production-data.mjs';
+import { activeReleaseSelection } from './active-release-selection.ts';
 
 const fixtures = new URL('../../fixtures/production-v2/', import.meta.url);
 const options = { latestQuarter: '2023-Q4', quarters: ['2014-Q2', '2023-Q4'] };
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const json = (name) => readFile(new URL(name, fixtures), 'utf8').then(JSON.parse);
+
+void test('active release selects every quarterly cutoff from 2013-Q2 through 2026-Q2 exactly once', () => {
+  const expected = [];
+  for (let year = 2013; year <= 2026; year++) {
+    for (let quarter = 1; quarter <= 4; quarter++) {
+      if ((year === 2013 && quarter === 1) || (year === 2026 && quarter > 2)) {
+        continue;
+      }
+      expected.push(`${year}-Q${quarter}`);
+    }
+  }
+  assert.deepEqual(activeReleaseSelection.quarters, expected);
+  assert.equal(activeReleaseSelection.requiredSnapshotCount, 53);
+  assert.equal(activeReleaseSelection.latestQuarter, '2026-Q2');
+  assert.equal(activeReleaseSelection.requiredRateVersion, '2.1.0');
+  assert.equal(activeReleaseSelection.requiredSelectionVersion, '2.1.0');
+  assert.equal(activeReleaseSelection.requiredCohortVersion, '2.1.0');
+  assert.equal(activeReleaseSelection.requiredMinimumCapacityTB, 1);
+});
+
+void test('view availability gate rejects missing historical analysis and delayed datacenter capture', () => {
+  const descriptor = {
+    context: {
+      asOfQuarter: '2013-Q2',
+      selection: { contextModelIds: [] },
+      inventory: [{}],
+      coverage: [{ quarter: '2013-Q2', datacenterFieldAvailable: false }],
+    },
+  };
+  assert.throws(
+    () => assertSnapshotAvailability(descriptor, { models: [] }),
+    /matrix availability differs/,
+  );
+  const matrix = { models: [{ cells: [{ status: 'eligible' }] }] };
+  assert.throws(
+    () => assertSnapshotAvailability(descriptor, matrix),
+    /deployments availability differs/,
+  );
+  descriptor.context.selection.contextModelIds = ['historical-hdd'];
+  assert.doesNotThrow(() => assertSnapshotAvailability(descriptor, matrix));
+  descriptor.context.asOfQuarter = '2023-Q3';
+  descriptor.context.selection.contextModelIds = ['accepted-model'];
+  descriptor.context.coverage = [{ quarter: '2023-Q3', datacenterFieldAvailable: false }];
+  assert.throws(
+    () => assertSnapshotAvailability(descriptor, matrix),
+    /datacenters availability differs/,
+  );
+  descriptor.context.coverage[0].datacenterFieldAvailable = true;
+  assert.doesNotThrow(() => assertSnapshotAvailability(descriptor, matrix));
+});
+
+void test('partial-only historical matrix remains selectable without asserting numeric AFR', () => {
+  const descriptor = {
+    context: {
+      asOfQuarter: '2013-Q2',
+      selection: { contextModelIds: ['historically-qualified-hdd'] },
+      inventory: [{}],
+      coverage: [{ quarter: '2013-Q2', datacenterFieldAvailable: false }],
+    },
+  };
+  const matrix = {
+    models: [
+      {
+        cells: [{ status: 'source_incomplete', metrics: { observedRecordedAfr: null } }],
+      },
+    ],
+  };
+  const before = structuredClone(matrix);
+  assert.doesNotThrow(() => assertSnapshotAvailability(descriptor, matrix));
+  assert.deepEqual(matrix, before);
+  assert.equal(matrix.models[0].cells[0].metrics.observedRecordedAfr, null);
+  assert.throws(
+    () => assertSnapshotAvailability(descriptor, { models: [] }),
+    /matrix availability differs/,
+  );
+});
 
 // Test-only graphs use fictional arithmetic with publication-safe strings. Passing
 // this release gate does not certify the provenance of their invented observations.
@@ -39,7 +121,7 @@ function sorted(value) {
   }
   return value;
 }
-async function publication(t, { revision = false } = {}) {
+async function publication(t, { revision = false, rateVersions } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'public-production-check-'));
   t.after(async () => {
     assert.ok(
@@ -61,6 +143,9 @@ async function publication(t, { revision = false } = {}) {
   for (const [number, entry] of original.snapshots.entries()) {
     const raw = await json(entry.descriptor.path);
     const descriptor = clean(raw);
+    if (rateVersions) {
+      descriptor.context.versions.rate = rateVersions[number];
+    }
     descriptor.context.kind = 'backblaze';
     descriptor.contextSha256 = sha(JSON.stringify(sorted(descriptor.context)));
     const stem = descriptor.context.snapshotId;
@@ -118,12 +203,88 @@ void test('release checker consumes every advertised matrix and supporting byte-
   assert.equal(result.files, (await readdir(directory)).length);
 });
 
+void test('active release rejects legacy calculation semantics in every advertised snapshot', async (t) => {
+  const { directory } = await publication(t);
+  // The generic checker and browser reader retain their legacy fixture support.
+  await checkProductionData(directory, { ...options, requiredRateVersion: '2.0.0' });
+  await assert.rejects(
+    checkProductionData(directory, { ...options, requiredRateVersion: '2.1.0' }),
+    /calculation version differs from active release/,
+  );
+});
+
+void test('uniform 2.1 rates cannot hide legacy selection or frozen-cohort semantics', async (t) => {
+  const { directory } = await publication(t, { rateVersions: ['2.1.0', '2.1.0'] });
+  for (const [option, semantic] of [
+    ['requiredSelectionVersion', 'selection'],
+    ['requiredCohortVersion', 'cohort'],
+  ]) {
+    await assert.rejects(
+      checkProductionData(directory, {
+        ...options,
+        requiredRateVersion: '2.1.0',
+        [option]: '2.1.0',
+      }),
+      new RegExp(`${semantic} version differs from active release`),
+    );
+  }
+});
+
+void test('active capacity policy rejects missing or broader minimum while legacy checks remain compatible', async (t) => {
+  const { directory } = await publication(t);
+  // Legacy 2.0 descriptors have no minimum-capacity selection field.
+  await checkProductionData(directory, options);
+  await assert.rejects(
+    checkProductionData(directory, {
+      ...options,
+      requiredMinimumCapacityTB: activeReleaseSelection.requiredMinimumCapacityTB,
+    }),
+    /minimum capacity differs from active release/,
+  );
+  // The reader rejects minimum-capacity fields on legacy selection contexts;
+  // exercise the same release assertion directly for valid new selection fields.
+  for (const minimumCapacityTB of [0.5, 2]) {
+    assert.throws(
+      () =>
+        assertMinimumCapacity(
+          { minimumCapacityTB },
+          activeReleaseSelection.requiredMinimumCapacityTB,
+        ),
+      /minimum capacity differs from active release/,
+    );
+  }
+  assert.doesNotThrow(() =>
+    assertMinimumCapacity(
+      { minimumCapacityTB: 1 },
+      activeReleaseSelection.requiredMinimumCapacityTB,
+    ),
+  );
+});
+
+void test('active release rejects a legacy advertised snapshot even when latest declares 2.1', async (t) => {
+  const { directory, index } = await publication(t, { rateVersions: ['2.0.0', '2.1.0'] });
+  const latest = index.snapshots.find((entry) => entry.snapshotId === index.latestSnapshotId);
+  const latestDescriptor = JSON.parse(
+    await readFile(join(directory, latest.descriptor.path), 'utf8'),
+  );
+  assert.equal(latestDescriptor.context.versions.rate, '2.1.0');
+  // Descriptor/context hashes and referenced artifacts were rebound by publication().
+  await assert.rejects(
+    checkProductionData(directory, { ...options, requiredRateVersion: '2.1.0' }),
+    /calculation version differs from active release/,
+  );
+});
+
 void test('same-quarter immutable revisions keep every snapshot while release quarter inventory stays unique', async (t) => {
   const { directory } = await publication(t, { revision: true });
   const result = await checkProductionData(directory, options);
   assert.equal(result.snapshots, 3);
   assert.equal(result.matrices, 3);
   assert.equal(result.files, (await readdir(directory)).length);
+  await assert.rejects(
+    checkProductionData(directory, { ...options, requiredSnapshotCount: 2 }),
+    /snapshot count differs from active release/,
+  );
   await assert.rejects(
     checkProductionData(directory, { latestQuarter: '2023-Q4', quarters: ['2023-Q4'] }),
     /release selection/,

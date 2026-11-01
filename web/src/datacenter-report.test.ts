@@ -198,6 +198,17 @@ void test('every accepted public generation reconciles actual 2023 Q2/Q3 boundar
     await verifyReference(descriptorBytes, entry.descriptor);
     const descriptor = parseSnapshotDescriptor(descriptorBytes, entry);
     for (const quarter of ['2023-Q2', '2023-Q3']) {
+      if (quarter > entry.asOfQuarter) {
+        assert.equal(
+          descriptor.quarters.find((row) => row.quarter === quarter),
+          undefined,
+        );
+        assert.equal(
+          descriptor.context.coverage.find((row) => row.quarter === quarter),
+          undefined,
+        );
+        continue;
+      }
       const ref = descriptor.quarters.find((row) => row.quarter === quarter)?.payload;
       assert.ok(ref);
       const payloadBytes = await bytes(ref.path);

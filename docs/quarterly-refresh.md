@@ -33,8 +33,9 @@ Start from the producer configuration shape in
 ```
 
 Also supply the reviewed `registry`, positive-seed `patterns` and explicit
-`selection` object. These are JSON objects/arrays, not filenames. Use the existing
-reviewed `config/backblaze-hdd-evidence-2026-Q2.json` registry and
+`selection` object. These are JSON objects/arrays, not filenames. For the active
+historical fleet, use the reviewed `config/backblaze-historical-drive-evidence-r001.json`
+registry (or an explicitly reviewed baseline-matching successor) and
 `drives_of_interest_regexes.json` seed as inputs; preserve canonical model aliases
 and the accepted analysis/default/reference choices. `summaryManifests` can
 replace `catalog` with explicitly pinned retained manifests, but do not supply
@@ -163,13 +164,19 @@ qualifiers remain reported; their previously accepted exclusion is not silently
 converted into HDD admission or a new blocker on a no-op.
 
 For an evidenced new qualifying HDD, explicitly record the updated analysis list.
-The semantic calculation version remains `2.0.0`; a membership decision is not an
-unsupported rate/selection algorithm. Supply a distinct decision revision:
+Keep the baseline's declared policy versions. The current active historical
+fleet uses selection/cohort 2.1.0, rate 2.1.0 and capacity 2.0.0. Selection 2.1
+can derive all eligible historical analysis models when the configuration omits
+`analysisModelIds`; an explicit list must equal that derived set. It requires
+the capacity floor and observed owner exclusions. A changed floor or exclusion
+list also requires a versioned selection decision. Supply a distinct revision:
 
 ```json
 {
   "selection": {
-    "version": "2.0.0",
+    "version": "2.1.0",
+    "minimumCapacityTB": 1.0,
+    "excludedModelIds": ["<copy observed owner exclusions from the baseline>"],
     "analysisModelIds": ["<complete reviewed analysis ID list>"],
     "purchaseDefaultModelIds": [],
     "historicalReferenceModelIds": [],
@@ -228,18 +235,21 @@ fake-client test verifies an actual remote copy. Reuse the verified commands in
 their exact manifests for recovery. Public site deployment is separate again.
 
 Before promoting staged JSON, run the normative Python graph validator and the
-maintained browser-reader release checker against the staged directory. Pass its
-expected latest quarter and unique list of advertised cutoffs explicitly:
+maintained browser-reader release checker against the staged directory. The
+active checker uses the reviewed release inventory and policy from
+`web/scripts/active-release-selection.ts`:
 
 ```console
 uv run --frozen --no-sync python tools/validate_production_v2.py data/refresh/public-staging
-node --experimental-strip-types web/scripts/check-production-data.mjs data/refresh/public-staging 2026-Q2 2025-Q3,2025-Q4,2026-Q2
+node --experimental-strip-types web/scripts/check-production-data.mjs data/refresh/public-staging
 ```
 
-Replace those cutoffs with the actual approved release inventory. The checker
-still consumes **every** snapshot/revision; deduplicating the quarter inventory
-does not discard revisions. Update the committed build gate's expected cutoffs
-only as part of the reviewed public release. Use the standard Python/web gates
+The active release requires one corrected snapshot for each of the 53 retained
+cutoffs, with rate/selection/cohort 2.1 and the 1 TB policy throughout. Generic
+readers still support legacy generations and retained revisions; they are not
+permission to publish a mixed or duplicate active index. Preserve predecessors
+outside the active served graph. Update the committed gate's expected inventory
+only as part of a reviewed later release. Use the standard Python/web gates
 and owner review before promoting a changed release or deploying it. No paid or
 unattended schedule is created by these tools.
 

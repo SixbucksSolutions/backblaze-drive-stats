@@ -6,6 +6,43 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { SnapshotLoader } from '../src/snapshot-loader.ts';
 import { parseStrictJson } from '../src/production-data.ts';
+import { activeReleaseSelection } from './active-release-selection.ts';
+import { snapshotAvailable } from '../src/snapshot-availability.ts';
+
+export function assertMinimumCapacity(selection, requiredMinimumCapacityTB) {
+  if (requiredMinimumCapacityTB !== undefined) {
+    assert.equal(
+      selection.minimumCapacityTB,
+      requiredMinimumCapacityTB,
+      'Production snapshot minimum capacity differs from active release',
+    );
+  }
+}
+
+export function assertSnapshotAvailability(descriptor, matrix) {
+  const { context } = descriptor;
+  const hasContext = context.selection.contextModelIds.length > 0;
+  const actual = {
+    // The browser reader already proves analysis membership and threshold
+    // anchors. Partial source capture can leave every display cell unavailable
+    // while those models still have a valid qualification lower-bound proof.
+    matrix: matrix.models.length > 0,
+    deployments: hasContext,
+    distribution: hasContext,
+    manufacturers: hasContext,
+    capacity: context.inventory.length > 0,
+    datacenters:
+      context.coverage.find((row) => row.quarter === context.asOfQuarter)
+        ?.datacenterFieldAvailable === true,
+  };
+  for (const [view, available] of Object.entries(actual)) {
+    assert.equal(
+      available,
+      snapshotAvailable(context.asOfQuarter, view),
+      `Snapshot ${view} availability differs from reviewed release bounds`,
+    );
+  }
+}
 
 /** Conservative publication check for free text as well as schema-owned fields.
  * This detects recognizable leaks; it cannot establish source authenticity or
@@ -79,7 +116,16 @@ async function publicFiles(directory, prefix = '') {
 
 export async function checkProductionData(
   directory,
-  { latestQuarter = '2026-Q2', quarters = ['2026-Q2'] } = {},
+  {
+    latestQuarter = '2026-Q2',
+    quarters = ['2026-Q2'],
+    requiredRateVersion,
+    requiredSelectionVersion,
+    requiredCohortVersion,
+    requiredMinimumCapacityTB,
+    requiredSnapshotCount,
+    requireViewAvailability = false,
+  } = {},
 ) {
   assert.ok(
     quarters.length > 0 &&
@@ -117,6 +163,13 @@ export async function checkProductionData(
     return new Response(new Uint8Array(bytes));
   });
   const index = await loader.loadIndex();
+  if (requiredSnapshotCount !== undefined) {
+    assert.equal(
+      index.snapshots.length,
+      requiredSnapshotCount,
+      'Advertised production snapshot count differs from active release',
+    );
+  }
   assert.deepEqual(
     [...new Set(index.snapshots.map((entry) => entry.asOfQuarter))].sort(),
     [...quarters].sort(),
@@ -134,7 +187,30 @@ export async function checkProductionData(
   for (const entry of index.snapshots) {
     const descriptor = await loader.loadSnapshot(entry.snapshotId);
     assert.equal(descriptor.context.kind, 'backblaze', 'Production snapshot must be Backblaze');
+    assertMinimumCapacity(descriptor.context.selection, requiredMinimumCapacityTB);
+    if (requiredRateVersion !== undefined) {
+      assert.equal(
+        descriptor.context.versions.rate,
+        requiredRateVersion,
+        'Production snapshot calculation version differs from active release',
+      );
+    }
+    for (const [semantic, expected] of [
+      ['selection', requiredSelectionVersion],
+      ['cohort', requiredCohortVersion],
+    ]) {
+      if (expected !== undefined) {
+        assert.equal(
+          descriptor.context.versions[semantic],
+          expected,
+          `Production snapshot ${semantic} version differs from active release`,
+        );
+      }
+    }
     const matrix = await loader.loadMatrix(descriptor);
+    if (requireViewAvailability) {
+      assertSnapshotAvailability(descriptor, matrix);
+    }
     matrices++;
     analysisModels += matrix.models.length;
     for (const quarter of descriptor.quarters) {
@@ -164,8 +240,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const directory = process.argv[2]
     ? resolve(process.argv[2])
     : resolve(dirname(fileURLToPath(import.meta.url)), '../public/data/production');
-  const latestQuarter = process.argv[3] ?? '2026-Q2';
-  const quarters = (process.argv[4] ?? latestQuarter).split(',');
-  const result = await checkProductionData(directory, { latestQuarter, quarters });
+  assert.ok(process.argv.length <= 3, 'Usage: check-production-data.mjs [production-directory]');
+  const result = await checkProductionData(directory, activeReleaseSelection);
   console.log(`Public production browser-reader verification passed: ${JSON.stringify(result)}`);
 }

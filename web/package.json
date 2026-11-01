@@ -12,7 +12,7 @@
     "dev": "vite --host 127.0.0.1",
     "check": "tsc --noEmit",
     "check:data": "node --experimental-strip-types scripts/check-data.mjs",
-    "check:production-data": "node --experimental-strip-types scripts/check-production-data.mjs public/data/production 2026-Q2 2026-Q2,2025-Q3,2025-Q4",
+    "check:production-data": "node --experimental-strip-types scripts/check-production-data.mjs public/data/production",
     "check:integrated-release": "node --experimental-strip-types scripts/check-integrated-release.mjs",
     "check:fonts": "node scripts/check-font-assets.mjs",
     "test": "node --experimental-strip-types --test src/data.test.ts src/matrix-data.test.ts src/matrix-contrast.test.ts src/explore-contrast.test.ts src/matrix-display.test.ts src/font-ready.test.ts src/matrix-scroll.test.ts src/matrix-selection.test.ts src/production-data.test.ts src/snapshot-loader.test.ts src/snapshot-selection.test.ts src/snapshot-summary.test.ts src/app-route.test.ts src/matrix-production.test.ts src/deployment-report.test.ts src/distribution-report.test.ts src/capacity-report.test.ts src/manufacturer-report.test.ts src/datacenter-report.test.ts scripts/check-production-data.test.mjs scripts/check-integrated-release.test.mjs scripts/check-hosting-release.test.mjs scripts/minimize-static-assets.test.mjs scripts/minimized-json.test.mjs scripts/minimize-public-json.test.mjs scripts/check-minimized-assets.test.mjs scripts/check-hosting-remote.test.mjs",

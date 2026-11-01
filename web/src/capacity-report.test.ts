@@ -10,6 +10,7 @@ import {
 } from './production-data.ts';
 import type { SnapshotDescriptor, SupportingQuarter } from './production-data.ts';
 import { SnapshotLoader } from './snapshot-loader.ts';
+import { activeReleaseSelection } from '../scripts/active-release-selection.ts';
 
 const directory = new URL('../../fixtures/production-v2/', import.meta.url);
 const names = await readdir(directory);
@@ -262,14 +263,18 @@ void test('one canceled reader consumer cannot cancel a live consumer', async ()
   assert.equal((await live)[0]!.capacityTB, 5);
 });
 
-void test('all three real committed snapshot graphs produce exact all-supplied chronological histories', async () => {
+void test('all 53 historical snapshot graphs produce exact all-supplied chronological histories', async () => {
   const root = new URL('../public/data/production/', import.meta.url);
   const loader = new SnapshotLoader('https://example.test/production/index.json', async (url) => {
     const relative = new URL(url).pathname.replace('/production/', '');
     return new Response(new Uint8Array(await readFile(new URL(relative, root))));
   });
   const productionIndex = await loader.loadIndex();
-  assert.equal(productionIndex.snapshots.length, 3);
+  assert.equal(productionIndex.snapshots.length, activeReleaseSelection.requiredSnapshotCount);
+  assert.deepEqual(
+    productionIndex.snapshots.map((entry) => entry.asOfQuarter).sort(),
+    [...activeReleaseSelection.quarters].sort(),
+  );
   const reader = new CapacityHistoryReader(loader);
   for (const snapshot of productionIndex.snapshots) {
     const descriptor = await loader.loadSnapshot(snapshot.snapshotId);

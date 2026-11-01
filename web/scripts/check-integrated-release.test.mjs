@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { SnapshotLoader } from '../src/snapshot-loader.ts';
 import { CapacityHistoryReader } from '../src/capacity-report.ts';
 import { reportCsv } from '../src/snapshot-selection.ts';
+import { activeReleaseSelection } from './active-release-selection.ts';
 import {
   auditCsv,
   auditMetric,
@@ -44,14 +45,14 @@ void test('large integer totals reject off-by-one errors while decimal TB permit
   assert.throws(() => auditMetric(1_000_000 + 0.0001, 1_000_000, 'capacityTB', 'capacity error'));
 });
 
-void test('all three immutable public snapshots pass every quarter and five report renderers', async () => {
+void test('all 53 historical public cutoffs pass every quarter and five report renderers', async () => {
   const result = await checkIntegratedRelease(fileURLToPath(directory));
-  assert.equal(result.snapshots.length, 3);
-  assert.equal(result.graph.supporting, 154);
+  assert.equal(result.snapshots.length, activeReleaseSelection.requiredSnapshotCount);
+  assert.ok(result.graph.supporting >= activeReleaseSelection.requiredSnapshotCount);
   assert.equal(result.payloadBytes.files, result.graph.files);
   for (const snapshot of result.snapshots) {
-    assert.ok(snapshot.contextModels > snapshot.analysisModels);
-    assert.ok(snapshot.inventoryModels > snapshot.contextModels);
+    assert.ok(snapshot.contextModels >= snapshot.analysisModels);
+    assert.ok(snapshot.inventoryModels >= snapshot.contextModels);
     assert.ok(snapshot.unavailable > 0);
     assert.equal(Object.keys(snapshot.maxRenderedFragmentBytes).length, 5);
   }

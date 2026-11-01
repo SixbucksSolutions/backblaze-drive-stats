@@ -73,6 +73,7 @@ export type MatrixSnapshot = {
   kind: 'reference' | 'sample' | 'production';
   rateLabel?: string;
   matrixCalculationVersion?: string;
+  hddScopeDescription?: string;
   sourceUrl: string | null;
   sourceHash: string;
   cutoff: string | null;

@@ -1,5 +1,27 @@
 import { csv } from './data.ts';
 
+/** Plain text shared by report and matrix explanations; callers escape for HTML. */
+export function customerHddScopeDescription(
+  selectionVersion: string,
+  selection: { minimumCapacityTB?: number; excludedModelIds?: readonly string[] },
+  inventory: readonly Pick<InventoryLabel, 'modelId' | 'modelNumber'>[] = [],
+): string | undefined {
+  if (selectionVersion !== '2.1.0' || selection.minimumCapacityTB === undefined) {
+    return undefined;
+  }
+  const excluded = selection.excludedModelIds ?? [];
+  const labels = excluded.flatMap((id) => {
+    const model = inventory.find((entry) => entry.modelId === id);
+    return model ? [model.modelNumber] : [];
+  });
+  const unnamed = excluded.length - labels.length;
+  if (unnamed > 0) {
+    labels.push(`${unnamed} ${labels.length ? 'additional ' : ''}model${unnamed === 1 ? '' : 's'}`);
+  }
+  const exclusions = labels.length ? ` Owner-designated exclusions: ${labels.join(', ')}.` : '';
+  return `Historical customer-HDD fleet: evidenced HDD models observed by this snapshot cutoff with nominal capacity ≥${selection.minimumCapacityTB} TB.${exclusions} Smaller populations remain in the supporting reports. AFR comparison separately requires at least 2,000 observed drives in a quarter; partial capture can establish a lower-bound qualification proof while AFR values remain unavailable.`;
+}
+
 export type ScopeName = 'selected_hdd' | 'all_supplied';
 export type SelectionPreset = 'context' | 'purchase' | 'reference';
 export type InventoryLabel = { modelId: string; vendor: string; modelNumber: string };

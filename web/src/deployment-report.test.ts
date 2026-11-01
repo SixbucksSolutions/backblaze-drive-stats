@@ -107,7 +107,7 @@ void test('untrusted category labels are escaped and chart tracks have no duplic
   assert.match(html, /Last-observed and Retired measures are unavailable/);
 });
 
-void test('accepted real 2026 Q2 payload reconciles all 40 context models and 12,261 additions', async () => {
+void test('real latest historical HDD fleet reconciles every context model and recorded addition', async () => {
   const directory = new URL('../public/data/production/', import.meta.url);
   const bytes = (path: string) => readFile(new URL(path, directory));
   const index = parseProductionIndex(await bytes('index.json'));
@@ -128,11 +128,39 @@ void test('accepted real 2026 Q2 payload reconciles all 40 context models and 12
     defaultFilter(),
   );
   const summary = deploymentSummary(selected, payload.status === 'complete');
-  assert.equal(selected.length, 40);
-  assert.equal(summary.total, 12261);
+  assert.equal(payload.status, 'complete');
+  const policy = descriptor.context.selection;
+  assert.equal(policy.minimumCapacityTB, 1);
+  const historicalFleet = descriptor.context.inventory.filter(
+    (model) =>
+      model.mediaClass === 'hdd' &&
+      model.capacityTB !== null &&
+      model.capacityTB >= policy.minimumCapacityTB! &&
+      !policy.excludedModelIds?.includes(model.modelId),
+  );
+  assert.deepEqual(
+    selected.map((row) => row.modelId).sort(),
+    historicalFleet.map((model) => model.modelId).sort(),
+  );
+  assert.equal(selected.length, descriptor.context.selection.contextModelIds.length);
+  assert.deepEqual(
+    selected.map((row) => row.modelId).sort(),
+    [...descriptor.context.selection.contextModelIds].sort(),
+  );
+  const sourceAdditions = payload.scopes.selected_hdd.models.reduce((sum, row) => {
+    assert.notEqual(row.new, null);
+    return sum + row.new!;
+  }, 0);
+  assert.equal(summary.total, sourceAdditions);
   assert.equal(summary.total, payload.scopes.selected_hdd.totals.new);
-  assert.equal(summary.chartRows[0]?.modelId, 'd832457db0cfc2280209abd0');
-  assert.equal(summary.chartRows[0]?.new, 4863);
-  assert.match(renderDeployments(selected, true), /12,261/);
-  assert.match(renderDeployments(selected, true), /Showing 8 of 40/);
+  const ranked = [...payload.scopes.selected_hdd.models].sort(
+    (left, right) => right.new! - left.new! || left.modelId.localeCompare(right.modelId),
+  );
+  assert.deepEqual(
+    summary.chartRows.map((row) => [row.modelId, row.new]),
+    ranked.slice(0, 8).map((row) => [row.modelId, row.new]),
+  );
+  const html = renderDeployments(selected, true);
+  assert.ok(html.includes(new Intl.NumberFormat('en-US').format(sourceAdditions)));
+  assert.ok(html.includes(`Showing ${Math.min(8, selected.length)} of ${selected.length}`));
 });

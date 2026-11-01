@@ -1,5 +1,10 @@
 # AFR metric reconciliation #0103
 
+Terry accepted this reconciliation. The subsequent
+[full-history refresh #0104](full-history-refresh-0104.md) applies it to every
+active production snapshot; references below to unchanged public 2.0 data
+describe #0103's implementation-only handoff, before that separate refresh.
+
 The original Python XLSX producer is the authority. Its `Retired` includes failed
 departures, and its `Failed` sums recorded failure flags rather than distinct
 failed serials. The recollection differed on both points. On 2026-11-01 Terry

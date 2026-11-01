@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { format } from 'prettier';
 import { checkProductionData } from './check-production-data.mjs';
 import { expectedPublicBytes } from './minimize-public-json.mjs';
+import { activeReleaseSelection } from './active-release-selection.ts';
 
 export const immutable = 'public, max-age=31536000, immutable';
 const shortCache = 'public, max-age=300, must-revalidate';
@@ -194,10 +195,7 @@ export async function checkHostingRelease(webRoot, distDirectory = resolve(webRo
     await hostingFiles(distDirectory),
     buildManifest,
   );
-  await checkProductionData(resolve(distDirectory, 'data/production'), {
-    latestQuarter: '2026-Q2',
-    quarters: ['2026-Q2', '2025-Q3', '2025-Q4'],
-  });
+  await checkProductionData(resolve(distDirectory, 'data/production'), activeReleaseSelection);
   return { formatVersion: 1, assets: manifest };
 }
 

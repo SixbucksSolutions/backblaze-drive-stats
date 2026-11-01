@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { activeReleaseSelection } from '../scripts/active-release-selection.ts';
 import { distributionSummary, renderDistribution } from './distribution-report.ts';
 import {
   parseProductionIndex,
@@ -141,11 +142,11 @@ void test('real immutable generations reconcile exact filtered model counts and 
   const root = new URL('../public/data/production/', import.meta.url);
   const bytes = (path: string) => readFile(new URL(path, root));
   const index = parseProductionIndex(await bytes('index.json'));
-  const expected = new Map([
-    ['2025-Q3', 326168],
-    ['2025-Q4', 334928],
-    ['2026-Q2', 353575],
-  ]);
+  assert.equal(index.snapshots.length, activeReleaseSelection.requiredSnapshotCount);
+  assert.deepEqual(
+    index.snapshots.map((entry) => entry.asOfQuarter).sort(),
+    [...activeReleaseSelection.quarters].sort(),
+  );
   for (const entry of index.snapshots) {
     const descriptorBytes = await bytes(entry.descriptor.path);
     await verifyReference(descriptorBytes, entry.descriptor);
@@ -164,7 +165,30 @@ void test('real immutable generations reconcile exact filtered model counts and 
       defaultFilter(),
     );
     const summary = distributionSummary(rows, payload.status === 'complete');
-    assert.equal(summary.count, expected.get(entry.asOfQuarter));
+    const complete = payload.status === 'complete';
+    const ledgerCounts = descriptor.context.inventory
+      .filter((model) => descriptor.context.selection.contextModelIds.includes(model.modelId))
+      .map((model) => {
+        const history = model.history.find((row) => row.quarter === entry.asOfQuarter);
+        assert.ok(history);
+        return history.quarterCount;
+      });
+    const ledgerCount =
+      complete && ledgerCounts.every((count) => count !== null)
+        ? ledgerCounts.reduce<number>((sum, count) => sum + count, 0)
+        : null;
+    if (!complete) {
+      assert.ok(ledgerCounts.every((count) => count === null));
+      assert.ok(
+        rows.every((row) => row.count === null && row.new === null && row.capacityTB === null),
+      );
+      assert.equal(summary.count, null);
+      assert.match(
+        renderDistribution(rows, false),
+        /Full-quarter observed population is unavailable/,
+      );
+    }
+    assert.equal(summary.count, ledgerCount);
     assert.equal(summary.count, scope.totals.count);
     assert.equal(summary.modelCount, descriptor.context.selection.contextModelIds.length);
     assert.deepEqual(
@@ -172,12 +196,18 @@ void test('real immutable generations reconcile exact filtered model counts and 
       scope.manufacturers.map(({ vendor, count }) => ({ vendor, count })),
     );
     assert.ok(
-      rows.some((row) => !descriptor.context.selection.analysisModelIds.includes(row.modelId)),
+      descriptor.context.selection.analysisModelIds.every((id) =>
+        rows.some((row) => row.modelId === id),
+      ),
     );
-    assert.equal(summary.topModels.length, 8);
+    assert.equal(summary.topModels.length, Math.min(8, rows.length));
     for (const row of summary.topModels) {
+      if (!complete) {
+        assert.equal(row.count, null);
+        continue;
+      }
       assert.match(
-        renderDistribution(rows, true),
+        renderDistribution(rows, complete),
         new RegExp(`<strong>${new Intl.NumberFormat('en-US').format(row.count!)}<\\/strong>`),
       );
     }

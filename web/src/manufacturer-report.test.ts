@@ -17,6 +17,7 @@ import {
 import type { Aggregate } from './production-data.ts';
 import { defaultFilter, selectRows } from './snapshot-selection.ts';
 import type { DisplayRow } from './snapshot-selection.ts';
+import { activeReleaseSelection } from '../scripts/active-release-selection.ts';
 const row = (
   vendor: string,
   count: number | null,
@@ -143,11 +144,12 @@ void test('chart preview retains all vendors in table/CSV, escapes names, and so
   assert.equal(csvRows[1]![0], 'Vendor 0');
   assert.deepEqual(csvRows[1]!.slice(7), [100, 20, 1000]);
 });
-void test('all three accepted public cuts reconcile every manufacturer metric and share', async () => {
+void test('all 53 historical public cutoffs reconcile every manufacturer metric and share', async () => {
   const directory = new URL('../public/data/production/', import.meta.url);
   const bytes = (path: string) => readFile(new URL(path, directory));
   const index = parseProductionIndex(await bytes('index.json'));
-  for (const cut of ['2026-Q2', '2025-Q3', '2025-Q4']) {
+  assert.equal(index.snapshots.length, activeReleaseSelection.requiredSnapshotCount);
+  for (const cut of activeReleaseSelection.quarters) {
     const entry = index.snapshots.find((snapshot) => snapshot.asOfQuarter === cut);
     assert.ok(entry);
     const descriptorBytes = await bytes(entry.descriptor.path);
@@ -166,6 +168,7 @@ void test('all three accepted public cuts reconcile every manufacturer metric an
       defaultFilter(),
     );
     const actual = manufacturerRows(rows, scope.totals, payload.status === 'complete');
+    const complete = payload.status === 'complete';
     assert.equal(rows.length, scope.models.length);
     assert.equal(actual.length, scope.manufacturers.length);
     for (const expected of scope.manufacturers) {
@@ -179,28 +182,38 @@ void test('all three accepted public cuts reconcile every manufacturer metric an
         'newShare',
         'capacityShare',
       ] as const) {
+        if (!complete) {
+          assert.equal(vendor[metric], null);
+          assert.equal(expected[metric], null);
+          continue;
+        }
         assert.ok(vendor[metric] !== null && expected[metric] !== null);
         assert.ok(
           Math.abs(vendor[metric] - expected[metric]) <= Math.max(1e-10, expected[metric] * 1e-10),
         );
       }
     }
-    let count = 0,
-      additions = 0;
+    let count: number | null = complete ? 0 : null,
+      additions: number | null = complete ? 0 : null;
     for (const model of scope.models) {
+      if (!complete) {
+        assert.equal(model.count, null);
+        assert.equal(model.new, null);
+        assert.equal(model.capacityTB, null);
+        continue;
+      }
       assert.ok(model.count !== null && model.new !== null);
+      assert.ok(count !== null && additions !== null);
       count += model.count;
       additions += model.new;
     }
-    assert.equal(
-      actual.reduce((sum, vendor) => sum + vendor.count!, 0),
-      count,
-    );
-    assert.equal(
-      actual.reduce((sum, vendor) => sum + vendor.new!, 0),
-      additions,
-    );
+    assert.equal(complete ? actual.reduce((sum, vendor) => sum + vendor.count!, 0) : null, count);
+    assert.equal(complete ? actual.reduce((sum, vendor) => sum + vendor.new!, 0) : null, additions);
     assert.equal(count, scope.totals.count);
     assert.equal(additions, scope.totals.new);
+    if (!complete) {
+      assert.ok(actual.every((vendor) => vendor.count === null && vendor.new === null));
+      assert.equal(scope.totals.capacityTB, null);
+    }
   }
 });
