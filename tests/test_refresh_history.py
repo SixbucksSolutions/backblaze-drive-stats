@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from copy import deepcopy
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
 from test_historical_generator import PATTERNS, REGISTRY, make_input, rows
@@ -17,7 +18,7 @@ from test_historical_generator import PATTERNS, REGISTRY, make_input, rows
 from historical_generator import Registry, bounds, digest
 from history_storage import atomic_write
 from production_history import generate, publish_generation
-from refresh_history import load_generation, plan_refresh, run_refresh, verify_refresh
+from refresh_history import _extend, load_generation, plan_refresh, run_refresh, verify_refresh
 
 
 class RefreshHistoryTests(unittest.TestCase):
@@ -121,6 +122,65 @@ class RefreshHistoryTests(unittest.TestCase):
                 removedModelIds=[],
             ),
         )
+
+    def test_validation_worker_options_forward_and_preserve_noop_identity(self):
+        from tools.validate_production_v2 import validate_generation
+
+        observed = []
+
+        def checked_validation(index, artifacts, *, workers=1):
+            observed.append(workers)
+            # Worker concurrency/parity belongs to validator tests. This test
+            # exercises caller forwarding while retaining real serial validation.
+            return validate_generation(index, artifacts)
+
+        with patch("refresh_history.validate_generation", side_effect=checked_validation):
+            initial = run_refresh(self.config)
+            self.assertTrue(observed)
+            self.assertEqual(set(observed), {1})
+            original_snapshot = initial["snapshotId"]
+            root = Path(self.config["outputDirectory"])
+            before = {
+                path: (path.read_bytes(), path.stat().st_mtime_ns) for path in root.rglob("*.json")
+            }
+            self.config["validationWorkers"] = 4
+            observed.clear()
+            self.assertEqual(plan_refresh(self.config)["snapshotId"], original_snapshot)
+            repeated = run_refresh(self.config)
+            self.assertEqual(repeated["snapshotId"], original_snapshot)
+            self.assertEqual(repeated["publicWrites"], 0)
+            self.assertEqual(verify_refresh(self.config)["status"], "verified")
+            self.assertTrue(observed)
+            self.assertEqual(set(observed), {4})
+            self.assertEqual(
+                before,
+                {
+                    path: (path.read_bytes(), path.stat().st_mtime_ns)
+                    for path in root.rglob("*.json")
+                },
+            )
+            observed.clear()
+            load_generation(root, validation_workers=2)
+            self.assertEqual(observed, [2])
+
+    def test_invalid_validation_workers_fail_before_graph_io_or_publication(self):
+        for value in (0, -1, 3, 16, True, False, 1.0, "4", None):
+            with self.subTest(value=value):
+                config = dict(self.config, validationWorkers=value)
+                with (
+                    patch("refresh_history.load_json", side_effect=AssertionError("graph read")),
+                    patch("refresh_history.atomic_write", side_effect=AssertionError("write")),
+                    patch("refresh_history.publication_lock", side_effect=AssertionError("lock")),
+                ):
+                    for operation in (plan_refresh, run_refresh, verify_refresh):
+                        with self.assertRaisesRegex(ValueError, "validationWorkers"):
+                            operation(config)
+                    # Cast preserves invalid runtime values to exercise typed API guards.
+                    invalid_workers = cast(int, value)
+                    with self.assertRaisesRegex(ValueError, "validationWorkers"):
+                        load_generation(object(), validation_workers=invalid_workers)
+                    with self.assertRaisesRegex(ValueError, "validationWorkers"):
+                        _extend(object(), {}, {}, {}, {}, validation_workers=invalid_workers)
 
     def test_unchanged_reuses_baseline_time_revision_and_zero_public_writes(self):
         with patch(
@@ -256,6 +316,132 @@ class RefreshHistoryTests(unittest.TestCase):
         self.assertEqual(receipt["snapshotId"], expected)
         self.assertTrue(all(p.read_bytes() == raw for p, raw in partial.items()))
         verify_refresh(self.config)
+
+    def test_publication_final_readback_rejects_post_index_changes(self):
+        for mutation in (
+            "index",
+            "wrong-index",
+            "artifact",
+            "missing",
+            "extra-json",
+            "private-file",
+        ):
+            with self.subTest(mutation=mutation):
+                root = (Path(self.case.name) / mutation).resolve()
+                config = dict(
+                    self.config,
+                    outputDirectory=str(root),
+                    receiptPath=str(root.parent / (mutation + "-receipt.json")),
+                )
+                victim = root / self.baseline_index["snapshots"][0]["descriptor"]["path"]
+
+                def changed_readback(
+                    path, data, *, root=root, mutation=mutation, victim=victim, **kwargs
+                ):
+                    atomic_write(path, data, **kwargs)
+                    if Path(path) != root / "index.json":
+                        return
+                    if mutation == "index":
+                        # Semantically equivalent bytes must still fail exact readback.
+                        Path(path).write_bytes(data + b" ")
+                    elif mutation == "wrong-index":
+                        wrong = json.loads(data)
+                        wrong["latestSnapshotId"] = "fictional-wrong-snapshot"
+                        Path(path).write_text(json.dumps(wrong))
+                    elif mutation == "artifact":
+                        victim.write_bytes(victim.read_bytes() + b" ")
+                    elif mutation == "missing":
+                        victim.unlink()
+                    elif mutation == "extra-json":
+                        (root / "unexpected.json").write_bytes(b"{}")
+                    else:
+                        (root / "private.parquet").write_bytes(b"fictional private bytes")
+
+                with (
+                    patch("refresh_history.atomic_write", side_effect=changed_readback),
+                    self.assertRaises((ValueError, FileNotFoundError)),
+                ):
+                    run_refresh(config)
+                self.assertEqual(
+                    json.loads(Path(config["receiptPath"]).read_bytes())["status"], "prepared"
+                )
+                if mutation == "index":
+                    # Retry validates the preserved equivalent index from scratch.
+                    self.assertEqual(run_refresh(config)["status"], "unchanged")
+                    self.assertEqual(verify_refresh(config)["status"], "verified")
+
+    def test_publication_final_readback_rejects_injected_symbolic_link(self):
+        root = Path(self.config["outputDirectory"]).resolve()
+        victim = root / self.baseline_index["snapshots"][0]["descriptor"]["path"]
+        outside = Path(self.case.name) / "fictional-linked-descriptor.json"
+        try:
+            probe = Path(self.case.name) / "link-probe"
+            probe.symlink_to(outside)
+            probe.unlink()
+        except OSError:
+            self.skipTest("Platform does not permit symbolic links")
+
+        def inject_link(path, data, **kwargs):
+            atomic_write(path, data, **kwargs)
+            if Path(path) == root / "index.json":
+                outside.write_bytes(victim.read_bytes())
+                victim.unlink()
+                victim.symlink_to(outside)
+
+        with (
+            patch("refresh_history.atomic_write", side_effect=inject_link),
+            self.assertRaisesRegex(ValueError, "reparse links|Unsafe"),
+        ):
+            run_refresh(self.config)
+        self.assertTrue(victim.is_symlink())
+        self.assertTrue(outside.exists())
+
+    def test_publication_exact_readback_retains_prewrite_validation(self):
+        index, artifacts = load_generation(self.baseline)
+        root = Path(self.config["outputDirectory"])
+        from tools.validate_production_v2 import validate_generation
+
+        with (
+            patch("refresh_history.validate_generation", wraps=validate_generation) as validator,
+            patch(
+                "refresh_history.load_generation",
+                side_effect=AssertionError("redundant graph load"),
+            ),
+        ):
+            self.assertGreater(_extend(root, index, artifacts, index, artifacts), 0)
+        self.assertEqual(validator.call_count, 1)
+        # Initial graph validation still rejects corrupt input before payload creation.
+        invalid_root = root.parent / "invalid-graph"
+        bad_artifacts = dict(artifacts)
+        key = next(iter(bad_artifacts))
+        bad_artifacts[key] += b" "
+        with self.assertRaises(ValueError):
+            _extend(invalid_root, index, bad_artifacts, index, bad_artifacts)
+        self.assertEqual(list(invalid_root.rglob("*.json")), [])
+        bad_artifacts = dict(artifacts, **{"../outside.json": b"{}"})
+        with self.assertRaises(ValueError):
+            _extend(invalid_root, index, bad_artifacts, index, bad_artifacts)
+        self.assertFalse((invalid_root.parent / "outside.json").exists())
+        self.assertEqual(list(invalid_root.rglob("*.json")), [])
+
+    def test_output_index_change_during_initial_validation_is_rejected_before_writes(self):
+        index, artifacts = load_generation(self.baseline)
+        root = Path(self.config["outputDirectory"]).resolve()
+        _extend(root, index, artifacts, index, artifacts)
+
+        def changed_index(path, *, validation_workers=1):
+            validated = load_generation(path, validation_workers=validation_workers)
+            index_path = Path(path) / "index.json"
+            index_path.write_bytes(index_path.read_bytes() + b" ")
+            return validated
+
+        with (
+            patch("refresh_history.load_generation", side_effect=changed_index),
+            patch("refresh_history.atomic_write", wraps=atomic_write) as writer,
+            self.assertRaisesRegex(ValueError, "index changed during publication validation"),
+        ):
+            _extend(root, index, artifacts, index, artifacts)
+        writer.assert_not_called()
 
     def test_explicit_new_generator_revision_creates_distinct_generation(self):
         self.config["generatorRevision"] = "reviewed-new-generator"

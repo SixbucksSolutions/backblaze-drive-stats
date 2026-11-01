@@ -165,19 +165,31 @@ and sanitized receipts are private evidence under `data/staging/0007/`.
    it does not replace them or permit arbitrary stale files. Run it again against
    the exact upload manifest immediately before publication.
 
-   #0109 changes headers only, so all existing asset bytes already carry forward.
-   If a future build drops an old hashed chunk, stylesheet or capsule, stop and
-   package the previously qualified immutable files alongside the new release.
-   Their separately validated inventory must form an exact union with the current
-   release; do not weaken the public-file allowlist to accept arbitrary extras.
-   That requires a separately scoped retention implementation: today's exact
-   inventory gate deliberately rejects unmanifested previous files. Recheck that
-   publication's resource/file limits before upload.
+   Qualify pristine `web/dist` with the normal audits first. Then make a separate
+   private upload bundle containing the exact union of the current release and
+   qualified immutable files from the actual predecessor. From `web/`:
+
+   ```console
+   node scripts/package-cache-compatible-release.mjs dist CURRENT-MANIFEST.json PREVIOUS-BUNDLE PREVIOUS-MANIFEST.json PREVIOUS-MANIFEST-SHA256 PREVIOUS-VITE-MANIFEST.json PREVIOUS-VITE-MANIFEST-SHA256 FRESH-PRIVATE-OUTPUT
+   ```
+
+   If the predecessor manifest includes retained assets, append the separately
+   pinned `PREVIOUS-RETENTION-LEDGER.json PREVIOUS-RETENTION-LEDGER-SHA256`.
+   The packager checks both trees and the predecessor pins, retains qualified
+   immutable bytes, rejects conflicts and checks the cache transition and file
+   limits. It does not carry forward old mutable indexes or private files. Check
+   the transition again against the final union manifest before uploading its
+   `upload` directory. Keep the union, its manifest and retention ledger, and
+   the current Vite manifest as the next release's predecessor evidence; pristine
+   `web/dist` alone cannot establish transitive retention. Keep receipts and
+   bundles outside Git and the served tree.
 3. Use a clean child environment with the production Cloudflare API endpoint,
    process-only account/token, telemetry/error reporting and Wrangler disk logs
    disabled. Reject unreviewed dotenv/config redirects and Functions/Worker
    entry points at publication time. Keep the reviewed `wrangler.jsonc` target.
-4. Upload only the validated static directory. The pinned Wrangler command uses
+4. Upload only the validated static directory: the private union's `upload`
+   directory when immutable predecessor files must be retained. Pristine `dist`
+   is sufficient only when no additional immutable bytes are needed. The pinned Wrangler command uses
    `--force` to remain on Pages instead of its automatic Pages-to-Workers
    delegation path. No Worker scripts or Pages Functions are part of this build.
    Existing CI remains quality-only; commits do not automatically publish.
@@ -190,7 +202,7 @@ The equivalent publication command, after the owner-requested release and
 credential/environment checks, is:
 
 ```console
-node node_modules/wrangler/bin/wrangler.js pages deploy dist --project-name backblaze-drive-stats-analysis --branch main --commit-hash REVIEWED_COMMIT --commit-dirty=false --force
+node node_modules/wrangler/bin/wrangler.js pages deploy REVIEWED_UPLOAD_DIRECTORY --project-name backblaze-drive-stats-analysis --branch main --commit-hash REVIEWED_COMMIT --commit-dirty=false --force
 ```
 
 Supply the reviewed commit hash. Local preparation does not itself execute this
@@ -200,11 +212,13 @@ Direct Upload does not later become automatic Git integration in place.
 After publication, from `web/`:
 
 ```console
-npm run check:hosting:remote -- https://backblaze-drive-stats-analysis.pages.dev/
+npm run check:hosting:remote -- https://backblaze-drive-stats-analysis.pages.dev/ --manifest QUALIFIED-UNION-MANIFEST.json --manifest-sha256 QUALIFIED-UNION-MANIFEST-SHA256
 ```
 
-This credential-free verifier checks every served release file against its local
-manifest, including decoded byte lengths, SHA-256, cache headers and media types.
+Supply the exact pinned private union manifest outside `web/dist` and `web/public`;
+both manifest options are required together. This credential-free verifier checks
+every served union file against it, including decoded byte lengths, SHA-256, cache
+headers and media types. With origin alone it instead audits pristine `dist`.
 It checks navigation queries, canonical HTML redirects and genuine custom 404s.
 Requests are limited to this HTTPS project origin or a single deployment/branch
 label beneath it, with bounded concurrency, response sizes and timeouts. It does

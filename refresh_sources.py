@@ -13,7 +13,7 @@ from pathlib import Path
 from historical_generator import QuarterInput, bounds, digest, file_sha, public_evidence
 from history_storage import atomic_write, json_bytes, object_key, publication_lock
 from parquet_profile import PROFILE_ID
-from prepare_quarter_zip import prepare
+from prepare_quarter_zip import prepare, validate_execution_options
 from tools.validate_production_v2 import load_json
 
 
@@ -118,7 +118,13 @@ def _reuse(root: Path, identity: dict, work_root: Path) -> QuarterInput:
     return QuarterInput(identity["quarter"], directory, directory / "import-metadata.json")
 
 
-def _prepare_source(source: dict, work_root: Path, allow_projection: bool) -> QuarterInput:
+def _prepare_source(
+    source: dict,
+    work_root: Path,
+    allow_projection: bool,
+    day_workers: int,
+    polars_threads: int,
+) -> QuarterInput:
     source_path, identity = _source_identity(source)
     work_root = Path(work_root).resolve()
     root = work_root / "projections" / identity["quarter"] / digest(identity)
@@ -147,7 +153,14 @@ def _prepare_source(source: dict, work_root: Path, allow_projection: bool) -> Qu
         check_private_path(work_root, directory)
         directory.mkdir()
         check_private_path(work_root, directory)
-        prepare(source_path, directory, source_url=identity["url"], quarter=identity["quarter"])
+        prepare(
+            source_path,
+            directory,
+            source_url=identity["url"],
+            quarter=identity["quarter"],
+            day_workers=day_workers,
+            polars_threads=polars_threads,
+        )
         marker = _projection_record(directory, identity, work_root) | {
             "attempt": directory.relative_to(root).as_posix(),
         }
@@ -157,7 +170,12 @@ def _prepare_source(source: dict, work_root: Path, allow_projection: bool) -> Qu
 
 
 def prepare_source(
-    source: dict, work_root: Path, *, allow_projection: bool = False
+    source: dict,
+    work_root: Path,
+    *,
+    allow_projection: bool = False,
+    day_workers: int = 1,
+    polars_threads: int = 2,
 ) -> QuarterInput:
     """Reuse verified output or explicitly project a pinned, complete local quarter.
 
@@ -165,7 +183,8 @@ def prepare_source(
     not call this adapter. Publication-domain exceptions stay in accepted catalogs.
     """
     try:
-        return _prepare_source(source, work_root, allow_projection)
+        validate_execution_options(day_workers, polars_threads)
+        return _prepare_source(source, work_root, allow_projection, day_workers, polars_threads)
     except Exception:
         raise ValueError(
             "Local source verification/projection failed; preserve evidence and check pins, calendar and explicit projection permission"
@@ -173,6 +192,9 @@ def prepare_source(
 
 
 def prepare_local_sources(config: dict, as_of: str) -> list[QuarterInput]:
+    day_workers = config.get("dayWorkers", 1)
+    polars_threads = config.get("polarsThreads", 2)
+    validate_execution_options(day_workers, polars_threads)
     sources = config.get("sources", [])
     if not isinstance(sources, list):
         raise ValueError("Sources must be an explicit bounded list")
@@ -192,6 +214,8 @@ def prepare_local_sources(config: dict, as_of: str) -> list[QuarterInput]:
                     source,
                     Path(config["workRoot"]),
                     allow_projection=config.get("allowProjection") is True,
+                    day_workers=day_workers,
+                    polars_threads=polars_threads,
                 )
             )
     return selected

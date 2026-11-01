@@ -3,12 +3,15 @@
 import copy
 import hashlib
 import json
+import multiprocessing
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from jsonschema import ValidationError
 
+from tools import validate_production_v2 as validator_module
 from tools.validate_production_v2 import load_json, validate_artifact, validate_generation
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures/production-v2"
@@ -16,6 +19,10 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures/production-v2"
 
 def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+
+
+def failed_validation_worker(graph):
+    raise RuntimeError("injected validation worker failure")
 
 
 class Bundle:
@@ -469,6 +476,106 @@ class ProductionV2Tests(unittest.TestCase):
         index["snapshots"].append(copy.deepcopy(index["snapshots"][0]))
         with self.assertRaisesRegex(ValueError, "duplicate snapshot"):
             validate_artifact(index)
+
+
+class ParallelProductionV2Tests(unittest.TestCase):
+    def reject_equally(self, index, artifacts):
+        errors = []
+        for workers in (1, 2):
+            with self.assertRaises((ValueError, ValidationError)) as caught:
+                validate_generation(index, artifacts, workers=workers)
+            errors.append(caught.exception)
+        self.assertEqual(type(errors[0]), type(errors[1]))
+        self.assertEqual(str(errors[0]), str(errors[1]))
+
+    def test_valid_exact_graph_and_unchanged_inputs(self):
+        index, artifacts = Bundle().pack()
+        before = copy.deepcopy((index, artifacts))
+        validate_generation(index, artifacts, workers=2)
+        self.assertEqual((index, artifacts), before)
+
+    def test_worker_options_reject_before_graph_work(self):
+        for workers in (True, False, 0, -1, 3, 1.0, "2", None):
+            with (
+                self.subTest(workers=workers),
+                patch.object(validator_module, "validate_artifact") as artifact_check,
+                self.assertRaisesRegex(ValueError, "workers must be one of"),
+            ):
+                # These runtime boundary probes intentionally violate the typed API.
+                validate_generation({}, {}, workers=workers)  # pyright: ignore[reportArgumentType]
+            artifact_check.assert_not_called()
+
+    def test_duplicate_latest_and_unadvertised_graph_rejections(self):
+        index, artifacts = Bundle().pack()
+        self.reject_equally(index, {**artifacts, "unadvertised.json": b"{}"})
+        duplicate = copy.deepcopy(index)
+        duplicate["snapshots"].append(copy.deepcopy(duplicate["snapshots"][0]))
+        self.reject_equally(duplicate, artifacts)
+        index["latestSnapshotId"] = "not-advertised"
+        self.reject_equally(index, artifacts)
+
+    def test_missing_corrupt_and_malformed_closure_rejections(self):
+        index, artifacts = Bundle().pack()
+        self.reject_equally(index, {})
+        path = next(iter(artifacts))
+        self.reject_equally(index, {**artifacts, path: artifacts[path] + b" "})
+        self.reject_equally(index, {**artifacts, path: "nonbytes"})
+        entry = index["snapshots"][-1]
+        del artifacts[entry["descriptor"]["path"]]
+        raw = b"null"
+        digest = hashlib.sha256(raw).hexdigest()
+        path = f"artifact.{digest}.json"
+        entry["descriptor"] = {"path": path, "sha256": digest, "sizeBytes": len(raw)}
+        artifacts[path] = raw
+        self.reject_equally(index, artifacts)
+
+    def test_cross_snapshot_descriptor_and_payload_bindings(self):
+        index, artifacts = Bundle().pack()
+        index["snapshots"][0]["descriptor"] = index["snapshots"][1]["descriptor"]
+        self.reject_equally(index, artifacts)
+        index, artifacts = Bundle().pack()
+        reference = index["snapshots"][0]["descriptor"]
+        descriptor = json.loads(artifacts.pop(reference["path"]))
+        foreign = json.loads(artifacts[index["snapshots"][1]["descriptor"]["path"]])
+        descriptor["matrix"] = foreign["matrix"]
+        raw = canonical(descriptor)
+        digest = hashlib.sha256(raw).hexdigest()
+        path = f"artifact.{digest}.json"
+        artifacts[path] = raw
+        index["snapshots"][0]["descriptor"] = {
+            "path": path,
+            "sha256": digest,
+            "sizeBytes": len(raw),
+        }
+        self.reject_equally(index, artifacts)
+
+    def test_bound_numerical_and_schema_errors_use_serial_diagnostics(self):
+        bundle = Bundle()
+        _, matrix, _ = bundle.snapshots[-1]
+        cell = next(
+            cell
+            for model in matrix["models"]
+            for cell in model["cells"]
+            if cell["status"] == "eligible"
+        )
+        cell["metrics"]["populationDelta"] += 1
+        self.reject_equally(*bundle.pack())
+        bundle = Bundle()
+        _, _, supporting = bundle.snapshots[-1]
+        del supporting[next(iter(supporting))]["quarter"]
+        self.reject_equally(*bundle.pack())
+
+    def test_unexpected_worker_failure_rejects_and_closes_pool(self):
+        index, artifacts = Bundle().pack()
+        children = {child.pid for child in multiprocessing.active_children()}
+        with (
+            patch.object(validator_module, "_validate_snapshot_worker", failed_validation_worker),
+            patch.object(validator_module, "_validate_generation_serial") as serial,
+            self.assertRaisesRegex(RuntimeError, "injected validation worker failure"),
+        ):
+            validate_generation(index, artifacts, workers=2)
+        serial.assert_not_called()
+        self.assertEqual({child.pid for child in multiprocessing.active_children()}, children)
 
 
 if __name__ == "__main__":

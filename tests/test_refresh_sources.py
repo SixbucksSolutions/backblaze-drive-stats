@@ -93,9 +93,95 @@ class RefreshSourceTests(unittest.TestCase):
             with patch(
                 "refresh_sources.prepare", side_effect=AssertionError("unexpected projection")
             ):
-                reused = prepare_source(source, root / "work")
+                reused = prepare_source(source, root / "work", day_workers=4, polars_threads=3)
             self.assertEqual(item.directory, reused.directory)
             self.assertEqual(before, {p: (file_sha(p), p.stat().st_mtime_ns) for p in before})
+
+    def test_execution_options_are_top_level_and_forwarded_to_projection(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = archive(root)
+            for options, expected in (
+                ({}, (1, 2)),
+                ({"dayWorkers": 4, "polarsThreads": 3}, (4, 3)),
+                ({"dayWorkers": 5, "polarsThreads": 4}, (5, 4)),
+            ):
+                with self.subTest(options=options):
+                    work = root / f"work-{expected[0]}"
+                    with (
+                        patch("refresh_sources.prepare", side_effect=RuntimeError) as project,
+                        self.assertRaises(ValueError),
+                    ):
+                        prepare_local_sources(
+                            dict(
+                                sources=[source],
+                                workRoot=str(work),
+                                allowProjection=True,
+                                **options,
+                            ),
+                            "2024-Q1",
+                        )
+                    project.assert_called_once()
+                    args, kwargs = project.call_args
+                    self.assertEqual(args[0], Path(source["path"]))
+                    self.assertEqual(kwargs["day_workers"], expected[0])
+                    self.assertEqual(kwargs["polars_threads"], expected[1])
+                    self.assertEqual(kwargs["quarter"], source["quarter"])
+                    self.assertEqual(kwargs["source_url"], source["url"])
+
+    def test_invalid_execution_options_fail_before_source_read_or_private_write(self):
+        invalid = [
+            (True, 2),
+            (1, False),
+            (0, 2),
+            (-1, 2),
+            (1, 0),
+            (1, -1),
+            (1.5, 2),
+            (1, "2"),
+            (None, 2),
+            (11, 2),
+            (1, 21),
+        ]
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary) / "work"
+            for workers, threads in invalid:
+                with (
+                    self.subTest(workers=workers, threads=threads),
+                    patch("refresh_sources._source_identity", side_effect=AssertionError),
+                    patch("refresh_sources.prepare_source", side_effect=AssertionError),
+                ):
+                    config = dict(
+                        sources=[dict(quarter="2024-Q1", path="absent")],
+                        workRoot=str(work),
+                        dayWorkers=workers,
+                        polarsThreads=threads,
+                    )
+                    with self.assertRaises(ValueError):
+                        prepare_local_sources(config, "2024-Q1")
+                    with self.assertRaises(ValueError):
+                        prepare_local_sources(dict(config, sources=[]), "2024-Q1")
+                with (
+                    patch(
+                        "refresh_sources._source_identity", side_effect=AssertionError
+                    ) as identity,
+                    self.assertRaises(ValueError),
+                ):
+                    prepare_source({}, work, day_workers=workers, polars_threads=threads)
+                identity.assert_not_called()
+                self.assertFalse(work.exists())
+
+    def test_execution_options_are_not_accepted_as_source_identity_fields(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = archive(root)
+            with self.assertRaises(ValueError):
+                prepare_source(
+                    dict(source, dayWorkers=2, polarsThreads=2),
+                    root / "work",
+                    allow_projection=True,
+                )
+            self.assertFalse((root / "work").exists())
 
     def test_pins_permission_and_public_url_fail_before_outputs(self):
         with tempfile.TemporaryDirectory() as temporary:

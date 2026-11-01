@@ -11,7 +11,10 @@ import json
 import os
 import re
 import stat
+import subprocess
+import sys
 import tempfile
+import time
 import zipfile
 from datetime import date
 from pathlib import Path, PurePosixPath
@@ -112,6 +115,165 @@ def read_day(archive: zipfile.ZipFile, member: zipfile.ZipInfo) -> tuple[pl.Data
         raise ValueError(f"{day}: daily CSV could not be read or verified") from None
 
 
+def _write_day(archive, member, target, digest, temporary_dir=None):
+    frame, columns = read_day(archive, member)
+    descriptor, temporary = tempfile.mkstemp(
+        prefix=f".{target.name}.", suffix=".tmp", dir=temporary_dir or target.parent
+    )
+    os.close(descriptor)
+    try:
+        write_enriched_parquet(
+            frame,
+            Path(temporary),
+            kind="daily_projection",
+            lineage={"sourceZipSha256": digest, "partition": target.stem},
+        )
+        os.replace(temporary, target)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+    return {
+        "date": target.stem,
+        "rowCount": frame.height,
+        "sourceColumns": columns,
+        "datacenterAvailable": "datacenter" in columns,
+        "memberCrc32": f"{member.CRC:08x}",
+        "memberSizeBytes": member.file_size,
+        "outputFile": target.name,
+    }
+
+
+def _member_identity(member, index):
+    return {
+        "index": index,
+        "filename": member.filename,
+        "originalFilename": member.orig_filename,
+        "headerOffset": member.header_offset,
+        "crc": member.CRC,
+        "fileSize": member.file_size,
+        "compressedSize": member.compress_size,
+        "externalAttributes": member.external_attr,
+        "compressionType": member.compress_type,
+        "flags": member.flag_bits,
+    }
+
+
+def _day_worker(task_path, result_path):
+    """Internal subprocess entry: use the coordinator's exact validated ZipInfo."""
+    try:
+        task = json.loads(task_path.read_text(encoding="utf-8"))
+        records = []
+        with zipfile.ZipFile(task["inputZip"]) as archive:
+            members = archive.infolist()
+            for identity in task["members"]:
+                index = identity["index"]
+                if type(index) is not int or not 0 <= index < len(members):
+                    raise ValueError("Selected ZIP member index changed")
+                member = members[index]
+                if _member_identity(member, index) != identity:
+                    raise ValueError("Selected ZIP member identity changed")
+                target = Path(task["outputDir"]) / (
+                    PurePosixPath(member.filename).stem + ".parquet"
+                )
+                records.append(
+                    _write_day(archive, member, target, task["digest"], task_path.parent)
+                )
+        result_path.write_text(json.dumps(records), encoding="utf-8")
+        return 0
+    except Exception:
+        # Parser exceptions may contain private row values; never emit them.
+        return 1
+
+
+def _parallel_days(input_zip, output_dir, archive, members, digest, workers, threads):
+    groups = [[] for _ in range(min(workers, len(members)))]
+    sizes = [0] * len(groups)
+    indexes = {id(member): index for index, member in enumerate(archive.infolist())}
+    for member in sorted(members, key=lambda item: (-item.file_size, item.filename)):
+        slot = min(range(len(groups)), key=lambda index: (sizes[index], index))
+        groups[slot].append(_member_identity(member, indexes[id(member)]))
+        sizes[slot] += member.file_size
+    env = dict(os.environ, POLARS_MAX_THREADS=str(threads))
+    processes = []
+    with tempfile.TemporaryDirectory(prefix=".day-workers-", dir=output_dir) as folder:
+        temporary_root = Path(folder)
+        results = []
+        try:
+            for index, group in enumerate(groups):
+                worker_dir = temporary_root / str(index)
+                worker_dir.mkdir()
+                task_path, result_path = worker_dir / "task.json", worker_dir / "result.json"
+                task_path.write_text(
+                    json.dumps(
+                        {
+                            "inputZip": str(input_zip.resolve()),
+                            "outputDir": str(output_dir.resolve()),
+                            "digest": digest,
+                            "members": sorted(group, key=lambda member: member["filename"]),
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                processes.append(
+                    subprocess.Popen(
+                        [
+                            sys.executable,
+                            str(Path(__file__).resolve()),
+                            "--day-worker",
+                            str(task_path.resolve()),
+                            str(result_path.resolve()),
+                        ],
+                        env=env,
+                        stdin=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+                    )
+                )
+                results.append(result_path)
+            while any(process.poll() is None for process in processes):
+                if any(process.poll() not in (None, 0) for process in processes):
+                    raise ValueError("Daily CSV could not be read or verified in a worker")
+                time.sleep(0.05)
+            if any(process.returncode != 0 for process in processes):
+                raise ValueError("Daily CSV could not be read or verified in a worker")
+            records = [
+                record
+                for result in results
+                for record in json.loads(result.read_text(encoding="utf-8"))
+            ]
+            expected = {PurePosixPath(member.filename).stem for member in members}
+            if (
+                len(records) != len(expected)
+                or {record["date"] for record in records} != expected
+                or len({record["outputFile"] for record in records}) != len(expected)
+            ):
+                raise ValueError("Daily worker result calendar mismatch")
+            return sorted(records, key=lambda record: record["date"])
+        finally:
+            # Finally also covers KeyboardInterrupt/SystemExit. No worker launches
+            # descendants; stop and join before deleting worker temporaries.
+            for process in processes:
+                if process.poll() is None:
+                    process.terminate()
+            for process in processes:
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+
+
+def validate_execution_options(day_workers: int, polars_threads: int) -> None:
+    if (
+        type(day_workers) is not int
+        or type(polars_threads) is not int
+        or day_workers < 1
+        or polars_threads < 1
+        or day_workers * polars_threads > 20
+    ):
+        raise ValueError("Positive day-worker/thread budget must not exceed 20")
+
+
 def prepare(
     input_zip: Path,
     output_dir: Path,
@@ -119,7 +281,15 @@ def prepare(
     source_url: str | None = None,
     overwrite: bool = False,
     quarter: str | None = None,
+    day_workers: int = 1,
+    polars_threads: int = 2,
 ) -> dict:
+    """Import serially by default; explicit parallel workers have isolated pools.
+
+    polars_threads applies only to child processes; the serial path retains the
+    caller's existing native pool. Worker settings do not enter cache lineage.
+    """
+    validate_execution_options(day_workers, polars_threads)
     expected_names: set[str] | None = None
     if quarter is not None:
         if not re.fullmatch(r"[0-9]{4}-Q[1-4]", quarter) or quarter.startswith("0000"):
@@ -170,35 +340,15 @@ def prepare(
         # A failed replacement must not leave an earlier success receipt describing partial output.
         if overwrite:
             receipt.unlink(missing_ok=True)
-        records = []
-        for member, target in zip(members, targets, strict=False):
-            frame, columns = read_day(archive, member)
-            descriptor, temporary = tempfile.mkstemp(
-                prefix=f".{target.name}.", suffix=".tmp", dir=output_dir
+        if day_workers == 1:
+            records = [
+                _write_day(archive, member, target, digest)
+                for member, target in zip(members, targets, strict=False)
+            ]
+        else:
+            records = _parallel_days(
+                input_zip, output_dir, archive, members, digest, day_workers, polars_threads
             )
-            os.close(descriptor)
-            try:
-                write_enriched_parquet(
-                    frame,
-                    Path(temporary),
-                    kind="daily_projection",
-                    lineage={"sourceZipSha256": digest, "partition": target.stem},
-                )
-                os.replace(temporary, target)
-            finally:
-                Path(temporary).unlink(missing_ok=True)
-            records.append(
-                {
-                    "date": target.stem,
-                    "rowCount": frame.height,
-                    "sourceColumns": columns,
-                    "datacenterAvailable": "datacenter" in columns,
-                    "memberCrc32": f"{member.CRC:08x}",
-                    "memberSizeBytes": member.file_size,
-                    "outputFile": target.name,
-                }
-            )
-            del frame
         metadata = {
             "schemaVersion": 1,
             "parquetProfile": PROFILE_ID,
@@ -229,12 +379,21 @@ def prepare(
 
 
 def main() -> None:
+    if len(sys.argv) == 4 and sys.argv[1] == "--day-worker":
+        raise SystemExit(_day_worker(Path(sys.argv[2]), Path(sys.argv[3])))
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input-zip", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--source-url")
     parser.add_argument("--quarter", help="Select a complete calendar quarter (YYYY-Qn)")
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--day-workers", type=int, default=1)
+    parser.add_argument(
+        "--polars-threads",
+        type=int,
+        default=2,
+        help="Native threads per day worker; serial mode uses the caller's pool",
+    )
     args = parser.parse_args()
     try:
         metadata = prepare(
@@ -243,6 +402,8 @@ def main() -> None:
             source_url=args.source_url,
             overwrite=args.overwrite,
             quarter=args.quarter,
+            day_workers=args.day_workers,
+            polars_threads=args.polars_threads,
         )
     except Exception:
         parser.exit(

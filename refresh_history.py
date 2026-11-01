@@ -57,8 +57,15 @@ def _check_public_tree(root: Path, *, expected_paths=None, allow_lock=False) -> 
         raise ValueError("Public output contains unadvertised JSON; preserve and inspect it")
 
 
-def load_generation(root):
+def _validation_worker_count(value):
+    if type(value) is not int or value not in {1, 2, 4, 8}:
+        raise ValueError("validationWorkers must be one of 1, 2, 4, or 8")
+    return value
+
+
+def load_generation(root, *, validation_workers=1):
     """Read only the indexed graph; reject unsafe links and verify exact bytes."""
+    validation_workers = _validation_worker_count(validation_workers)
     root = Path(root).resolve()
     index = load_json(root / "index.json")
     artifacts = {}
@@ -80,7 +87,7 @@ def load_generation(root):
         for row in descriptor["quarters"]:
             if row["payload"] is not None:
                 read(row["payload"])
-    validate_generation(index, artifacts)
+    validate_generation(index, artifacts, workers=validation_workers)
     return index, artifacts
 
 
@@ -92,6 +99,7 @@ def _context(index, artifacts):
 
 
 def _configuration(config):
+    validation_workers = _validation_worker_count(config.get("validationWorkers", 1))
     for name in (
         "baselineDirectory",
         "outputDirectory",
@@ -166,7 +174,7 @@ def _configuration(config):
         raise ValueError("Explicit private cacheRoot required for cold source summarization")
     if config.get("sources") and not config.get("workRoot"):
         raise ValueError("Local sources require an explicit private workRoot")
-    index, artifacts = load_generation(baseline)
+    index, artifacts = load_generation(baseline, validation_workers=validation_workers)
     if ordinal(config["historyStart"]) > ordinal(
         _context(index, artifacts)["sourceDomain"]["historyStartQuarter"]
     ):
@@ -419,12 +427,18 @@ def plan_refresh(config) -> dict:
     return _report(config, as_of, index, artifacts, diagnostics, baseline_index, baseline_artifacts)
 
 
-def _extend(root, baseline_index, baseline_artifacts, index, artifacts):
+def _extend(root, baseline_index, baseline_artifacts, index, artifacts, *, validation_workers=1):
+    validation_workers = _validation_worker_count(validation_workers)
     root = Path(root).resolve()
     with publication_lock(root):
         _check_public_tree(root, allow_lock=True)
-        if (root / "index.json").exists():
-            current, existing = load_generation(root)
+        index_path = root / "index.json"
+        current_index_raw = None
+        if index_path.exists():
+            current_index_raw = index_path.read_bytes()
+            current, existing = load_generation(root, validation_workers=validation_workers)
+            if index_path.read_bytes() != current_index_raw:
+                raise ValueError("Output index changed during publication validation")
         else:
             current, existing = baseline_index, dict(baseline_artifacts)
         for entry in baseline_index["snapshots"]:
@@ -455,7 +469,7 @@ def _extend(root, baseline_index, baseline_artifacts, index, artifacts):
         # Retain the original ordering/latest pointer when no new entry is added.
         if all(row in current["snapshots"] for row in index["snapshots"]):
             merged = current
-        validate_generation(merged, combined)
+        validate_generation(merged, combined, workers=validation_workers)
         _check_public_tree(root, expected_paths={"index.json", *combined}, allow_lock=True)
         writes = 0
         for key, raw in combined.items():
@@ -471,11 +485,24 @@ def _extend(root, baseline_index, baseline_artifacts, index, artifacts):
                 raise ValueError("Immutable publication readback mismatch")
             writes += 1
         index_raw = json_bytes(merged)
-        index_path = root / "index.json"
         if not index_path.exists() or (merged != current and index_path.read_bytes() != index_raw):
             atomic_write(index_path, index_raw)
             writes += 1
-        load_generation(root)
+        elif merged == current:
+            # A verified no-op preserves the existing index's exact formatting.
+            index_raw = current_index_raw
+        # The complete merged graph was normatively validated before publication.
+        # Bind readback to those exact validated bytes rather than redoing semantic
+        # calculations on a potentially different graph read from disk.
+        _check_public_tree(root, expected_paths={"index.json", *combined}, allow_lock=True)
+        if index_path.read_bytes() != index_raw:
+            raise ValueError("Publication index readback mismatch")
+        for key, raw in combined.items():
+            target = root / object_key(key)
+            if not target.resolve().is_relative_to(root) or target.is_symlink():
+                raise ValueError("Unsafe immutable publication path")
+            if target.read_bytes() != raw:
+                raise ValueError("Immutable publication readback mismatch")
         return writes
 
 
@@ -584,7 +611,12 @@ def run_refresh(config):
     if report["publicationGates"]:
         raise ValueError("Refresh publication is gated; inspect the sanitized receipt")
     writes = _extend(
-        config["outputDirectory"], baseline_index, baseline_artifacts, index, artifacts
+        config["outputDirectory"],
+        baseline_index,
+        baseline_artifacts,
+        index,
+        artifacts,
+        validation_workers=config.get("validationWorkers", 1),
     )
     report.update(status="published" if writes else "unchanged", publicWrites=writes)
     atomic_write(receipt_path, json_bytes(report))
@@ -596,7 +628,10 @@ def verify_refresh(config):
     baseline_index, _ = _configuration(config)
     root = Path(config["outputDirectory"]).resolve()
     _check_public_tree(root)
-    index, artifacts = load_generation(config["outputDirectory"])
+    validation_workers = _validation_worker_count(config.get("validationWorkers", 1))
+    index, artifacts = load_generation(
+        config["outputDirectory"], validation_workers=validation_workers
+    )
     _check_public_tree(root, expected_paths={"index.json", *artifacts})
     receipt = load_json(Path(config["receiptPath"]))
     if receipt.get("status") not in {"published", "unchanged"} or receipt.get(
@@ -610,7 +645,7 @@ def verify_refresh(config):
     )
     if entry is None or entry["sourceManifestSha256"] != receipt["sourceManifestSha256"]:
         raise ValueError("Receipt snapshot is absent or differs")
-    validate_generation(index, artifacts)
+    validate_generation(index, artifacts, workers=validation_workers)
     return dict(receipt, status="verified")
 
 

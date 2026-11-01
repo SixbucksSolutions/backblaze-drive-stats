@@ -137,6 +137,37 @@ that the illustrated byte length/URL is valid. Record publisher checksum evidenc
 where available; an operator-supplied local SHA-256 pin alone does not authenticate
 the publisher. Keep source URLs public and free of credentials/query tokens.
 
+For a quarter already represented in the retained catalog, do not supply both
+that quarter's old summary and its fresh source as competing inputs. Pin the
+other retained quarters explicitly with `summaryManifests`, and add the fresh
+quarter through `sources`. Also derive a staging baseline index ending before
+the replayed quarter, with exactly its referenced payload graph. A full baseline
+containing the old same-quarter snapshot would retain both revisions, producing
+an extra active snapshot that the release checker rejects. Preserve the complete
+previous release separately for immutable upload and recovery. For example, a
+Q2 2026 replay starts with a 52-snapshot baseline through Q1, 52 pinned older
+summaries and the fresh Q2 source. A normal subsequent Q3 append instead retains
+all 53 prior cutoffs and adds Q3; it does not remove Q2. Update the reviewed
+release inventory gate for the resulting 54-cutoff release.
+
+The optional execution settings below change resource allocation, not the source
+or generation identity:
+
+```json
+{
+  "dayWorkers": 6,
+  "polarsThreads": 2,
+  "validationWorkers": 8
+}
+```
+
+`dayWorkers` and `polarsThreads` are positive integers with a product no greater
+than 20; defaults are 1 and 2. `validationWorkers` accepts 1, 2, 4 or 8 and
+defaults to 1. Choose a budget appropriate to available CPU, memory and other
+work; the [replay benchmark](quarterly-refresh-benchmark-0101.md) records the
+measured choices and their limitations. These are operating-system workers and
+threads, not a requirement for an equal number of Codex agents.
+
 The source adapter verifies exact ZIP length/hash, selects a complete quarter
 calendar, and delegates the six-column enriched Parquet projection. It streams
 source CSV members without extracting raw CSV files. Annual archives are selected

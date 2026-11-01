@@ -10,13 +10,15 @@ import hashlib
 import ipaddress
 import json
 import math
+import multiprocessing
 import re
 from collections.abc import Mapping
+from concurrent.futures import ProcessPoolExecutor
 from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "contracts/production-v2.schema.json"
@@ -772,77 +774,161 @@ def _supporting(payload, context, previous):
     _same(locations["knownLocationPopulationShare"], share, "known-location coverage denominator")
 
 
-def validate_generation(index: dict, artifacts: Mapping[str, bytes]):
-    """Validate exactly the explicit immutable graph; never fetch/read referenced paths."""
-    validate_artifact(index)
-    _require(index["artifactType"] == "generation_index", "generation requires index")
+def _artifact_bytes(reference, artifacts):
+    path = _path(reference)
+    _require(path in artifacts, "referenced artifact missing")
+    raw = artifacts[path]
+    _require(isinstance(raw, bytes), "artifact map must contain exact bytes")
+    _require(
+        len(raw) == reference["sizeBytes"]
+        and hashlib.sha256(raw).hexdigest() == reference["sha256"],
+        "artifact byte hash/size mismatch",
+    )
+    return path, raw
+
+
+def _validate_snapshot(entry, artifacts):
+    """Run every binding, schema and numerical check within one snapshot."""
     used = set()
 
     def resolve(reference):
-        path = _path(reference)
-        _require(path in artifacts, "referenced artifact missing")
-        raw = artifacts[path]
-        _require(isinstance(raw, bytes), "artifact map must contain exact bytes")
-        _require(
-            len(raw) == reference["sizeBytes"]
-            and hashlib.sha256(raw).hexdigest() == reference["sha256"],
-            "artifact byte hash/size mismatch",
-        )
+        path, raw = _artifact_bytes(reference, artifacts)
         used.add(path)
         result = _decode(raw)
         validate_artifact(result)
         return result
 
+    descriptor = resolve(entry["descriptor"])
+    _require(
+        descriptor["artifactType"] == "snapshot_descriptor",
+        "descriptor reference has wrong type",
+    )
+    context = descriptor["context"]
+    _require(
+        all(
+            entry[key] == context[key]
+            for key in ("snapshotId", "asOfQuarter", "sourceManifestSha256")
+        ),
+        "index descriptor identity mismatch",
+    )
+    matrix = resolve(descriptor["matrix"])
+    _require(matrix["artifactType"] == "matrix", "matrix reference has wrong type")
+    payloads = [matrix]
+    supporting = {}
+    for row in descriptor["quarters"]:
+        if row["payload"] is not None:
+            payload = resolve(row["payload"])
+            _require(
+                payload["artifactType"] == "supporting_quarter"
+                and payload["quarter"] == row["quarter"],
+                "quarter reference/type mismatch",
+            )
+            supporting[row["quarter"]] = payload
+            payloads.append(payload)
+    for payload in payloads:
+        _require(
+            payload["contextSha256"] == descriptor["contextSha256"]
+            and payload["snapshotId"] == context["snapshotId"]
+            and payload["asOfQuarter"] == context["asOfQuarter"],
+            "mixed generation context/identity",
+        )
+    _matrix(matrix, context)
+    for quarter, payload in supporting.items():
+        _supporting(payload, context, supporting.get(_quarter(_ordinal(quarter) - 1)))
+    for block in matrix["models"]:
+        for cell in block["cells"]:
+            if cell["status"] == "eligible":
+                row = next(
+                    row
+                    for row in supporting[cell["quarter"]]["scopes"]["selected_hdd"]["models"]
+                    if row["modelId"] == block["modelId"]
+                )
+                _require(
+                    cell["metrics"]["new"] == row["new"],
+                    "matrix/supporting New differs",
+                )
+    return used
+
+
+def _validate_generation_serial(index, artifacts):
+    used = set()
     for entry in index["snapshots"]:
-        descriptor = resolve(entry["descriptor"])
-        _require(
-            descriptor["artifactType"] == "snapshot_descriptor",
-            "descriptor reference has wrong type",
-        )
-        context = descriptor["context"]
-        _require(
-            all(
-                entry[key] == context[key]
-                for key in ("snapshotId", "asOfQuarter", "sourceManifestSha256")
-            ),
-            "index descriptor identity mismatch",
-        )
-        matrix = resolve(descriptor["matrix"])
-        _require(matrix["artifactType"] == "matrix", "matrix reference has wrong type")
-        payloads = [matrix]
-        supporting = {}
+        used.update(_validate_snapshot(entry, artifacts))
+    return used
+
+
+def _snapshot_graphs(index, artifacts):
+    """Extract byte-bound closures; malformed collections use serial diagnostics."""
+    graphs = []
+    used = set()
+    for entry in index["snapshots"]:
+        selected = {}
+
+        def read(reference, selected=selected):
+            path, raw = _artifact_bytes(reference, artifacts)
+            selected[path] = raw
+            used.add(path)
+            return raw
+
+        descriptor = _decode(read(entry["descriptor"]))
+        read(descriptor["matrix"])
         for row in descriptor["quarters"]:
             if row["payload"] is not None:
-                payload = resolve(row["payload"])
-                _require(
-                    payload["artifactType"] == "supporting_quarter"
-                    and payload["quarter"] == row["quarter"],
-                    "quarter reference/type mismatch",
-                )
-                supporting[row["quarter"]] = payload
-                payloads.append(payload)
-        for payload in payloads:
-            _require(
-                payload["contextSha256"] == descriptor["contextSha256"]
-                and payload["snapshotId"] == context["snapshotId"]
-                and payload["asOfQuarter"] == context["asOfQuarter"],
-                "mixed generation context/identity",
-            )
-        _matrix(matrix, context)
-        for quarter, payload in supporting.items():
-            _supporting(payload, context, supporting.get(_quarter(_ordinal(quarter) - 1)))
-        for block in matrix["models"]:
-            for cell in block["cells"]:
-                if cell["status"] == "eligible":
-                    row = next(
-                        row
-                        for row in supporting[cell["quarter"]]["scopes"]["selected_hdd"]["models"]
-                        if row["modelId"] == block["modelId"]
-                    )
-                    _require(
-                        cell["metrics"]["new"] == row["new"],
-                        "matrix/supporting New differs",
-                    )
+                read(row["payload"])
+        graphs.append((entry, selected))
+    return graphs, used
+
+
+def _validate_snapshot_worker(graph):
+    try:
+        entry, artifacts = graph
+        used = _validate_snapshot(entry, artifacts)
+        _require(used == set(artifacts), "artifact map has unreachable/unadvertised paths")
+    except ValueError, ValidationError:
+        # Rich jsonschema exceptions may hold unpicklable resolver state. Only a
+        # status crosses spawn; the parent reproduces the full normative error.
+        return False
+    return True
+
+
+def _validate_generation_parallel(index, artifacts, workers):
+    try:
+        graphs, used = _snapshot_graphs(index, artifacts)
+    except AttributeError, IndexError, KeyError, TypeError, ValueError:
+        return _validate_generation_serial(index, artifacts)
+    invalid = False
+    with ProcessPoolExecutor(
+        max_workers=workers, mp_context=multiprocessing.get_context("spawn")
+    ) as pool:
+        for valid in pool.map(_validate_snapshot_worker, graphs, chunksize=1, buffersize=workers):
+            if not valid:
+                invalid = True
+                break
+    if invalid:
+        return _validate_generation_serial(index, artifacts)
+    return used
+
+
+def validate_generation(index: dict, artifacts: Mapping[str, bytes], *, workers=1):
+    """Validate the explicit immutable graph; optional workers use bounded spawn.
+
+    Root membership and the global artifact union stay in the parent. Every
+    snapshot uses the same complete checks in serial and parallel modes. Callers
+    choosing parallel work own process-tree containment and resource deadlines.
+    """
+    _require(
+        type(workers) is int and workers in {1, 2, 4, 8},
+        "workers must be one of 1, 2, 4, or 8",
+    )
+    # Graph-wide rules belong here, shared by both execution modes. Workers only
+    # validate independent snapshots; they never rewrite or replace the root.
+    validate_artifact(index)
+    _require(index["artifactType"] == "generation_index", "generation requires index")
+    used = (
+        _validate_generation_serial(index, artifacts)
+        if workers == 1
+        else _validate_generation_parallel(index, artifacts, workers)
+    )
     _require(used == set(artifacts), "artifact map has unreachable/unadvertised paths")
 
 
@@ -851,6 +937,7 @@ def main():
     parser.add_argument(
         "directory", type=Path, help="explicit fixture directory containing index.json"
     )
+    parser.add_argument("--workers", type=int, choices=(1, 2, 4, 8), default=1)
     args = parser.parse_args()
     directory = args.directory.resolve()
     candidates = (
@@ -866,7 +953,7 @@ def main():
         for path in directory.rglob("*.json")
         if path != index_path
     }
-    validate_generation(index, artifacts)
+    validate_generation(index, artifacts, workers=args.workers)
     print("v2 generation graph validated")
 
 

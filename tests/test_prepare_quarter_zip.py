@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import stat
 import tempfile
 import unittest
@@ -9,12 +10,12 @@ import warnings
 import zipfile
 from datetime import date, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import polars as pl
 import pyarrow.parquet as pq
 
-from parquet_profile import PROFILE_ID
+from parquet_profile import PROFILE_ID, inspect_profile
 from prepare_quarter_zip import prepare
 
 HEADER = "date,serial_number,model,capacity_bytes,failure,smart_1_raw\n"
@@ -35,6 +36,102 @@ class ZipImportTests(unittest.TestCase):
                         name = literal
                     archive.writestr(name, content)
         return path
+
+    def test_parallel_matches_serial_bytes_and_exact_selected_members(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            link = zipfile.ZipInfo("2026-04-01.csv")
+            link.create_system = 3
+            link.external_attr = (stat.S_IFLNK | 0o777) << 16
+            archive = self.make_zip(
+                root,
+                [
+                    ("2026-04-02.csv", HEADER + ROW.replace("2026-04-01", "2026-04-02")),
+                    ("2026-04-01.csv", HEADER + ROW),
+                    (link, "ignored invalid body; duplicate spelling must not select this member"),
+                ],
+            )
+            serial = prepare(archive, root / "serial")
+            environment = dict(os.environ)
+            original_digest = hashlib.file_digest
+            with patch("prepare_quarter_zip.hashlib.file_digest", wraps=original_digest) as digest:
+                parallel = prepare(archive, root / "parallel", day_workers=2, polars_threads=2)
+            self.assertEqual(digest.call_count, 1)
+            self.assertEqual(dict(os.environ), environment)
+            self.assertEqual(parallel, serial)
+            self.assertEqual(parallel["dates"], ["2026-04-01", "2026-04-02"])
+            for name in ["import-metadata.json", "2026-04-01.parquet", "2026-04-02.parquet"]:
+                self.assertEqual(
+                    (root / "serial" / name).read_bytes(), (root / "parallel" / name).read_bytes()
+                )
+            for name in ["2026-04-01.parquet", "2026-04-02.parquet"]:
+                self.assertEqual(
+                    inspect_profile(root / "serial" / name),
+                    inspect_profile(root / "parallel" / name),
+                )
+            self.assertFalse(list((root / "parallel").glob(".day-workers-*")))
+
+    def test_parallel_failure_invalidates_receipt_and_joins_without_temporary_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            archive = self.make_zip(root, [("2026-04-01.csv", HEADER + ROW)])
+            prepare(archive, root / "out")
+            archive = self.make_zip(
+                root,
+                [
+                    ("2026-04-01.csv", HEADER + ROW.replace("2026-04-01", "2026-04-03")),
+                    ("2026-04-02.csv", HEADER + ROW.replace("2026-04-01", "2026-04-02")),
+                ],
+            )
+            with self.assertRaisesRegex(ValueError, "could not be read or verified") as caught:
+                prepare(archive, root / "out", overwrite=True, day_workers=2)
+            self.assertNotIn("private-", str(caught.exception))
+            self.assertFalse((root / "out/import-metadata.json").exists())
+            self.assertFalse(list((root / "out").glob(".day-workers-*")))
+            self.assertFalse(list((root / "out").rglob("*.tmp")))
+
+    def test_parallel_interrupt_stops_and_joins_started_workers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            archive = self.make_zip(
+                root,
+                [
+                    ("2026-04-01.csv", HEADER + ROW),
+                    ("2026-04-02.csv", HEADER + ROW.replace("2026-04-01", "2026-04-02")),
+                ],
+            )
+            process = Mock()
+            process.poll.return_value = None
+            with patch(
+                "prepare_quarter_zip.subprocess.Popen", side_effect=[process, KeyboardInterrupt]
+            ):
+                with self.assertRaises(KeyboardInterrupt):
+                    prepare(archive, root / "out", day_workers=2)
+            process.terminate.assert_called_once()
+            process.wait.assert_called_once_with(timeout=3)
+            self.assertFalse((root / "out/import-metadata.json").exists())
+            self.assertFalse(list((root / "out").iterdir()))
+
+    def test_invalid_parallel_budget_fails_before_source_or_output_access(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for workers, threads in [
+                (True, 2),
+                (2, False),
+                (0, 2),
+                (-1, 2),
+                (2, 0),
+                (11, 2),
+                (2, 1.5),
+            ]:
+                with self.subTest(workers=workers, threads=threads), self.assertRaises(ValueError):
+                    prepare(
+                        root / "missing.zip",
+                        root / "out",
+                        day_workers=workers,
+                        polars_threads=threads,
+                    )
+                self.assertFalse((root / "out").exists())
 
     def test_projection_private_outputs_and_provenance(self):
         with tempfile.TemporaryDirectory() as folder:

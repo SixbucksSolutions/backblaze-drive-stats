@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
-import { checkHostingRemote, validateRemoteOrigin } from './check-hosting-remote.mjs';
+import {
+  checkHostingRemote,
+  runHostingRemoteCli,
+  validateRemoteOrigin,
+} from './check-hosting-remote.mjs';
 
 const origin = 'https://backblaze-drive-stats-analysis.pages.dev';
 const bodies = new Map([
@@ -69,6 +76,188 @@ function fixture(change = () => {}) {
   };
   return { request, calls, peak: () => peak };
 }
+
+async function qualifiedFixture(t) {
+  const root = await mkdtemp(join(tmpdir(), 'remote-qualified-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const path = join(root, 'qualified.json');
+  const qualified = {
+    formatVersion: 1,
+    assets: structuredClone(manifest.assets).filter(
+      (asset) =>
+        !['data/production/generation/matrix.json', 'fonts/font.woff2'].includes(asset.path),
+    ),
+  };
+  async function save(value = qualified) {
+    const bytes = Buffer.from(JSON.stringify(value));
+    await writeFile(path, bytes);
+    return [
+      origin,
+      '--manifest',
+      path,
+      '--manifest-sha256',
+      createHash('sha256').update(bytes).digest('hex'),
+    ];
+  }
+  return { root, path, qualified, save };
+}
+
+test('explicit pinned qualified CLI inventory probes retained union assets without deriving pristine dist', async (t) => {
+  const files = await qualifiedFixture(t);
+  const retained = 'assets/previous-abcdefgh.js';
+  const body = 'export const retained = 1;';
+  files.qualified.assets.push({
+    path: retained,
+    sizeBytes: Buffer.byteLength(body),
+    sha256: createHash('sha256').update(body).digest('hex'),
+    served: true,
+    cacheControl: 'public, max-age=31536000, immutable',
+  });
+  // Exact packageCacheCompatibleRelease output shape, including its retention
+  // ledger. The pin covers this entire union, rather than the pristine inputs.
+  files.qualified.retention = {
+    formatVersion: 1,
+    currentManifestSha256: '1'.repeat(64),
+    previousManifestSha256: '2'.repeat(64),
+    retainedAssets: [structuredClone(files.qualified.assets.at(-1))],
+  };
+  const mock = fixture((url, state) => {
+    if (url.pathname === `/${retained}`) {
+      state.status = 200;
+      state.body = body;
+      state.headers['content-type'] = 'text/javascript';
+      state.headers['cache-control'] = 'public, max-age=31536000, immutable';
+    }
+  });
+  const result = await runHostingRemoteCli(await files.save(), {
+    root: files.root,
+    request: mock.request,
+    releaseCheck: () => assert.fail('Explicit union must not derive pristine dist'),
+  });
+  assert.equal(result.assets, files.qualified.assets.length - 1);
+  assert.ok(mock.calls.some((call) => call.path === `/${retained}`));
+  assert.equal(result.missing, 18);
+});
+
+test('qualified union rejects forged, duplicate, unknown or malformed retention metadata before GET', async (t) => {
+  const files = await qualifiedFixture(t);
+  const noRequest = () => assert.fail('Network must not be reached');
+  const immutableAsset = files.qualified.assets.find((asset) => asset.path.startsWith('assets/'));
+  immutableAsset.cacheControl = 'public, max-age=31536000, immutable';
+  const base = {
+    formatVersion: 1,
+    currentManifestSha256: '1'.repeat(64),
+    previousManifestSha256: '2'.repeat(64),
+    retainedAssets: [],
+  };
+  for (const mutate of [
+    () => null,
+    (value) => ({ ...value, unexpected: true }),
+    (value) => ({ ...value, formatVersion: 2 }),
+    (value) => ({ ...value, currentManifestSha256: 'invalid' }),
+    (value) => ({ ...value, previousManifestSha256: null }),
+    (value) => ({ ...value, retainedAssets: 'not-an-array' }),
+    (value) => ({
+      ...value,
+      retainedAssets: [{ ...files.qualified.assets[0], sha256: '3'.repeat(64) }],
+    }),
+    (value) => ({ ...value, retainedAssets: [{ ...files.qualified.assets[0], unreviewed: true }] }),
+    (value) => ({ ...value, retainedAssets: [immutableAsset, immutableAsset] }),
+    (value) => ({ ...value, retainedAssets: [files.qualified.assets[0]] }),
+  ]) {
+    const altered = {
+      ...structuredClone(files.qualified),
+      retention: mutate(structuredClone(base)),
+    };
+    await assert.rejects(
+      runHostingRemoteCli(await files.save(altered), { root: files.root, request: noRequest }),
+    );
+  }
+});
+
+test('origin-only CLI retains pristine release audit', async () => {
+  const mock = fixture();
+  let checked = false;
+  const result = await runHostingRemoteCli([origin], {
+    request: mock.request,
+    releaseCheck: async () => {
+      checked = true;
+      return manifest;
+    },
+  });
+  assert.ok(checked);
+  assert.equal(result.assets, manifest.assets.length - 1);
+});
+
+test('qualified manifest pin, shape, bounds and private paths fail before any GET', async (t) => {
+  const files = await qualifiedFixture(t);
+  const noRequest = () => assert.fail('Network must not be reached');
+  const args = await files.save();
+  await assert.rejects(
+    runHostingRemoteCli([...args.slice(0, 4), '0'.repeat(64)], {
+      root: files.root,
+      request: noRequest,
+    }),
+    /SHA-256 differs/,
+  );
+  for (const mutate of [
+    (value) => {
+      value.unreviewed = true;
+    },
+    (value) => {
+      value.formatVersion = 2;
+    },
+    (value) => {
+      value.assets[0].credential = 'forbidden';
+    },
+    (value) => {
+      value.assets[0].path = '../private/token';
+    },
+    (value) => {
+      value.assets[0].path = 'private/summary.json';
+    },
+    (value) => {
+      value.assets[0].sizeBytes = 25 * 1024 * 1024 + 1;
+    },
+    (value) => {
+      value.assets[0].served = false;
+    },
+    (value) => {
+      value.assets.push({
+        ...value.assets.find((asset) => asset.path.startsWith('assets/')),
+        path: 'assets/App-abcdefgh.js',
+      });
+    },
+  ]) {
+    const altered = structuredClone(files.qualified);
+    mutate(altered);
+    await assert.rejects(
+      runHostingRemoteCli(await files.save(altered), { root: files.root, request: noRequest }),
+    );
+  }
+  for (const malformed of [
+    [origin, '--manifest', files.path],
+    [origin, '--manifest-sha256', args[4]],
+    [origin, '--manifest', files.path, '--unknown', args[4]],
+    [origin, '--manifest', files.path, '--manifest', files.path],
+  ]) {
+    await assert.rejects(
+      runHostingRemoteCli(malformed, { root: files.root, request: noRequest }),
+      /Usage/,
+    );
+  }
+  await mkdir(join(files.root, 'public'));
+  const servedPath = join(files.root, 'public', 'qualified.json');
+  const validArgs = await files.save();
+  await writeFile(servedPath, JSON.stringify(files.qualified));
+  await assert.rejects(
+    runHostingRemoteCli([origin, '--manifest-sha256', validArgs[4], '--manifest', servedPath], {
+      root: files.root,
+      request: noRequest,
+    }),
+    /outside served/,
+  );
+});
 
 test('only the exact approved HTTPS project and one valid deployment label are accepted', () => {
   for (const url of [
