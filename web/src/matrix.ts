@@ -285,7 +285,7 @@ function render() {
   const models = visibleModels(snapshot, selected);
   patchContent(
     app,
-    `<div class="matrix-page"><header class="matrix-top"><a class="matrix-brand" href="?">▰ DriveStats <span>BY SIXBUCKS SOLUTIONS</span></a><a href="${snapshot.rateLabel ? `?view=explore&snapshot=${esc(snapshot.id)}` : '?view=explore'}">Explore calendar-quarter reports ↗</a></header>
+    `<div class="matrix-page" data-render-key="matrix-page"><header class="matrix-top"><a class="matrix-brand" href="?">▰ DriveStats <span>BY SIXBUCKS SOLUTIONS</span></a><a href="${snapshot.rateLabel ? `?view=explore&snapshot=${esc(snapshot.id)}` : '?view=explore'}">Explore calendar-quarter reports ↗</a></header>
   <section class="matrix-heading"><div><p class="eyebrow">THE FULL TRAJECTORY</p><h1>Reliability through deployment history.</h1><p>${snapshot.rateLabel ? 'Compare Observed-history AFR, population and turnover. Seven adjacent metrics retain the evidence behind each value.' : 'Compare cumulative AFR, population and turnover together. Each model keeps its seven workbook columns.'}</p></div><label class="snapshot-control">AS-OF EVIDENCE<select id="matrix-snapshot">${(referenceMode ? snapshots : productionChoices.map((entry) => ({ id: entry.snapshotId, label: `${entry.asOfQuarter.replace('-Q', ' Q')} · ${snapshotAvailable(entry.asOfQuarter, 'matrix') ? 'observed history' : 'unavailable for AFR comparison'}` }))).map((s) => `<option value="${esc(s.id)}" ${!referenceMode && productionChoices.some((entry) => entry.snapshotId === s.id && !snapshotAvailable(entry.asOfQuarter, 'matrix')) ? 'disabled' : ''} ${s.id === (pendingSnapshot || snapshot.id) ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select></label></section>
   <aside class="matrix-notice ${snapshot.kind}"><strong>${snapshot.kind === 'production' ? 'BACKBLAZE OBSERVED HISTORY · V2' : snapshot.kind === 'reference' ? 'WORKBOOK REFERENCE · NOT A PRODUCTION SNAPSHOT' : 'SYNTHETIC SAMPLE · INVENTED FIGURES'}</strong><span>${esc(snapshot.notice)}</span></aside>
   ${pendingSnapshot ? '<p role="status">Validating selected snapshot… The previous validated matrix remains visible.</p>' : ''}${snapshotError ? `<p role="alert">${esc(snapshotError)}</p>` : ''}
@@ -341,7 +341,17 @@ function table(models: MatrixModel[]) {
   )
     .map(
       (group) =>
-        `<tbody data-render-key="year-${group.year}">${group.quarters.map((q, rowIndex) => `<tr data-render-key="row-${q}" data-relative="${q}" class="${q % 4 === 1 ? 'year-start' : ''} ${q === guideQuarter ? 'horizon-row' : ''}">${rowIndex === 0 ? `<th class="age year ${group.quarters.at(-1) === guideQuarter ? 'horizon-year' : ''}" scope="rowgroup" rowspan="${group.quarters.length}"><span class="year-number">${group.year}</span></th>` : ''}<th class="age age-quarter" scope="row">Q${((q - 1) % 4) + 1}<small>${q}</small>${q === guideQuarter ? `<span class="guide-slot"><span class="guide-label">After year ${guideYear}</span></span>` : ''}</th>${models.map((m) => metrics.map((metric, mi) => cellHtml(m, cellAt(m, q), metric, mi)).join('')).join('')}</tr>`).join('')}</tbody>`,
+        `<tbody data-render-key="year-${group.year}">${group.quarters
+          .map(
+            (q, rowIndex) =>
+              `<tr data-render-key="row-${q}" data-relative="${q}" class="${q % 4 === 1 ? 'year-start' : ''} ${q === guideQuarter ? 'horizon-row' : ''}">${rowIndex === 0 ? `<th class="age year ${group.quarters.at(-1) === guideQuarter ? 'horizon-year' : ''}" scope="rowgroup" rowspan="${group.quarters.length}"><span class="year-number">${group.year}</span></th>` : ''}<th class="age age-quarter" scope="row">Q${((q - 1) % 4) + 1}<small>${q}</small>${q === guideQuarter ? `<span class="guide-slot"><span class="guide-label">After year ${guideYear}</span></span>` : ''}</th>${models
+                .map((m) => {
+                  const cell = cellAt(m, q);
+                  return metrics.map((metric, mi) => cellHtml(m, cell, metric, mi)).join('');
+                })
+                .join('')}</tr>`,
+          )
+          .join('')}</tbody>`,
     )
     .join('')}</table>`;
 }
@@ -359,7 +369,9 @@ function cellHtml(m: MatrixModel, c: MatrixCell, metric: Metric, mi: number) {
           : ''
       : '';
   const detail = `${m.name}, relative quarter ${c.relativeQuarter}, ${quarter(c.quarter)}, ${labelForMetric(mi)}: ${text}${unit}. ${info.description}`;
-  return `<td data-render-key="cell-${esc(m.id)}-${metric}" class="${mi < 2 ? 'metric-rate' : 'metric-count'} ${mi === 0 ? 'model-start' : ''} ${observed ? 'observed' : `unavailable state-${c.state}`}"><button id="${controlId('cell', `${m.id}-${c.relativeQuarter}-${metric}`)}" class="matrix-cell" tabindex="${c.relativeQuarter === 1 && mi === 0 ? '0' : '-1'}" data-cell="${esc(m.id)}" data-q="${c.relativeQuarter}" data-metric="${metric}" style="${neutral || !observed ? '' : `background:${heatmapPaint(interpolate(value, snapshot.domains[metric])).background};color:${heatmapPaint(interpolate(value, snapshot.domains[metric])).foreground}`}" aria-label="${esc(detail)}" aria-controls="matrix-inspector" title="${esc(detail)}">${observed ? `<span class="numeric-field" style="width:var(--field-${metric})">${metric === 'afrDelta' && value !== null && deltaDisplay(value).reserveSign ? '<span class="pp-sign-space" aria-hidden="true">−</span>' : ''}${esc(text)}</span>` : esc(text)}</button></td>`;
+  const paint =
+    neutral || !observed ? null : heatmapPaint(interpolate(value, snapshot.domains[metric]));
+  return `<td data-render-key="cell-${esc(m.id)}-${metric}" class="${mi < 2 ? 'metric-rate' : 'metric-count'} ${mi === 0 ? 'model-start' : ''} ${observed ? 'observed' : `unavailable state-${c.state}`}"><button id="${controlId('cell', `${m.id}-${c.relativeQuarter}-${metric}`)}" class="matrix-cell" tabindex="${c.relativeQuarter === 1 && mi === 0 ? '0' : '-1'}" data-cell="${esc(m.id)}" data-q="${c.relativeQuarter}" data-metric="${metric}" style="${paint ? `background:${paint.background};color:${paint.foreground}` : ''}" aria-label="${esc(detail)}" aria-controls="matrix-inspector" title="${esc(detail)}">${observed ? `<span class="numeric-field" style="width:var(--field-${metric})">${metric === 'afrDelta' && value !== null && deltaDisplay(value).reserveSign ? '<span class="pp-sign-space" aria-hidden="true">−</span>' : ''}${esc(text)}</span>` : esc(text)}</button></td>`;
 }
 function inspector() {
   const { model: m, cell: c, metric } = selection!;

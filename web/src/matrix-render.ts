@@ -2,7 +2,7 @@
 export function patchContent(host: Element, markup: string) {
   const template = host.ownerDocument.createElement('template');
   template.innerHTML = markup;
-  patchChildren(host, template.content);
+  patchChildren(host, template.content, true);
 }
 
 const key = (node: Node) =>
@@ -10,7 +10,7 @@ const key = (node: Node) =>
 const compatible = (a: Node, b: Node) =>
   a.nodeType === b.nodeType && a.nodeName === b.nodeName && key(a) === key(b);
 
-function patchChildren(host: Node, desired: Node) {
+function patchChildren(host: Node, desired: Node, moveFreshRoots = false) {
   const keyed = new Map(
     [...host.childNodes].filter((node) => key(node)).map((node) => [key(node), node]),
   );
@@ -29,7 +29,9 @@ function patchChildren(host: Node, desired: Node) {
       patchNode(current, next);
       cursor = current.nextSibling;
     } else {
-      host.insertBefore(next.cloneNode(true), cursor);
+      // Only fresh roots can move intact. Descendants of retained controls must
+      // stay in the desired tree while sibling state (such as select) is read.
+      host.insertBefore(moveFreshRoots ? next : next.cloneNode(true), cursor);
     }
   }
   while (cursor) {

@@ -40,14 +40,59 @@
       .app-pending #app {
         visibility: hidden;
       }
+      #startup-status {
+        display: none;
+      }
+      .app-pending #startup-status {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: #183c40;
+        font:
+          500 14px system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      .startup-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #c9d9d6;
+        border-top-color: #183c40;
+        border-radius: 50%;
+        animation: startup-spin 0.8s linear infinite;
+      }
+      @keyframes startup-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .startup-spinner {
+          animation: none;
+        }
+      }
       body {
         margin: 0;
       }
     </style>
   </head>
   <body>
+    <div id="startup-status" role="status">
+      <span class="startup-spinner" aria-hidden="true"></span>Preparing Drive Stats…
+    </div>
     <div id="app"></div>
-    <noscript><p>This data explorer needs JavaScript to load its reports.</p></noscript>
+    <noscript
+      ><style>
+        .app-pending #startup-status {
+          display: none;
+        }
+      </style>
+      <p>This data explorer needs JavaScript to load its reports.</p></noscript
+    >
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
