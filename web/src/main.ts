@@ -560,7 +560,12 @@ async function start() {
             startup.signal.throwIfAborted();
             return module.initMatrix(startup.signal);
           })
-        : init(startup.signal),
+        : params.get('view') === 'explore'
+          ? import('./snapshot-explorer.ts').then((module) => {
+              startup.signal.throwIfAborted();
+              return module.initSnapshotExplorer(startup.signal);
+            })
+          : init(startup.signal),
     startup,
   );
   const readiness = await waitForPresentation(waitForFonts(document.fonts), rendering);

@@ -1,8 +1,9 @@
-# Proposed shared production data contracts, version 2
+# Shared production data contracts, version 2
 
-#0084 proposes **2.0.0** for owner acceptance. The generator, website, published
-data and v1 fixtures keep their existing behavior. #0085, #0086 and #0088 consume
-this contract only after #0084 is accepted. This is a public aggregate contract;
+#0084's **2.0.0** family was reviewed and accepted by Terry on 2026-10-31.
+#0085 adopts it in the offline producer and #0088 supplies the browser reader;
+#0086 retains the real-artifact generation gate. Published data and v1 fixtures
+keep their existing behavior. This is a public aggregate contract;
 its version is independent of the private processing store named `cache-v2`.
 
 The [remaining delivery plan](remaining-delivery-plan.md) assigns implementation,
@@ -11,9 +12,9 @@ is [production-v2.schema.json](../contracts/production-v2.schema.json); its smal
 fictional examples live in [fixtures/production-v2](../fixtures/production-v2/).
 Neither schema conformance nor a synthetic example certifies source truth.
 
-## Decisions proposed for acceptance
+## Accepted decisions
 
-**RECOMMENDED: adopt this v2 family** with three explicit changes:
+The accepted v2 family makes three explicit changes:
 
 1. Keep the supporting HDD context separate from the narrower flagship analysis
    cohort. Purchase defaults never remove supporting context or change its

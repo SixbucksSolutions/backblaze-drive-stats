@@ -1,0 +1,45 @@
+.snapshot-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 20px 0;
+}
+.snapshot-controls label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  color: #415c3a;
+}
+.snapshot-controls select {
+  max-width: min(100%, 32rem);
+  padding: 10px;
+  border: 1px solid #b4c5ae;
+  border-radius: 5px;
+  background: white;
+  font: inherit;
+}
+.snapshot-note {
+  margin: 12px 24px;
+  color: #415c3a;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.snapshot-layout .brand {
+  display: block;
+  margin-bottom: 32px;
+}
+.snapshot-layout .brand small {
+  display: block;
+  margin-top: 10px;
+  font-size: 10px;
+}
+.snapshot-layout tbody th {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  text-transform: none;
+}
+.snapshot-layout .filters label:not(.search) {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}

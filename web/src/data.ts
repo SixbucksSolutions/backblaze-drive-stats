@@ -174,7 +174,7 @@ export function csv(rows: (string | number)[][]): string {
       row
         .map((value) => {
           let cell = String(value);
-          if (/^[=+@\-\t\r]/.test(cell)) {
+          if (typeof value === 'string' && /^(?:\s*[=+@-]|[\t\r\n])/.test(cell)) {
             cell = `'${cell}`;
           }
           return `"${cell.replaceAll('"', '""')}"`;

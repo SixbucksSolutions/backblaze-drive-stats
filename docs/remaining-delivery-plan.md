@@ -25,10 +25,12 @@ In Progress before implementation, tests or review. Terry controls Completed.
 | #0094 | Independent integrated release validation and localhost handoff | #0087, #0089–#0093, #0095 |
 | #0007 | Existing Cloudflare static-hosting preparation | Accepted #0017 release |
 
-#0084 is the only newly authorized implementation in this turn. Other consumers
-wait for the relevant contract and data handoffs to be accepted. The shared
-loader can be developed against accepted-version fixtures while the generator
-is implemented; the actual views require validated real artifacts as well.
+#0084 is owner-Completed. #0085's offline producer and #0088's shared reader/model
+context are implemented for owner review. Other consumers wait for the relevant
+handoffs to be accepted. The reader uses clearly labeled accepted-version fixtures;
+the actual views require validated real artifacts as well. See the
+[producer documentation](historical-generator.md) and
+[shared reader handoff](snapshot-reader.md).
 
 Users select **brands and models**. Serial numbers remain private aggregation
 identities and never enter public JSON, tables, filters or CSV downloads. The
@@ -55,16 +57,22 @@ Existing Cloudflare work remains separate: its RFW lane does not authorize live
 deployment or account changes. Prepare the concrete deployment package and
 resolve the actual account/domain/access when that work is selected.
 
-Terry owns In Progress #0096 for the **cool B2 us-west** copy. The storage hierarchy
-is hot B2 us-east, cool B2 us-west and cold Glacier Deep Archive. #0096’s runtime
-and owner-controlled lane are separate from Bot’s contract work.
+Terry accepted #0096 for the **cool B2 us-west replication setup**. Initial copy
+completion and restore integrity remain unverified. The storage hierarchy
+is hot B2 us-east, cool B2 us-west and cold Glacier Deep Archive. #0096's runtime
+and owner-controlled Completed lane are separate from Bot's implementation work.
 
 The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r031**. The
+Current rolling author/reviewer assignments are in private plan **r032**. The
 roster covers the next three remaining turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
 ten-quarter source-batch exceptions do not expand this implementation limit.
+
+The remaining three-turn roster starts with #0086, conditional on owner acceptance
+of #0085; then #0087/#0089/#0090 after #0086 and #0088 acceptance; then
+#0091/#0092/#0093 under those same data/reader prerequisites. #0095 and integrated
+#0094 remain visible beyond that window. The roster does not start those cards.

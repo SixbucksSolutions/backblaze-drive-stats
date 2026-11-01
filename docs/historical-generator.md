@@ -22,9 +22,9 @@ with no further Ready for Work source cards after this handoff. Source census
 completion does not itself certify complete lifetime exposure or publish a
 production matrix.
 
-The [proposed v2 contracts](production-data-v2.md) are separately reviewed under
-#0084. This generator still implements its existing contracts; #0085 owns adoption
-after acceptance.
+The [accepted v2 contracts](production-data-v2.md) are implemented separately by
+`production_history.py` under #0085. The v1 generator and fixtures retain their
+existing meanings; see the production v2 producer instructions below.
 
 Run with the locked project environment:
 
@@ -200,3 +200,137 @@ SSD exclusion, pending media classification, all-alias capacity modes/latest
 location, cutoff-first validation, invalid date partitions, identity duplicates,
 partial coverage, cache reuse, source corrections and damaged-object recovery.
 No historical source downloads are used by those tests.
+
+Production v2 producer (#0085)
+
+`production_history.py` adopts the accepted 2.0.0 family without changing the v1
+`historical_generator.generate` API, its fixtures, or retained summary semantics.
+It performs no downloads or cloud operations. The real production generation and
+publication remain the separately gated #0086 work.
+
+```powershell
+uv run --frozen --no-sync python production_history.py --config private/production-v2.json
+uv run --frozen --no-sync python -m unittest discover -s tests -p test_production_history.py
+```
+
+The private JSON configuration supplies `summaryManifests` (explicit retained
+`quarters/YYYY-QN/<semantic-key>[.<physical-profile>]/manifest.json` paths),
+`asOfQuarter`, `historyStart`, `registry`, `patterns`, `generatorRevision`,
+`generatedAt` (an explicit ISO timestamp), `selection`, and `outputDirectory`.
+`kind` defaults to `backblaze`; fictional local tests use `sample`.
+`firstPublishedDate` defaults to `2013-04-10`.
+
+For a cold local run, replace `summaryManifests` with the existing `inputs` array
+and `cacheRoot`. The modes are mutually exclusive. Cold mode uses the existing
+validated daily summarizer and cache; retained mode verifies manifest semantic
+identity, canonical aliases, manifest content hash and both Parquet object hashes
+before loading summaries. A damaged/stale retained object fails closed without
+falling back to daily reads or altering the cache. Future-quarter input objects
+are excluded before reading their bytes. Missing periods are metadata; quarters
+before publication are `unpublished`, without synthetic zero datasets.
+
+`selection.version` is an explicit semantic version. Supply disjoint
+`purchaseDefaultModelIds` and `historicalReferenceModelIds`, including explicit
+empty lists when appropriate. Optional `analysisModelIds` freezes a reviewed
+subset of evidenced qualifying HDDs. When omitted, this versioned generation
+admits all evidenced qualifying HDDs, including off-seed vendors. Every context
+HDD matching the positive seed or proving >=2,000 stays in supporting context;
+context-only seeds never disappear because the matrix is narrower. Optional
+`seedVersion`, `seedAsOfQuarter`, and `classificationVersion` record semantic
+provenance versions. The actual registry, patterns and complete selection decision
+also participate in the generation identity. The retained research decisions are
+private caller configuration, never fixture values or an implicit fixed model list.
+
+The producer derives threshold proofs from complete counts and partial identity
+lower bounds; the earliest proof anchors the matrix. Recorded pre-anchor and
+subthreshold exposure remain in Observed-history AFR through gaps and reentry.
+Deltas use the preceding eligible complete cell, preserve actual calendar distance,
+and explicitly initialize the first eligible delta to zero. Count/rates on partial
+or below-threshold cells stay null. Per-cell source completeness includes the
+history through that cell; future gaps do not rewrite earlier completeness.
+
+New uses the first recorded identity observation. Retired uses last-observed
+inference only where later source coverage permits it; the cutoff Failed proxy
+is explicitly provisional. Capacity modes include only supplied observations
+through the selected cutoff, break ties toward smaller positive capacities, and
+propagate missing capacity without hiding known population. Supporting totals,
+manufacturer shares and all-supplied last-observed datacenters retain independent
+denominators. Pre-2023 Q3 datacenters are Unknown.
+
+The Python API returns `(index, artifacts, diagnostics)`, where `artifacts` maps
+relative immutable paths to exact bytes. It validates the complete descriptor,
+matrix and ordered quarter graph before returning. `publish_generation` validates
+again, writes each content-hashed object immutably, verifies readback, and atomically
+switches `index.json` only after all referenced objects exist. One writer per output
+root is required. Earlier files remain intact; the caller chooses the validated
+snapshots advertised in an index. Repeat the same explicit `generatedAt` to reproduce
+a generation; changing it creates a new generation identity. Use a separate staging
+output for #0085 validation; this command does not authorize preferred-cache updates
+or public deployment.
+
+An explicit fictional config shape is:
+
+```json
+{
+  "kind": "sample",
+  "asOfQuarter": "2024-Q2",
+  "historyStart": "2024-Q1",
+  "generatedAt": "2026-10-31T00:00:00Z",
+  "generatorRevision": "reviewed-working-revision",
+  "outputDirectory": "data/staging/sample-production-v2",
+  "summaryManifests": [
+    "data/sample-cache/quarters/2024-Q1/<semantic-key>.<physical-profile>/manifest.json",
+    "data/sample-cache/quarters/2024-Q2/<semantic-key>.<physical-profile>/manifest.json"
+  ],
+  "patterns": ["^Sample MODEL$"],
+  "registry": {
+    "version": "sample-classification-v1",
+    "models": [{
+      "vendor": "Sample", "modelNumber": "MODEL", "mediaClass": "hdd",
+      "evidence": "Fictional example HDD", "aliases": ["MODEL"]
+    }]
+  },
+  "selection": {
+    "version": "2.0.0",
+    "purchaseDefaultModelIds": [],
+    "historicalReferenceModelIds": []
+  }
+}
+```
+
+Replace the example summary paths with explicit retained local objects. To use a
+preferred processing catalog instead, replace `summaryManifests` with:
+
+```json
+{
+  "catalog": {
+    "localRoot": "data/preferred-cache-v2",
+    "path": "data/staging/reviewed-catalog.json",
+    "sha256": "<exact 64-character SHA-256 of the catalog bytes>"
+  }
+}
+```
+
+The runtime `data/preferred-cache.json` supplies the preferred local root and
+catalog hash/path metadata. A verified retained local copy of that pinned catalog
+may be used when the catalog itself is not mirrored under the preferred root.
+`catalog_summary_manifests` checks its exact byte hash, selects each in-window
+catalog `quarters` entry, resolves `summaryManifestPath` beneath `localRoot`,
+verifies `summaryManifestSha256`, and checks the manifest's coverage and semantic
+key against the catalog. The generator then verifies each manifest and both
+summary objects. It never resolves cloud pointers or scans a directory to choose
+an arbitrary summary variant.
+
+Catalog `coverage.status = incomplete` maps to public `partial`, preserving its
+recorded dates, row count and partial identity evidence. In particular, accepted
+2017 Q2 recovery has **84/91 dates** and stays partial; its catalog-selected
+retained summaries are sufficient for production generation without rereading
+its daily partitions. The source-domain start separately makes 2013 Q1
+unpublished and 2013 Q2 an 82/91-day partial. Configuration does not promote
+those periods to complete or synthesize missing observations.
+
+For v2, use `mediaClass: "ssd"` for a positively classified SSD. The producer
+adapts that declaration to the legacy summarizer internally without changing
+canonical model IDs. An old `non_hdd` declaration alone does not prove SSD and
+therefore remains publicly `unclassified`; it cannot enter HDD comparisons.
+Classification evidence preserves an available public citation from the registry.

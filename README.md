@@ -54,9 +54,11 @@ and independent local-mirror acceptance passed. Terry accepted #0023 and the fin
 source cards. No further source cards are queued. #0017 remains In Progress for
 production integration; #0063 is owner-Completed research. The
 [remaining delivery plan](docs/remaining-delivery-plan.md) tracks the flagship and
-each Explore view separately. The [proposed shared v2 contracts](docs/production-data-v2.md)
-are #0084’s current review work; generation and UI adoption remain later tickets.
-The private rolling plan is r031.
+each Explore view separately. The [shared v2 contracts](docs/production-data-v2.md)
+are owner-accepted under #0084. The offline producer and
+[shared snapshot reader](docs/snapshot-reader.md) implement the next foundation;
+real-artifact generation and individual report adoption retain their own gates.
+The private rolling plan is r032.
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's
