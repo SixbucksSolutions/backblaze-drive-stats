@@ -87,7 +87,8 @@ Terry explicitly accepted #0017, with its RFR lane held for his later move.
 verified. It will be Needs Terry for the account, hostname and any existing Pages
 project details he will supply in the morning. Target-specific configuration and
 hosted verification remain unfinished; no deployment authority is inferred.
-#0097 asset minimization remains last behind its unchanged #0007/#0017/#0094
-dependencies. Both carryover hosting and later minimization remain planned;
+#0097's dependencies were removed at Terry's request. It stays Ready for Work
+and is planned next turn, without waiting for hosting. Carryover hosting and
+minimization remain planned;
 pending owner inputs stay visible. The roster starts no workers and does not treat RFR alone
 as approval.
