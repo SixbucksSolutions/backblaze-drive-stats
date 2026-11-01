@@ -81,6 +81,12 @@ the exact advertised cutoff set, and rejects missing, corrupt, unadvertised or
 recognizably private/synthetic files. `npm run build` runs this gate alongside
 the existing legacy-data and font checks.
 
+Git preserves production artifact bytes without text conversion. Windows
+`autocrlf` must not change the line endings of content-hashed JSON; the initial
+hosted Windows gate caught that conversion before handoff, and the production
+directory now has an explicit `-text` attribute. The hashes and size checks remain
+strict on both platforms.
+
 Fresh independent audits derive populations, failures, exposure, New, capacity
 modes, thresholds, matrix arithmetic, nullable values, scopes, shares, locations
 and adjacent capacity deltas from retained summaries. They cover early history

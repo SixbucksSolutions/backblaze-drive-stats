@@ -13,4 +13,6 @@
 
 # Preserve downloaded font/license bytes and the existing cache-bound normalizer.
 /web/public/fonts/** -text
+# Content hashes and lengths bind the exact generated production JSON bytes.
+/web/public/data/production/** -text
 /drive_model_names.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
