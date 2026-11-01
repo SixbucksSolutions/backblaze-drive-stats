@@ -76,7 +76,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r051**. The
+Current rolling author/reviewer assignments are in private plan **r052**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
@@ -143,8 +143,8 @@ preserve immutable URLs while adding 24-hour caching for unversioned successes.
 Terry has approved #0109 and moved it to Completed. Follow-up #0112 investigates
 [HTML reload validators](cloudflare-hosting.md#html-reload-validation-0112).
 Its verified static candidate obtains body-free `304`s at the cost of HTML
-compression; an owner decision is required before any production change.
-The remaining private roster retains that decision and #0101's dedicated,
+compression. Terry chose to retain compression, resolving #0112 without a
+production change. The remaining private roster retains only #0101's dedicated,
 explicitly held turn. Architecture ideas #0110/#0111 remain unstarted in Backlog;
 they are not implementation authority for #0112.
 Optional #0107 is Terry-owned research in Backlog, not Bot work or a release gate.

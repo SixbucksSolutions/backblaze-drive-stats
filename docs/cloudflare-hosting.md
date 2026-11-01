@@ -126,8 +126,10 @@ comparison. Chrome/Lighthouse automatically supplied the validator in a forced
 revalidation diagnostic; this was not a manual UI reload test. Changed HTML
 rejected the previous validator and returned its new body.
 
-Production remains compressed. Choosing the larger fresh HTML response to obtain
-native `304`s requires the owner's decision on #0112. The tested candidate needs
+Terry selected retaining compressed HTML on #0112. Production keeps the 24-hour
+HTML cache policy; explicit reloads may still download compressed HTML. The
+investigation is resolved without an application or production configuration change.
+The tested but unadopted `no-transform` candidate needs
 no custom hashing or Worker: Pages already stores and compares its uploaded asset
 key. Diagnostic use of Wrangler's existing BLAKE3 dependency added no installation
 or browser dependency. Detailed evidence is retained in `data/staging/0112/` and
