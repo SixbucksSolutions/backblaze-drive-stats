@@ -55,8 +55,9 @@ captures within the published span and 99 calendar days before publication remai
 explicitly unavailable. Unpublished 2013 Q1 has no dataset or warm-cache count.
 Source computation, B2 retention/readback, isolated restore, preferred publication
 and independent local-mirror acceptance passed. Terry accepted #0023 and the final
-source cards. No further source cards are queued. #0017 remains In Progress for
-production integration; #0063 is owner-Completed research. The
+source cards. No further source cards are queued. Terry has accepted #0017's
+integrated release; its RFR lane is held for his later move. #0063 is
+owner-Completed research. The
 [remaining delivery plan](docs/remaining-delivery-plan.md) tracks the flagship and
 each Explore view separately. The [shared v2 contracts](docs/production-data-v2.md)
 are owner-accepted under #0084. The offline producer and
@@ -72,7 +73,7 @@ Explore [capacity history](docs/explore-capacity.md) at `?view=capacity`,
 [manufacturer shares](docs/explore-manufacturers.md) at `?view=manufacturers`, and
 [datacenters](docs/explore-datacenters.md) at `?view=datacenters`. Capacity history
 and datacenters use all supplied observations; model and manufacturer reports
-use the separate selected-HDD context. The private rolling plan is r038.
+use the separate selected-HDD context. The private rolling plan is r039.
 The original quarterly reliability view remains at `?view=reliability`;
 explicit `legacy=1` preserves the original report routes for comparison.
 
@@ -140,10 +141,11 @@ History-based measures use the supplied data window. A single quarter can show
 quarterly AFR and capacity, but cannot establish lifetime AFR or true deployments
 before that quarter. The interface displays the available coverage explicitly.
 
-For eventual Cloudflare Pages hosting, use `web` as the root directory,
-`npm run build` as the build command, and `dist` as the output directory. The
-included `_headers` keeps the quarter index fresh and caches hashed application
-assets. Deploying is a separate step; local development does not publish a site.
+The [static Cloudflare Pages package](docs/cloudflare-hosting.md) uses `web/dist`
+with no Worker scripts or Functions. `npm run build` verifies its inventory and
+immutable public data; `npm run preview:hosting` and `npm run check:hosting:serve`
+check the local Pages runtime. Account/project/hostname details remain pending;
+local preparation does not publish a site.
 
 ## Python generator environment
 

@@ -37,9 +37,9 @@ owner-Completed. #0095's [maintained refresh workflow](quarterly-refresh.md) is
 explicitly owner-approved, with its RFR lane held for Terry's later move. #0094's
 [integrated localhost review packet](integrated-release-validation.md) now records
 the accepted release validation. Terry explicitly approved #0094; its RFR lane
-is held for his later move. Parent #0017's acceptance prerequisite is satisfied,
-and its [integrated handoff](integrated-production-handoff.md) is ready for owner
-review. See the
+is held for his later move. Terry also explicitly accepted parent #0017's
+[integrated handoff](integrated-production-handoff.md), with its RFR lane held for
+his later move. See the
 [producer documentation](historical-generator.md) and
 [shared reader handoff](snapshot-reader.md).
 
@@ -63,10 +63,9 @@ every historical cutoff before the first production release.
 
 Fresh independent review, meaningful numerical/accessibility checks, Backblaze
 attribution and the maintained Python/web quality gates are part of handoff.
-The parent #0017 closes only after integrated release validation is accepted.
-Existing Cloudflare work remains separate: its RFW lane does not authorize live
-deployment or account changes. Prepare the concrete deployment package and
-resolve the actual account/domain/access when that work is selected.
+Parent #0017 and its integrated validation are accepted. Cloudflare #0007 remains
+separate and is being handed off Needs Terry for concrete account/domain/project
+inputs. Local preparation does not authorize live deployment or account changes.
 
 Terry accepted #0096 for the **cool B2 us-west replication setup**. Initial copy
 completion and restore integrity remain unverified. The storage hierarchy
@@ -77,16 +76,18 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r038**. The
+Current rolling author/reviewer assignments are in private plan **r039**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
 ten-quarter source-batch exceptions do not expand this implementation limit.
 
-Remaining implementation starts with #0007 hosting preparation only after owner
-acceptance of the integrated #0017 release. #0094 is accepted and the parent
-handoff is ready for review; no deployment authority or access decision is inferred.
+Terry explicitly accepted #0017, with its RFR lane held for his later move.
+#0007's [static Pages package](cloudflare-hosting.md) is prepared and locally
+verified. It will be Needs Terry for the account, hostname and any existing Pages
+project details he will supply in the morning. Target-specific configuration and
+hosted verification remain unfinished; no deployment authority is inferred.
 #0097 asset minimization remains last behind its unchanged #0007/#0017/#0094
-dependencies. Only these two implementation turns remain planned; pending owner
-reviews stay visible. The roster starts no workers and does not treat RFR alone
+dependencies. Both carryover hosting and later minimization remain planned;
+pending owner inputs stay visible. The roster starts no workers and does not treat RFR alone
 as approval.

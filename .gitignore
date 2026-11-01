@@ -10,6 +10,8 @@ __pycache__/
 web/node_modules/
 web/dist/
 web/.vite/
+/web/.wrangler/
+/web/hosting-vite-manifest.json
 /data/
 *.zip
 *.zip.part
