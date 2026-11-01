@@ -17,6 +17,7 @@ import {
   assertHostingPolicy,
   auditHostingInventory,
   cachePolicy,
+  dailyCache,
   immutable,
   hostingFiles,
   writeHostingEvidence,
@@ -185,8 +186,8 @@ await test('reviewed routing and disjoint caching reject SPA fallback, bindings 
     const input = headers.replace(/\r?\n/g, newline);
     assertHostingPolicy(config, input);
     const changed = input.replace(
-      `/fonts/*${newline}  Cache-Control: no-cache`,
-      `/fonts/*${newline}  Cache-Control: ${immutable}`,
+      `/fonts/provenance.json${newline}  Cache-Control: ${dailyCache}`,
+      `/fonts/provenance.json${newline}  Cache-Control: ${immutable}`,
     );
     assert.notEqual(changed, input, 'Cache-policy corruption must actually change the fixture');
     assert.throws(() => assertHostingPolicy(config, changed));
@@ -198,12 +199,89 @@ await test('reviewed routing and disjoint caching reject SPA fallback, bindings 
     'index.html',
     'data/index.json',
     'data/production/index.json',
+    'fonts/provenance.json',
+    'fonts/NOTICE.txt',
+  ]) {
+    assert.equal(cachePolicy(path), dailyCache);
+  }
+  assert.equal(cachePolicy(''), dailyCache);
+  for (const path of [
+    'data/2026-Q2.json',
+    'fonts/Inter-OFL-4.1.txt',
+    'fonts/JetBrainsMono-OFL-2.304.txt',
     'fonts/InterVariable-4.1.woff2',
+    'fonts/JetBrainsMono-Regular-2.304.woff2',
+    'fonts/JetBrainsMono-SemiBold-2.304.woff2',
+  ]) {
+    assert.equal(cachePolicy(path), immutable);
+  }
+  for (const path of [
+    '404.html',
+    '404',
+    'missing.html',
+    'data/missing.json',
+    'fonts/InterVariable-4.2.woff2',
+    'fonts/unversioned.woff2',
+    'assets/index.js',
+    'data/production/missing/descriptor.json',
   ]) {
     assert.equal(cachePolicy(path), 'no-cache');
   }
   assert.equal(cachePolicy(generation), immutable);
   assert.equal(cachePolicy(data), immutable);
+});
+
+await test('header URL matching selects one policy independent of navigation queries', () => {
+  // Read the deployed file independently of the policy inventory. Cloudflare
+  // matches pathnames, with :placeholders confined to a segment and * splats.
+  const rules = [...headers.matchAll(/^(\/\S*)\r?\n\s+Cache-Control: (.+)$/gm)].map(
+    ([, pattern, policy]) => ({
+      pattern: new RegExp(
+        `^${pattern
+          .replaceAll('.', '\\.')
+          .replaceAll(/:[A-Za-z]+/g, '[^/]+')
+          .replaceAll('*', '.*')}$`,
+      ),
+      policy: policy.trim(),
+    }),
+  );
+  for (const [path, expected] of [
+    ['/', dailyCache],
+    ['/index.html', dailyCache],
+    ['/data/index.json', dailyCache],
+    ['/data/2026-Q2.json', immutable],
+    ['/data/production/index.json', dailyCache],
+    [`/${generation}`, immutable],
+    [`/${script}`, immutable],
+    ['/fonts/InterVariable-4.1.woff2', immutable],
+    ['/fonts/JetBrainsMono-Regular-2.304.woff2', immutable],
+    ['/fonts/JetBrainsMono-SemiBold-2.304.woff2', immutable],
+    ['/fonts/provenance.json', dailyCache],
+    ['/fonts/NOTICE.txt', dailyCache],
+    ['/fonts/Inter-OFL-4.1.txt', immutable],
+    ['/fonts/JetBrainsMono-OFL-2.304.txt', immutable],
+    ['/404.html', 'no-cache'],
+    ['/404', 'no-cache'],
+  ]) {
+    for (const query of ['', '?view=matrix&reference=1', '?cache-bust=2']) {
+      const url = new URL(`${path}${query}`, 'https://example.com');
+      assert.deepEqual(
+        rules.filter((rule) => rule.pattern.test(url.pathname)).map((rule) => rule.policy),
+        [expected],
+        `Exactly one cache policy must match ${url.pathname}${url.search}`,
+      );
+    }
+  }
+  for (const path of [
+    '/fonts/missing.woff2',
+    '/fonts/InterVariable-4.2.woff2',
+    '/data/missing.json',
+  ]) {
+    assert.deepEqual(
+      rules.filter((rule) => rule.pattern.test(path)),
+      [],
+    );
+  }
 });
 
 function responder(distFiles, manifest, defect) {
@@ -217,7 +295,10 @@ function responder(distFiles, manifest, defect) {
     const path = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
     const asset = manifest.assets.find((entry) => entry.path === path && entry.served);
     if (!asset) {
-      return new Response('', { status: defect === 'fallback' ? 200 : 404 });
+      return new Response('', {
+        status: defect === 'fallback' ? 200 : 404,
+        headers: { 'Cache-Control': defect === 'error-cache' ? immutable : 'no-cache' },
+      });
     }
     return new Response(defect === 'bytes' ? 'corrupt' : distFiles.get(path), {
       headers: {
@@ -246,7 +327,7 @@ await test('local probes verify HTTP bytes/cache, query retention and genuine mi
     responder(distFiles, manifest),
   );
   assert.equal(result.missing, 12);
-  for (const defect of ['query', 'fallback', 'bytes', 'cache', 'mime']) {
+  for (const defect of ['query', 'fallback', 'bytes', 'cache', 'mime', 'error-cache']) {
     await assert.rejects(
       checkHostingLocal(manifest, 'http://127.0.0.1:8787', responder(distFiles, manifest, defect)),
     );
@@ -257,6 +338,35 @@ await test('local probes verify HTTP bytes/cache, query retention and genuine mi
     }),
     /loopback/,
   );
+});
+
+await test('local error cache checks reject positive freshness even alongside no-cache/no-store', async () => {
+  const { publicFiles, distFiles, build } = release();
+  const manifest = { assets: auditHostingInventory(publicFiles, distFiles, build) };
+  for (const policy of [
+    'no-store',
+    'public, max-age="0"',
+    'no-cache, s-maxage=0',
+    '',
+    'no-cache, max-age=86400',
+    'no-store, s-maxage=86400',
+    'no-cache, immutable',
+    'no-cache, max-age=invalid',
+  ]) {
+    const request = async (url) => {
+      const response = await responder(distFiles, manifest)(url);
+      if (response.status === 404) {
+        response.headers.set('Cache-Control', policy);
+      }
+      return response;
+    };
+    const result = checkHostingLocal(manifest, 'http://127.0.0.1:8787', request);
+    if (['no-store', 'public, max-age="0"', 'no-cache, s-maxage=0'].includes(policy)) {
+      assert.equal((await result).missing, 12);
+    } else {
+      await assert.rejects(result, /error cache policy/);
+    }
+  }
 });
 
 await test('build manifest retention preserves exact bytes and refuses unexpected sibling output', async (context) => {

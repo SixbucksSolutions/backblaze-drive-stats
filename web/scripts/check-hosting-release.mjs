@@ -14,7 +14,7 @@ import {
 } from './presentation-capsules.mjs';
 
 export const immutable = 'public, max-age=31536000, immutable';
-const shortCache = 'public, max-age=300, must-revalidate';
+export const dailyCache = 'public, max-age=86400, must-revalidate';
 const fontFiles = [
   'Inter-OFL-4.1.txt',
   'InterVariable-4.1.woff2',
@@ -24,30 +24,71 @@ const fontFiles = [
   'NOTICE.txt',
   'provenance.json',
 ];
+// Dated legacy data and pinned versioned font/license names have immutable byte
+// identities. Unversioned metadata must be revalidated after one day.
+const immutableFiles = new Set([
+  'data/2026-Q2.json',
+  'fonts/Inter-OFL-4.1.txt',
+  'fonts/InterVariable-4.1.woff2',
+  'fonts/JetBrainsMono-OFL-2.304.txt',
+  'fonts/JetBrainsMono-Regular-2.304.woff2',
+  'fonts/JetBrainsMono-SemiBold-2.304.woff2',
+]);
+const mutableFiles = new Set([
+  '',
+  'index.html',
+  'data/index.json',
+  'data/production/index.json',
+  ...fontFiles.map((file) => `fonts/${file}`).filter((path) => !immutableFiles.has(path)),
+]);
 const generationFile =
   /^data\/production\/\d{4}-Q[1-4]-v2-[a-f0-9]{24}\/(?:descriptor|matrix|\d{4}-Q[1-4])\.[a-f0-9]{64}\.json$/;
 const builtAsset = /^assets\/[A-Za-z0-9_.-]+-[A-Za-z0-9_-]{8,}\.(?:js|css|json)$/;
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 export function cachePolicy(path) {
-  if (generationFile.test(path) || builtAsset.test(path)) {
+  if (generationFile.test(path) || builtAsset.test(path) || immutableFiles.has(path)) {
     return immutable;
   }
-  return path === 'data/2026-Q2.json' ? shortCache : 'no-cache';
+  return mutableFiles.has(path) ? dailyCache : 'no-cache';
+}
+
+export function assertErrorCachePolicy(cacheControl) {
+  // Error responses must prevent positive browser and shared-cache freshness,
+  // independently of the successful canonical 404 asset's exact header value.
+  const directives = (cacheControl ?? '')
+    .toLowerCase()
+    .split(',')
+    .map((part) => part.trim());
+  assert.ok(
+    directives.some((part) =>
+      ['no-store', 'no-cache', 'max-age=0', 'max-age="0"'].includes(part),
+    ) &&
+      !directives.includes('immutable') &&
+      directives.every(
+        (part) =>
+          !/^(?:s-maxage|max-age)\b/.test(part) ||
+          /^(?:s-maxage|max-age)\s*=\s*(?:0|"0")$/.test(part),
+      ),
+    'Hosted error cache policy must prevent positive freshness',
+  );
 }
 
 // Disjoint rules matter: Cloudflare joins duplicate header values with commas.
 export const headerRules = [
-  ['/', 'no-cache'],
-  ['/index.html', 'no-cache'],
+  ['/', dailyCache],
+  ['/index.html', dailyCache],
   ['/404.html', 'no-cache'],
   ['/404', 'no-cache'],
-  ['/data/index.json', 'no-cache'],
-  ['/data/2026-Q2.json', shortCache],
-  ['/data/production/index.json', 'no-cache'],
+  ['/data/index.json', dailyCache],
+  ['/data/2026-Q2.json', immutable],
+  ['/data/production/index.json', dailyCache],
   ['/data/production/:generation/*.json', immutable],
   ['/assets/*', immutable],
-  ['/fonts/*', 'no-cache'],
+  ...fontFiles.map((file) => {
+    const path = `fonts/${file}`;
+    return [`/${path}`, immutableFiles.has(path) ? immutable : dailyCache];
+  }),
 ];
 
 export function assertHostingPolicy(config, headers) {

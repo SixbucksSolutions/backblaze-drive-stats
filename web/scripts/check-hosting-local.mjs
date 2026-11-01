@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { checkHostingRelease } from './check-hosting-release.mjs';
+import { assertErrorCachePolicy, checkHostingRelease } from './check-hosting-release.mjs';
 
 export async function checkHostingLocal(manifest, baseUrl, request = fetch) {
   const base = new URL(baseUrl);
@@ -125,6 +125,7 @@ export async function checkHostingLocal(manifest, baseUrl, request = fetch) {
         404,
         'Missing/private asset must return 404 without an HTML fallback',
       );
+      assertErrorCachePolicy(response.headers.get('cache-control'));
     }
   }
   return { assets: probes.length, missing: 12, redirects: 1 };

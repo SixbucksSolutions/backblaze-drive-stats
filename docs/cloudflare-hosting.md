@@ -75,10 +75,27 @@ headers, accounting for Pages' HTML-extension redirects.
 
 | File group | Browser policy |
 | --- | --- |
-| Root HTML, 404 page, mutable production/legacy indexes | `no-cache` |
-| Content-addressed production generation JSON and Vite assets | `public, max-age=31536000, immutable` |
-| Fixed-name legacy quarter JSON | `public, max-age=300, must-revalidate` |
-| Fixed-name fonts, provenance and license files | `no-cache` |
+| Root HTML, production/legacy indexes, unversioned font notice/provenance | `public, max-age=86400, must-revalidate` |
+| Content-addressed production JSON and Vite assets | `public, max-age=31536000, immutable` |
+| Dated legacy quarter JSON, versioned fonts and OFL licenses | `public, max-age=31536000, immutable` |
+| Canonical 404 page and missing/private responses | Revalidation or non-storage; no positive freshness |
+
+Successful unversioned URLs stay fresh for at least 24 hours. `must-revalidate`
+applies after that period, not on every visit. A cached page can therefore show
+the previous latest-snapshot catalogue for a day after publication; that is the
+owner-selected freshness policy. Historical data use versioned URLs whose bytes
+must never change. The one-year immutable policy encourages long-lived reuse;
+it cannot force a browser or CDN to retain an object forever.
+
+`Cache-Control: public` also supplies freshness instructions to shared caches.
+Pages already provides [built-in Tiered Cache](https://developers.cloudflare.com/pages/configuration/serving-pages/#caching-and-performance),
+ETags and transport compression. This package does not add account-level cache
+rules or a Worker. Actual edge residency is separate from browser freshness and
+can end before a TTL; observed edge hits are verification evidence, not a promise
+of permanent residency. Cloudflare's default cache key includes the
+[full URI and query string](https://developers.cloudflare.com/cache/how-to/cache-keys/).
+The root HTML is identical across our query selections; the inline bootstrap
+chooses the exact versioned data URL. No timestamp cache-busting is added.
 
 Rules are disjoint because Cloudflare joins repeated header values. The local
 probe checks actual response headers, content types, bodies and hashes, query
@@ -103,6 +120,28 @@ and sanitized receipts are private evidence under `data/staging/0007/`.
    Windows/Linux CI. Keep the exact release manifest outside `dist` and verify
    every byte again immediately before upload. Record the prior production
    deployment ID, if any; an initial deployment has no rollback predecessor.
+   Compare the new inventory with the verified manifest belonging to the actual
+   successful predecessor deployment:
+
+   ```console
+   npm run check:cache-transition -- PREVIOUS-VERIFIED-MANIFEST.json NEW-VERIFIED-MANIFEST.json
+   ```
+
+   Retain the JSON result privately, including both manifest hashes. Every prior
+   immutable URL must still exist with the same size/hash and at least its prior
+   browser and shared-cache freshness. Changing mutable HTML or an index is
+   allowed. This supplements the normal exact-inventory and canonical-data audits;
+   it does not replace them or permit arbitrary stale files. Run it again against
+   the exact upload manifest immediately before publication.
+
+   #0109 changes headers only, so all existing asset bytes already carry forward.
+   If a future build drops an old hashed chunk, stylesheet or capsule, stop and
+   package the previously qualified immutable files alongside the new release.
+   Their separately validated inventory must form an exact union with the current
+   release; do not weaken the public-file allowlist to accept arbitrary extras.
+   That requires a separately scoped retention implementation: today's exact
+   inventory gate deliberately rejects unmanifested previous files. Recheck that
+   publication's resource/file limits before upload.
 3. Use a clean child environment with the production Cloudflare API endpoint,
    process-only account/token, telemetry/error reporting and Wrangler disk logs
    disabled. Reject unreviewed dotenv/config redirects and Functions/Worker
@@ -147,6 +186,12 @@ to roll back to the recorded successful production deployment. Preview deploymen
 are not rollback targets. Keep the matching complete bundle and manifest so it
 can be rebuilt or redeployed under the approved procedure if needed. The first
 deployment has no prior production version to roll back to.
+
+Browser-cached HTML is not purged by a Pages rollback. If a newer release added
+immutable files absent from the rollback target, refresh that cached page or
+publish the prior shell with the qualified immutable files from both releases.
+#0109's headers-only release and its predecessor share every asset, so their
+rollback does not introduce that mismatch.
 
 Rollback restores a coherent app/index/data bundle; it does not rewrite immutable
 generation files. A browser already using a newer generation may encounter a

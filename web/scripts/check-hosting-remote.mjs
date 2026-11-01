@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { checkHostingRelease } from './check-hosting-release.mjs';
+import { assertErrorCachePolicy, checkHostingRelease } from './check-hosting-release.mjs';
 
 const projectHost = 'backblaze-drive-stats-analysis.pages.dev';
 const label = '[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?';
@@ -42,24 +42,7 @@ function mediaType(path) {
 async function verifyBody(response, asset, errorResponse = false) {
   const cache = response.headers.get('cache-control');
   if (errorResponse) {
-    // Error responses can use an edge policy distinct from the canonical 404
-    // asset. Require revalidation/non-storage and reject positive freshness.
-    const directives = (cache ?? '')
-      .toLowerCase()
-      .split(',')
-      .map((part) => part.trim());
-    assert.ok(
-      directives.some((part) =>
-        ['no-store', 'no-cache', 'max-age=0', 'max-age="0"'].includes(part),
-      ) &&
-        !directives.includes('immutable') &&
-        directives.every(
-          (part) =>
-            !/^(?:s-maxage|max-age)\b/.test(part) ||
-            /^(?:s-maxage|max-age)\s*=\s*(?:0|"0")$/.test(part),
-        ),
-      'Hosted error cache policy must prevent positive freshness',
-    );
+    assertErrorCachePolicy(cache);
   } else {
     assert.equal(cache, asset.cacheControl, 'Hosted cache policy differs');
   }
@@ -184,6 +167,8 @@ export async function checkHostingRemote(manifest, baseUrl, request = fetch) {
   for (const query of [
     '?view=matrix&reference=1',
     '?view=explore&report=distribution&snapshot=2025-Q4',
+    '?view=matrix&snapshot=2013-Q2-v2-c7f86b91d0bbd7f5cca8b6f8',
+    '?view=capacity&snapshot=2026-Q2-v2-e5e750b334c69fddd974556c&quarter=2026-Q2',
   ]) {
     const response = await get(`/${query}`);
     try {
@@ -204,6 +189,9 @@ export async function checkHostingRemote(manifest, baseUrl, request = fetch) {
     '/private/summary.json',
     '/data/missing.json',
     '/data/production/missing/descriptor.json',
+    '/assets/missing-abcdefgh.js',
+    '/assets/presentation-missing-abcdefgh.json',
+    '/fonts/missing.woff2',
     '/unknown-view',
   ]) {
     for (const accept of ['text/html', 'application/json']) {

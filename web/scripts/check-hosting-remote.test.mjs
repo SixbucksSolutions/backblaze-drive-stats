@@ -108,9 +108,9 @@ test('checks every served inventory entry, navigation, redirects and genuine mis
     assetBytes: manifest.assets
       .filter((asset) => asset.served)
       .reduce((sum, asset) => sum + asset.sizeBytes, 0),
-    navigation: 2,
-    missing: 12,
-    redirects: 5,
+    navigation: 4,
+    missing: 18,
+    redirects: 9,
   });
   assert.ok(mock.peak() <= 4 && mock.peak() > 1);
   for (const asset of manifest.assets.filter((asset) => asset.served)) {
@@ -317,7 +317,7 @@ test('accepts safe error cache policies independently of the canonical 404 asset
         state.headers['cache-control'] = policy;
       }
     });
-    assert.equal((await checkHostingRemote(manifest, origin, mock.request)).missing, 12);
+    assert.equal((await checkHostingRemote(manifest, origin, mock.request)).missing, 18);
   }
 });
 

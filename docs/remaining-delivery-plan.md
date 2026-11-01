@@ -76,7 +76,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r049**. The
+Current rolling author/reviewer assignments are in private plan **r050**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
@@ -128,17 +128,19 @@ Terry accepted #0104 and moved it to Completed. Its handoff retains the full
 historical-fleet verification and actual Pages deployment receipt. #0106 now
 documents the durable time-warp intent in
 [project navigation](project-navigation.md); #0108 implements
-[static presentation loading](static-page-loading-0108.md). Their new handoffs
-await Terry's review; they are not covered by the earlier blanket approval.
+[static presentation loading](static-page-loading-0108.md). Terry has approved
+both cards and moved them to Completed.
 
 Terry explicitly requested production publication for #0108's review. The verified
 `e001e25` static bundle is now live at
 <https://backblaze-drive-stats-analysis.pages.dev/>. The publication receipt retains
 the accepted #0104 deployment as the rollback target; publication does not mark
-#0108 approved or Completed.
+#0108 approved or Completed. Terry subsequently reviewed and completed it.
 
-The remaining private roster lists owner-created #0109 for a future caching turn,
-then #0101's dedicated, explicitly held turn. #0109 has only been read for intake.
+Terry selected #0109 for this turn. Its
+[cache policy and publication compatibility gate](cloudflare-hosting.md#cache-policy)
+preserve immutable URLs while adding 24-hour caching for unversioned successes.
+The remaining private roster retains #0101's dedicated, explicitly held turn.
 Optional #0107 is Terry-owned research in Backlog, not Bot work or a release gate.
 Planning does not start those cards, authorize #0101's source moves, downloads or
 ETL, or upload a new website release. Completed lanes remain owner-controlled.
