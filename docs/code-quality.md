@@ -48,7 +48,8 @@ npm run build
 
 `quality` runs strict TypeScript analysis, typed/syntax lint and formatting checks,
 including parsing/formatting the CI YAML through the same pinned Prettier tool.
-The build additionally validates published aggregates and the pinned font assets.
+The build additionally validates published aggregates, cross-view scope/filter/CSV
+consistency through `check:integrated-release`, and the pinned font assets.
 Use `uv run --frozen --no-sync ruff format .` and `npm run format` to apply formatting;
 Ruff's safe fixes are available separately with `ruff check --fix`. Review fixes;
 unsafe automatic fixes are not part of the normal workflow.

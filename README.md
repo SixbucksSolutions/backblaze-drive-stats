@@ -72,7 +72,7 @@ Explore [capacity history](docs/explore-capacity.md) at `?view=capacity`,
 [manufacturer shares](docs/explore-manufacturers.md) at `?view=manufacturers`, and
 [datacenters](docs/explore-datacenters.md) at `?view=datacenters`. Capacity history
 and datacenters use all supplied observations; model and manufacturer reports
-use the separate selected-HDD context. The private rolling plan is r036.
+use the separate selected-HDD context. The private rolling plan is r037.
 The original quarterly reliability view remains at `?view=reliability`;
 explicit `legacy=1` preserves the original report routes for comparison.
 
@@ -81,6 +81,11 @@ offline plan/run/verify commands, pinned local source projection, retained-summa
 reuse, explicit model-discovery gates and recoverable immutable publication.
 An unchanged refresh reuses the approved generation without public payload/index
 writes. Private B2 retention and site deployment remain separate operations.
+
+The [integrated localhost review packet](docs/integrated-release-validation.md)
+records cross-view/source reconciliation, keyboard/responsive/contrast checks,
+actual aggregate exports and the preserved workbook evidence limits. The maintained
+`npm run check:integrated-release` gate is part of the production build.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's
 source data, name, branding and other third-party material retain their own rights

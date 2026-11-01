@@ -20,7 +20,7 @@ import { renderScopeMetrics } from './snapshot-summary.ts';
 import './snapshot-explorer.css';
 import { renderDeployments } from './deployment-report.ts';
 import { renderDistribution } from './distribution-report.ts';
-import { snapshotReport } from './app-route.ts';
+import { matrixHref, snapshotReport } from './app-route.ts';
 import type { SnapshotReport } from './app-route.ts';
 
 const reportNames = {
@@ -200,7 +200,7 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
     ].sort();
     patchContent(
       app,
-      `<div class="layout snapshot-layout"><aside class="sidebar"><a class="brand" href="${esc(import.meta.env.BASE_URL)}">DriveStats<small>EXPLORE THE DATA</small></a><a class="nav-item" href="?view=matrix">AFR comparison</a><nav aria-label="Snapshot Explore reports">${Object.entries(
+      `<div class="layout snapshot-layout"><aside class="sidebar"><a class="brand" href="${esc(import.meta.env.BASE_URL)}">DriveStats<small>EXPLORE THE DATA</small></a><a class="nav-item" href="${esc(matrixHref(context?.snapshotId, context?.kind))}">AFR comparison</a><nav aria-label="Snapshot Explore reports">${Object.entries(
         snapshotReports,
       )
         .map(

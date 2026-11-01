@@ -34,7 +34,10 @@ satisfies the dependent acceptance gate. Terry also approved #0087, #0089 and
 #0090 while reserving their later lane moves. #0091, #0092 and #0093 now implement
 the remaining capacity, manufacturer and datacenter views; those cards are now
 owner-Completed. #0095's [maintained refresh workflow](quarterly-refresh.md) is
-implemented for owner review. See the
+explicitly owner-approved, with its RFR lane held for Terry's later move. #0094's
+[integrated localhost review packet](integrated-release-validation.md) now records
+the remaining release validation for owner review. Parent #0017 retains its
+requirement for acceptance of #0094 before parent handoff. See the
 [producer documentation](historical-generator.md) and
 [shared reader handoff](snapshot-reader.md).
 
@@ -72,15 +75,16 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r036**. The
-roster covers the next three remaining turns, preserves earlier revisions and
+Current rolling author/reviewer assignments are in private plan **r037**. The
+roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
 ten-quarter source-batch exceptions do not expand this implementation limit.
 
-Next is #0094 integrated validation after #0095 acceptance; every view is already
-owner-Completed. #0007 hosting preparation follows only after owner acceptance of
-the integrated #0017 release, without deployment authority or waived access
-decisions. The owner-added #0097 is intended last; its scope and dependencies are
-preserved for later eligibility review. The roster starts no future workers and
-does not treat RFR alone as approval.
+Remaining implementation starts with #0007 hosting preparation only after owner
+acceptance of #0094 and the integrated #0017 release. The primary reconciles that
+parent handoff first; no deployment authority or access decision is inferred.
+#0097 asset minimization remains last behind its unchanged #0007/#0017/#0094
+dependencies. Only these two implementation turns remain planned; pending owner
+reviews stay visible. The roster starts no workers and does not treat RFR alone
+as approval.

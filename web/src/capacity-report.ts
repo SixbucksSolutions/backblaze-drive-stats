@@ -167,7 +167,7 @@ export function capacityCsvRows(points: readonly CapacityPoint[]): (string | num
   return [
     [
       'Quarter',
-      'Coverage',
+      'Quarter coverage',
       'Drive count',
       'Capacity (TB)',
       'Capacity Delta (TB)',
