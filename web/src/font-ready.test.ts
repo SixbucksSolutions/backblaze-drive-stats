@@ -10,6 +10,7 @@ import {
   waitForFonts,
   waitForPresentation,
   withStartupDeadline,
+  yieldToStartupPaint,
 } from './font-ready.ts';
 
 function deferred<T>() {
@@ -111,7 +112,7 @@ await test('a stalled route import reaches the deadline and a late route cannot 
   assert.equal(renders, 0);
 });
 
-async function mainStartupHarness(query: string) {
+async function mainStartupHarness(query: string, firstPaint = Promise.resolve()) {
   const source = await readFile(new URL('./main.ts', import.meta.url), 'utf8');
   const executable =
     stripTypeScriptTypes(source)
@@ -131,7 +132,12 @@ async function mainStartupHarness(query: string) {
     AbortController,
     AbortSignal,
     location: { search: query },
-    document: { querySelector: () => ({}), fonts: {}, documentElement: root },
+    document: {
+      querySelector: () => ({}),
+      fonts: {},
+      documentElement: root,
+      visibilityState: 'visible',
+    },
     waitForFonts: () => {
       fontStarts++;
       events.push('fonts started');
@@ -139,6 +145,10 @@ async function mainStartupHarness(query: string) {
     },
     waitForPresentation,
     withStartupDeadline,
+    yieldToStartupPaint: (visible: boolean) => {
+      assert.equal(visible, true);
+      return firstPaint;
+    },
     appRoute,
     abortInitialPresentation: () => {
       events.push('abort early request');
@@ -160,6 +170,68 @@ async function mainStartupHarness(query: string) {
   const rendering = start();
   return { fontChoice, matrix, events, root, rendering, fontStarts: () => fontStarts };
 }
+
+await test('startup feedback yields past a frame callback before synchronous rendering', async () => {
+  let frame: (() => void) | undefined;
+  let finished = false;
+  const painted = yieldToStartupPaint(true, {
+    request: (callback) => {
+      frame = callback;
+      return 1;
+    },
+    cancel: () => assert.fail('A completed frame should not be cancelled'),
+  }).then(() => {
+    finished = true;
+  });
+  await Promise.resolve();
+  assert.equal(finished, false);
+  assert.ok(frame);
+  frame();
+  await Promise.resolve();
+  assert.equal(finished, false, 'The frame callback itself precedes paint');
+  await painted;
+  assert.equal(finished, true);
+});
+
+await test('hidden startup skips the frame wait; missing or failed frames cannot stall it', async () => {
+  let requested = false;
+  await yieldToStartupPaint(false, {
+    request: () => {
+      requested = true;
+      return 1;
+    },
+    cancel: () => assert.fail('No frame was requested'),
+  });
+  assert.equal(requested, false);
+  const cancelled: number[] = [];
+  await yieldToStartupPaint(true, { request: () => 17, cancel: (id) => cancelled.push(id) }, 5);
+  assert.deepEqual(cancelled, [17]);
+  await yieldToStartupPaint(true, {
+    request: () => {
+      throw new Error('Frame scheduler unavailable');
+    },
+    cancel: () => assert.fail('No frame was scheduled'),
+  });
+});
+
+await test('main overlaps downloads with feedback but defers complete matrix rendering until it', async () => {
+  const paint = deferred<void>();
+  const harness = await mainStartupHarness('?view=matrix', paint.promise);
+  let renders = 0;
+  harness.matrix.resolve({
+    initMatrix: async () => {
+      renders++;
+    },
+  });
+  harness.fontChoice.resolve('custom');
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(renders, 0);
+  assert.deepEqual(harness.events, ['fonts started', 'matrix import started']);
+  paint.resolve();
+  await harness.rendering;
+  assert.equal(renders, 1);
+});
 
 await test('main downloads matrix in parallel but applies font choice before its first render', async () => {
   for (const mode of ['custom', 'fallback'] as const) {

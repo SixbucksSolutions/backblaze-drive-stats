@@ -3,6 +3,58 @@ export type FontSet = {
   load: (font: string, text?: string) => Promise<unknown[]>;
   ready: PromiseLike<unknown>;
 };
+type FrameScheduler = {
+  request: (callback: () => void) => number;
+  cancel: (id: number) => void;
+};
+
+/** Give the startup status a paint opportunity before synchronous table work. */
+export function yieldToStartupPaint(
+  visible: boolean,
+  frames?: FrameScheduler,
+  timeoutMs = 100,
+): Promise<void> {
+  if (!visible) {
+    return Promise.resolve();
+  }
+  const scheduler = frames ?? {
+    request: (callback: () => void) => requestAnimationFrame(callback),
+    cancel: (id: number) => cancelAnimationFrame(id),
+  };
+  return new Promise<void>((resolve) => {
+    let frame: number | undefined;
+    let paintTask: ReturnType<typeof setTimeout> | undefined;
+    let settled = false;
+    const finish = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(fallback);
+      if (paintTask !== undefined) {
+        clearTimeout(paintTask);
+      }
+      if (frame !== undefined) {
+        scheduler.cancel(frame);
+      }
+      resolve();
+    };
+    // Backgrounding or a missing animation frame must not hold startup open.
+    const fallback = setTimeout(finish, timeoutMs);
+    try {
+      frame = scheduler.request(() => {
+        frame = undefined;
+        if (!settled) {
+          // A frame callback runs before paint; continue in the following task.
+          paintTask = setTimeout(finish, 0);
+        }
+      });
+    } catch {
+      finish();
+    }
+  });
+}
+
 export const REQUIRED_FONTS = [
   '400 14px Inter',
   '400 13px "JetBrains Mono"',

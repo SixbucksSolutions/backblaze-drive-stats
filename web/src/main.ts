@@ -1,7 +1,12 @@
 import './style.css';
 import { appRoute } from './app-route.ts';
 import { abortInitialPresentation } from './presentation-loader.ts';
-import { waitForFonts, waitForPresentation, withStartupDeadline } from './font-ready.ts';
+import {
+  waitForFonts,
+  waitForPresentation,
+  withStartupDeadline,
+  yieldToStartupPaint,
+} from './font-ready.ts';
 import { csv, groupManufacturers, parseBundle, parseManifest, summarize } from './data.ts';
 import type { Bundle, Manifest, Model, Quarter } from './data.ts';
 
@@ -569,6 +574,7 @@ async function start() {
     document.documentElement.dataset.fontMode = mode;
     return mode;
   });
+  const startupPaint = yieldToStartupPaint(document.visibilityState === 'visible');
   const rendering = withStartupDeadline(
     () =>
       appRoute(params) === 'matrix'
@@ -576,15 +582,17 @@ async function start() {
             if (params.get('reference') !== '1') {
               await fonts;
             }
+            await startupPaint;
             startup.signal.throwIfAborted();
             return module.initMatrix(startup.signal);
           })
         : appRoute(params) === 'snapshot'
-          ? import('./snapshot-explorer.ts').then((module) => {
+          ? import('./snapshot-explorer.ts').then(async (module) => {
+              await startupPaint;
               startup.signal.throwIfAborted();
               return module.initSnapshotExplorer(startup.signal);
             })
-          : init(startup.signal),
+          : startupPaint.then(() => init(startup.signal)),
     startup,
   );
   const readiness = await waitForPresentation(fonts, rendering);
