@@ -181,15 +181,16 @@ await test('reviewed routing and disjoint caching reject SPA fallback, bindings 
     mutate(copy);
     assert.throws(() => assertHostingPolicy(copy, headers));
   }
-  assert.throws(() =>
-    assertHostingPolicy(
-      config,
-      headers.replace(
-        '/fonts/*\n  Cache-Control: no-cache',
-        `/fonts/*\n  Cache-Control: ${immutable}`,
-      ),
-    ),
-  );
+  for (const newline of ['\n', '\r\n']) {
+    const input = headers.replace(/\r?\n/g, newline);
+    assertHostingPolicy(config, input);
+    const changed = input.replace(
+      `/fonts/*${newline}  Cache-Control: no-cache`,
+      `/fonts/*${newline}  Cache-Control: ${immutable}`,
+    );
+    assert.notEqual(changed, input, 'Cache-policy corruption must actually change the fixture');
+    assert.throws(() => assertHostingPolicy(config, changed));
+  }
   assert.throws(() =>
     assertHostingPolicy(config, `${headers}\n/data/*.json\n  Cache-Control: ${immutable}\n`),
   );
