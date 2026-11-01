@@ -26,9 +26,10 @@ In Progress before implementation, tests or review. Terry controls Completed.
 | #0007 | Existing Cloudflare static-hosting preparation | Accepted #0017 release |
 
 #0084 is owner-Completed. #0085's offline producer and #0088's shared reader/model
-context are implemented for owner review. Other consumers wait for the relevant
-handoffs to be accepted. The reader uses clearly labeled accepted-version fixtures;
-the actual views require validated real artifacts as well. See the
+context are owner-Completed. #0086's [real aggregate release](production-release.md)
+is prepared for owner review: 2026 Q2 plus the 2025 Q3/Q4 workbook cutoffs, with
+explicit [reconciliation limits](production-workbook-reconciliation.md). Other
+consumers wait for the relevant handoffs to be accepted. See the
 [producer documentation](historical-generator.md) and
 [shared reader handoff](snapshot-reader.md).
 
@@ -66,13 +67,14 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r032**. The
+Current rolling author/reviewer assignments are in private plan **r033**. The
 roster covers the next three remaining turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
 ten-quarter source-batch exceptions do not expand this implementation limit.
 
-The remaining three-turn roster starts with #0086, conditional on owner acceptance
-of #0085; then #0087/#0089/#0090 after #0086 and #0088 acceptance; then
-#0091/#0092/#0093 under those same data/reader prerequisites. #0095 and integrated
-#0094 remain visible beyond that window. The roster does not start those cards.
+The remaining three-turn roster starts with #0087/#0089/#0090 after owner
+acceptance of #0086; #0088 is already accepted. Next are #0091/#0092/#0093 under
+those same data/reader prerequisites, then #0095's refresh workflow with a fresh
+Sol / High recovery/provenance review. Integrated #0094 and hosting #0007 remain
+visible beyond that window. The roster does not start those cards.

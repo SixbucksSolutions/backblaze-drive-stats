@@ -58,7 +58,11 @@ each Explore view separately. The [shared v2 contracts](docs/production-data-v2.
 are owner-accepted under #0084. The offline producer and
 [shared snapshot reader](docs/snapshot-reader.md) implement the next foundation;
 real-artifact generation and individual report adoption retain their own gates.
-The private rolling plan is r032.
+The [real production v2 aggregate release](docs/production-release.md) now supplies
+2026 Q2 and the 2025 Q3/Q4 workbook cutoffs, with explicit
+[workbook reconciliation limits](docs/production-workbook-reconciliation.md).
+Review its shared model context at `?view=explore`; specialized report integration
+remains queued. The private rolling plan is r033.
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's

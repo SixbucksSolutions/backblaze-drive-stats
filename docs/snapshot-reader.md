@@ -14,8 +14,9 @@ partial coverage, missing/unpublished periods and the datacenter-field boundary.
 Exact fixture bytes remain unchanged.
 
 The non-example route, `?view=explore`, reads `data/production/index.json` beneath
-the application base. #0086 supplies the separately reviewed real generation.
-A missing index produces an error/retry state and an explicit example link; the
+the application base. #0086 supplies the [real aggregate release](production-release.md)
+for 2026 Q2 and the two workbook cutoffs. A missing index produces an error/retry
+state and an explicit example link; the
 reader never substitutes fictional values for a missing real dataset. Navigation
 links lead to the implemented current quarterly reports. Specialized v2 report
 views retain their own tickets.
