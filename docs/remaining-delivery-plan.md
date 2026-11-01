@@ -54,11 +54,11 @@ timeline; it does not silently filter supporting report rows. Total capacity and
 datacenters use their separately labeled all-supplied scope. Unreported locations
 before 2023 Q3 and partial source coverage remain explicit.
 
-The artifact task starts with the real 2026 Q2 paired snapshot and reconciles the
-two supplied workbook cutoffs where source coverage permits. It advertises only
-validated snapshots and supplies calendar-quarter Explore data without inventing
-observations for unavailable periods. This does not require a matrix snapshot for
-every historical cutoff before the first production release.
+The initial artifact release used the real 2026 Q2 paired snapshot and reconciled
+the two supplied workbook cutoffs where source coverage permitted. The accepted
+#0104 refresh expands that release to all 53 retained historical cutoffs. Each
+view advertises only evidence-supported dates without inventing observations for
+unavailable periods.
 
 Fresh independent review, meaningful numerical/accessibility checks, Backblaze
 attribution and the maintained Python/web quality gates are part of handoff.
@@ -76,7 +76,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r047**. The
+Current rolling author/reviewer assignments are in private plan **r048**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
@@ -124,11 +124,15 @@ and moved them to Completed. The separate
 retained cutoffs with per-view evidence bounds across all six views and calculation
 2.1.0; the exact old graph remains in an unserved archive.
 
-Terry explicitly held #0101 for its own turn. It remains Ready for Work and has
-not started. Terry separately authorized #0104 for this turn, including the
-consistent full-history refresh and existing-target Pages deployment. Its
-handoff records the final verification and actual deployment receipt. Terry
-requested new #0106 for next turn to document the durable historical time-warp
-intent; that card is created only and unstarted. The remaining roster lists
-#0106 followed by #0101's dedicated held turn. Planning does not start either
-card or authorize #0101's source moves, downloads, ETL or publication.
+Terry accepted #0104 and moved it to Completed. Its handoff retains the full
+historical-fleet verification and actual Pages deployment receipt. #0106 now
+documents the durable time-warp intent in
+[project navigation](project-navigation.md); #0108 implements
+[static presentation loading](static-page-loading-0108.md). Their new handoffs
+await Terry's review; they are not covered by the earlier blanket approval.
+
+The remaining private roster lists owner-created #0109 for a future caching turn,
+then #0101's dedicated, explicitly held turn. #0109 has only been read for intake.
+Optional #0107 is Terry-owned research in Backlog, not Bot work or a release gate.
+Planning does not start those cards, authorize #0101's source moves, downloads or
+ETL, or upload a new website release. Completed lanes remain owner-controlled.

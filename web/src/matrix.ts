@@ -1,8 +1,7 @@
 import './matrix.css';
 import './matrix-selection.css';
-import { initializedBaselineLabel, MatrixProductionReader } from './matrix-production.ts';
-import { SnapshotLoader } from './snapshot-loader.ts';
-import type { SnapshotEntry } from './production-data.ts';
+import { PresentationLoader, presentationCatalogue } from './presentation-loader.ts';
+import type { CatalogueSnapshot } from './presentation-data.ts';
 import { deltaDisplay, metricFieldWidths, yearRowGroups } from './matrix-display.ts';
 import { patchContent } from './matrix-render.ts';
 import { heatmapPaint } from './matrix-contrast.ts';
@@ -56,8 +55,10 @@ const quarter = (value: string | null | undefined) =>
       ? 'Unknown in workbook'
       : 'Unavailable';
 let snapshots: MatrixSnapshot[] = [];
-let productionChoices: SnapshotEntry[] = [];
-let reader: MatrixProductionReader | undefined;
+let productionChoices: CatalogueSnapshot[] = [];
+let reader: PresentationLoader | undefined;
+let switchController: AbortController | undefined;
+let switchRequest = 0;
 let routeSignal: AbortSignal | undefined;
 let pendingSnapshot = '';
 let snapshotError = '';
@@ -130,13 +131,20 @@ export async function initMatrix(signal?: AbortSignal) {
 async function initProduction(signal?: AbortSignal) {
   app.innerHTML = '<div class="matrix-loading" role="status">Validating production snapshot…</div>';
   try {
-    reader = new MatrixProductionReader(
-      new SnapshotLoader(`${import.meta.env.BASE_URL}data/production/index.json`),
-    );
-    const index = await reader.loader.loadIndex(signal);
-    const id = new URLSearchParams(location.search).get('snapshot') ?? index.latestSnapshotId;
+    const index = presentationCatalogue();
+    reader = new PresentationLoader(index);
+    const params = new URLSearchParams(location.search);
+    const id = params.get('snapshot') ?? index.latestSnapshotId;
     productionChoices = snapshotChoices(index.snapshots, 'matrix', id);
-    const loaded = await reader.select(id, signal);
+    const choice = reader.selection(params);
+    if (!choice) {
+      throw new Error('Unknown production snapshot.');
+    }
+    const capsule = await reader.load(choice, signal);
+    if (capsule.kind !== 'matrix') {
+      throw new Error('Invalid matrix presentation.');
+    }
+    const loaded = capsule.body;
     signal?.throwIfAborted();
     if (!loaded) {
       return;
@@ -162,6 +170,7 @@ function resetSnapshot() {
   snapshotError = '';
 }
 async function changeSnapshot(id: string) {
+  const request = ++switchRequest;
   if (!reader) {
     snapshot = snapshots.find((s) => s.id === id)!;
     resetSnapshot();
@@ -170,14 +179,32 @@ async function changeSnapshot(id: string) {
     snapshotError = '';
     render();
     try {
-      const loaded = await reader.select(id, routeSignal);
-      if (!loaded || routeSignal?.aborted) {
+      switchController?.abort();
+      switchController = new AbortController();
+      const signal = routeSignal
+        ? AbortSignal.any([routeSignal, switchController.signal])
+        : switchController.signal;
+      const choice = reader.selection(new URLSearchParams({ view: 'matrix', snapshot: id }));
+      if (!choice) {
+        throw new Error('Unknown production snapshot.');
+      }
+      const capsule = await reader.load(choice, signal);
+      if (request !== switchRequest || signal.aborted) {
         return;
       }
+      if (capsule.kind !== 'matrix') {
+        throw new Error('Invalid matrix presentation.');
+      }
+      const loaded = capsule.body;
       snapshot = loaded;
       resetSnapshot();
     } catch (error) {
-      if (routeSignal?.aborted) {
+      if (
+        request !== switchRequest ||
+        routeSignal?.aborted ||
+        switchController?.signal.aborted ||
+        pendingSnapshot !== id
+      ) {
         return;
       }
       pendingSnapshot = '';
@@ -469,4 +496,12 @@ function bind() {
       }
     };
   });
+}
+
+function initializedBaselineLabel(baseline: MatrixCell['deltaBaseline']): string | null {
+  return baseline?.kind === 'initial_subtract_zero'
+    ? 'First eligible deltas subtract synthetic zero: AFR 0%, Count 0. This is not a prior observed quarter; elapsed span is not applicable.'
+    : baseline?.kind === 'initial_zero_delta'
+      ? 'Deltas initialized to zero. Prior AFR/Count baseline and elapsed span: not applicable.'
+      : null;
 }

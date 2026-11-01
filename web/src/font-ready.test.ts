@@ -1,5 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { stripTypeScriptTypes } from 'node:module';
+import vm from 'node:vm';
+import { appRoute } from './app-route.ts';
+import type { FontMode } from './font-ready.ts';
 import {
   REQUIRED_FONTS,
   waitForFonts,
@@ -104,4 +109,97 @@ await test('a stalled route import reaches the deadline and a late route cannot 
   await Promise.resolve();
   await Promise.resolve();
   assert.equal(renders, 0);
+});
+
+async function mainStartupHarness(query: string) {
+  const source = await readFile(new URL('./main.ts', import.meta.url), 'utf8');
+  const executable =
+    stripTypeScriptTypes(source)
+      .replace(/^import[\s\S]*?;\r?$/gm, '')
+      .replace("import('./matrix.ts')", '__matrixModule()')
+      .replace("import('./snapshot-explorer.ts')", '__snapshotModule()')
+      .replaceAll('import.meta.env.BASE_URL', JSON.stringify('/'))
+      .replace('void start();', '') + '\nstart;';
+  const fontChoice = deferred<FontMode>();
+  const matrix = deferred<{ initMatrix: (signal: AbortSignal) => Promise<void> }>();
+  const events: string[] = [];
+  const root = { dataset: {} as Record<string, string>, classList: { remove: () => {} } };
+  let fontStarts = 0;
+  const context = {
+    URLSearchParams,
+    Intl,
+    AbortController,
+    AbortSignal,
+    location: { search: query },
+    document: { querySelector: () => ({}), fonts: {}, documentElement: root },
+    waitForFonts: () => {
+      fontStarts++;
+      events.push('fonts started');
+      return fontChoice.promise;
+    },
+    waitForPresentation,
+    withStartupDeadline,
+    appRoute,
+    abortInitialPresentation: () => {
+      events.push('abort early request');
+    },
+    __matrixModule: () => {
+      events.push('matrix import started');
+      return matrix.promise;
+    },
+    __snapshotModule: async () => ({
+      initSnapshotExplorer: async () => {
+        events.push('snapshot rendered');
+      },
+    }),
+    requestAnimationFrame: (callback: () => void) => {
+      callback();
+    },
+  };
+  const start = vm.runInNewContext(executable, context) as () => Promise<void>;
+  const rendering = start();
+  return { fontChoice, matrix, events, root, rendering, fontStarts: () => fontStarts };
+}
+
+await test('main downloads matrix in parallel but applies font choice before its first render', async () => {
+  for (const mode of ['custom', 'fallback'] as const) {
+    const harness = await mainStartupHarness('?view=matrix');
+    await Promise.resolve();
+    assert.deepEqual(harness.events, ['fonts started', 'matrix import started']);
+    let renders = 0;
+    harness.matrix.resolve({
+      initMatrix: async (signal) => {
+        signal.throwIfAborted();
+        assert.equal(harness.root.dataset.fontMode, mode);
+        renders++;
+      },
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(renders, 0);
+    harness.fontChoice.resolve(mode);
+    await harness.rendering;
+    assert.equal(renders, 1);
+    assert.equal(harness.fontStarts(), 1);
+    assert.equal(harness.root.dataset.appReady, 'true');
+  }
+});
+
+await test('main retains reference route rendering without waiting for the font decision', async () => {
+  const harness = await mainStartupHarness('?view=matrix&reference=1');
+  let renders = 0;
+  const rendered = deferred<void>();
+  harness.matrix.resolve({
+    initMatrix: async () => {
+      renders++;
+      rendered.resolve();
+    },
+  });
+  await rendered.promise;
+  assert.equal(renders, 1);
+  assert.equal(harness.root.dataset.appReady, undefined);
+  harness.fontChoice.resolve('fallback');
+  await harness.rendering;
+  assert.equal(harness.root.dataset.fontMode, 'fallback');
+  assert.equal(harness.fontStarts(), 1);
 });

@@ -15,11 +15,13 @@ value is explicitly fictional. Examples cover a context-only seed, a new vendor,
 partial coverage, missing/unpublished periods and the datacenter-field boundary.
 Exact fixture bytes remain unchanged.
 
-The non-example route, `?view=explore`, reads `data/production/index.json` beneath
-the application base. #0086 supplies the [real aggregate release](production-release.md)
-for 2026 Q2 and the two workbook cutoffs. A missing index produces an error/retry
-state and an explicit example link; the
-reader never substitutes fictional values for a missing real dataset. Navigation
+The non-example route, `?view=explore`, uses the static presentation assets
+derived from `data/production/index.json` at build time. See
+[static page loading](static-page-loading-0108.md) for the build and browser
+loading path. The [full-history refresh](full-history-refresh-0104.md) retains all
+53 published cutoffs with each view's evidence bounds. A loading failure produces an
+error/retry state and an explicit example link; the reader never substitutes
+fictional values for a missing real dataset. Navigation
 links connect the real matrix, deployments, distribution and shared context.
 The five specialized reports are also directly addressable by `view=deployments`,
 `distribution`, `capacity`, `manufacturers` and `datacenters`. Explicit `legacy=1`
@@ -27,12 +29,14 @@ keeps the original quarterly implementations addressable.
 
 ## Reader API and boundaries
 
-`SnapshotLoader` in `web/src/snapshot-loader.ts` reads one immutable index per
-instance. `loadIndex` returns advertised snapshots; `loadDescriptor` (also named
+The canonical `SnapshotLoader` in `web/src/snapshot-loader.ts` is used at build
+time and for fictional example graphs, rather than by the default production
+presentation runtime. It reads one immutable index per instance. `loadIndex`
+returns advertised snapshots; `loadDescriptor` (also named
 `loadSnapshot`) loads a context. `loadQuarter` fetches only the selected quarter
 and returns null for an explicitly unavailable period. `loadMatrix` loads the
 separately bound matrix. Recreate the reader to discover a newly published index.
-The shell does not eagerly fetch every quarter or matrix.
+The canonical reader does not eagerly fetch every quarter or matrix.
 
 Readers check strict v2 structures, supported semantic versions, exact byte
 hashes/lengths, immutable relative paths, snapshot/source/context bindings,
@@ -40,9 +44,10 @@ membership, coverage/null rules and aggregate arithmetic. Duplicate decoded JSON
 keys, unsupported versions, unknown public fields and malformed values fail.
 Producer/source validation remains responsible for upstream authenticity.
 
-Only completed validated objects enter caches, keyed by generation and content
-identity. Cached objects are frozen. Abort signals are checked after network,
-byte verification and parsing work, before cache writes. The shell also uses a
+In the canonical reader, only completed validated objects enter caches, keyed by
+generation and content identity. Cached objects are frozen. Abort signals are
+checked after network, byte verification and parsing work, before cache writes.
+The shell also uses a
 monotonic selection token, clears stale rows while loading, and suppresses old
 request completions. Cancellation does not poison retry or another reader.
 

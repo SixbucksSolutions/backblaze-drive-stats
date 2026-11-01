@@ -1,5 +1,6 @@
-import { SnapshotLoader } from './snapshot-loader.ts';
-import type { ProductionIndex, SnapshotDescriptor, SupportingQuarter } from './production-data.ts';
+import { PresentationLoader, presentationCatalogue } from './presentation-loader.ts';
+import type { DisplayDescriptor, PresentationCatalogue } from './presentation-data.ts';
+import type { ProductionIndex, SupportingQuarter } from './production-data.ts';
 import { patchContent } from './matrix-render.ts';
 import {
   defaultFilter,
@@ -94,7 +95,8 @@ const capacity = (value: number | null) =>
       : `${decimal.format(value / 1000)} PB`;
 
 /** The build derives a compact fictional graph with its own byte-bound references. */
-function exampleTransport() {
+async function exampleTransport() {
+  const { SnapshotLoader } = await import('./snapshot-loader.ts');
   const byName = new Map(Object.entries(exampleUrls));
   const base = new URL(`${import.meta.env.BASE_URL}examples/`, location.origin);
   const fetcher: typeof fetch = (input, init) => {
@@ -110,18 +112,22 @@ function exampleTransport() {
 }
 
 export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
+  startupSignal?.throwIfAborted();
   const app = document.querySelector<HTMLDivElement>('#app')!;
   const params = new URLSearchParams(location.search);
   const example = params.get('example') === '1';
-  const loader = example
-    ? exampleTransport()
-    : new SnapshotLoader(
-        new URL(`${import.meta.env.BASE_URL}data/production/index.json`, location.origin).href,
-      );
-  let index: ProductionIndex | undefined;
-  let descriptor: SnapshotDescriptor | undefined;
+  const loader = example ? await exampleTransport() : undefined;
+  startupSignal?.throwIfAborted();
+  const presentation = example ? undefined : new PresentationLoader(presentationCatalogue());
+  let index:
+    | (Pick<ProductionIndex, 'latestSnapshotId'> & {
+        snapshots: { snapshotId: string; asOfQuarter: string }[];
+      })
+    | PresentationCatalogue
+    | undefined;
+  let descriptor: DisplayDescriptor | undefined;
   let payload: SupportingQuarter | null = null;
-  const capacityReader = new CapacityHistoryReader(loader);
+  const capacityReader = loader ? new CapacityHistoryReader(loader) : undefined;
   let capacityHistory: readonly CapacityPoint[] = [];
   let manufacturerSort: ManufacturerSort = { key: 'capacityTB', descending: true };
   let snapshotId = params.get('snapshot') ?? '';
@@ -153,6 +159,9 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
   }
 
   function render() {
+    if (startupSignal?.aborted) {
+      return;
+    }
     const active = document.activeElement;
     const focusId = active instanceof HTMLElement ? active.id : '';
     const selection =
@@ -501,6 +510,9 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
   }
 
   async function load(nextSnapshot: string, nextQuarter: string, signal?: AbortSignal) {
+    if (signal?.aborted || startupSignal?.aborted) {
+      return;
+    }
     const id = ++request;
     controller?.abort();
     controller = new AbortController();
@@ -517,8 +529,36 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
     snapshotId = nextSnapshot;
     render();
     try {
+      if (presentation) {
+        index = presentation.catalogue;
+        const choice = presentation.selection(
+          new URLSearchParams({ view: 'explore', snapshot: nextSnapshot, quarter: nextQuarter }),
+        );
+        if (!choice) {
+          throw new Error('Unknown production presentation.');
+        }
+        const capsule = await presentation.load(choice, combined);
+        if (id !== request || combined.aborted) {
+          return;
+        }
+        if (capsule.kind !== 'report') {
+          throw new Error('Invalid report presentation.');
+        }
+        descriptor = capsule.body.descriptor;
+        snapshotId = capsule.snapshotId;
+        quarter = capsule.quarter!;
+        payload = capsule.body.quarter;
+        capacityHistory = capsule.body.capacityHistory;
+        syncUrl();
+        busy = false;
+        render();
+        return;
+      }
+      if (!loader || !capacityReader) {
+        throw new Error('Example reader unavailable.');
+      }
       const loadedIndex = index ?? (await loader.loadIndex(combined));
-      if (id !== request) {
+      if (id !== request || combined.aborted) {
         return;
       }
       index = loadedIndex;
@@ -526,7 +566,7 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
         ? nextSnapshot
         : index.latestSnapshotId;
       const loaded = await loader.loadDescriptor(target, combined);
-      if (id !== request) {
+      if (id !== request || combined.aborted) {
         return;
       }
       descriptor = loaded;
@@ -536,22 +576,22 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
         : loaded.context.asOfQuarter;
       syncUrl();
       const loadedPayload = await loader.loadQuarter(target, quarter, combined);
-      if (id !== request) {
+      if (id !== request || combined.aborted) {
         return;
       }
       const history = report === 'capacity' ? await capacityReader.load(target, combined) : [];
-      if (id !== request) {
+      if (id !== request || combined.aborted) {
         return;
       }
       payload = loadedPayload;
       capacityHistory = history;
     } catch {
-      if (id !== request) {
+      if (id !== request || combined.aborted) {
         return;
       }
       error = 'The selected snapshot could not be loaded or verified. Please try again.';
     }
-    if (id === request) {
+    if (id === request && !combined.aborted) {
       busy = false;
       render();
     }

@@ -8,6 +8,10 @@ import { format } from 'prettier';
 import { checkProductionData } from './check-production-data.mjs';
 import { expectedPublicBytes } from './minimize-public-json.mjs';
 import { activeReleaseSelection } from './active-release-selection.ts';
+import {
+  auditPresentationAssets,
+  presentationCatalogueFromHtml,
+} from './presentation-capsules.mjs';
 
 export const immutable = 'public, max-age=31536000, immutable';
 const shortCache = 'public, max-age=300, must-revalidate';
@@ -196,6 +200,9 @@ export async function checkHostingRelease(webRoot, distDirectory = resolve(webRo
     buildManifest,
   );
   await checkProductionData(resolve(distDirectory, 'data/production'), activeReleaseSelection);
+  const servedFiles = await hostingFiles(distDirectory);
+  const catalogue = presentationCatalogueFromHtml(servedFiles.get('index.html').toString('utf8'));
+  await auditPresentationAssets(resolve(webRoot, 'public/data/production'), servedFiles, catalogue);
   return { formatVersion: 1, assets: manifest };
 }
 

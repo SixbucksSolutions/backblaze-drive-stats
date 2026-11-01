@@ -1,5 +1,5 @@
 import type { Coverage, Scope, SupportingQuarter } from './production-data.ts';
-import { SnapshotLoader } from './snapshot-loader.ts';
+import type { SnapshotLoader } from './snapshot-loader.ts';
 
 export type CapacityPoint = Readonly<{
   quarter: string;

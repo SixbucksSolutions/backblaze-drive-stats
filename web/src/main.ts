@@ -1,5 +1,6 @@
 import './style.css';
 import { appRoute } from './app-route.ts';
+import { abortInitialPresentation } from './presentation-loader.ts';
 import { waitForFonts, waitForPresentation, withStartupDeadline } from './font-ready.ts';
 import { csv, groupManufacturers, parseBundle, parseManifest, summarize } from './data.ts';
 import type { Bundle, Manifest, Model, Quarter } from './data.ts';
@@ -561,10 +562,20 @@ async function init(startupSignal?: AbortSignal) {
 }
 async function start() {
   const startup = new AbortController();
+  startup.signal.addEventListener('abort', () => abortInitialPresentation(), { once: true });
+  // Font requests, route downloads and the HTML-started capsule request overlap.
+  // Apply the permanent font choice before constructing the large production matrix.
+  const fonts = waitForFonts(document.fonts).then((mode) => {
+    document.documentElement.dataset.fontMode = mode;
+    return mode;
+  });
   const rendering = withStartupDeadline(
     () =>
       appRoute(params) === 'matrix'
-        ? import('./matrix.ts').then((module) => {
+        ? import('./matrix.ts').then(async (module) => {
+            if (params.get('reference') !== '1') {
+              await fonts;
+            }
             startup.signal.throwIfAborted();
             return module.initMatrix(startup.signal);
           })
@@ -576,7 +587,7 @@ async function start() {
           : init(startup.signal),
     startup,
   );
-  const readiness = await waitForPresentation(waitForFonts(document.fonts), rendering);
+  const readiness = await waitForPresentation(fonts, rendering);
   document.documentElement.dataset.fontMode = readiness.fontMode;
   if (readiness.renderFailed || startup.signal.aborted) {
     app.innerHTML =
