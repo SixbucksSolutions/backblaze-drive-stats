@@ -181,5 +181,6 @@ node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 5179 --strict
 The final hosted Windows/Linux workflow and commit are linked from #0094's
 handoff comment. Private source-audit, CSV, browser and size evidence is under
 `data/staging/0094/`; raw summaries, runtime files and downloaded exports are not
-committed. Parent #0017 still requires Terry's acceptance of this validation.
-Hosting #0007 remains separately gated, with no deployment implied.
+committed. Terry has explicitly accepted #0094. Parent #0017's
+[integrated handoff](integrated-production-handoff.md) is ready for his review;
+hosting #0007 remains gated on parent acceptance, with no deployment implied.

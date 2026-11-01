@@ -72,7 +72,7 @@ Explore [capacity history](docs/explore-capacity.md) at `?view=capacity`,
 [manufacturer shares](docs/explore-manufacturers.md) at `?view=manufacturers`, and
 [datacenters](docs/explore-datacenters.md) at `?view=datacenters`. Capacity history
 and datacenters use all supplied observations; model and manufacturer reports
-use the separate selected-HDD context. The private rolling plan is r037.
+use the separate selected-HDD context. The private rolling plan is r038.
 The original quarterly reliability view remains at `?view=reliability`;
 explicit `legacy=1` preserves the original report routes for comparison.
 

@@ -3,7 +3,7 @@
 Terry accepted the source-history cards and #0023 on 2026-10-31. All 53
 data-bearing quarters are retained and independently verified; requested 2013 Q1
 is recorded as unpublished. #0063 remains accepted research. Production
-contracts, generation and UI integration continue under #0017.
+contracts, generation and UI integration are delivered under #0017.
 
 The remaining scoped work is tracked at P3. Ready for Work can retain
 dependencies; it does not waive their owner-acceptance gates. Move a ticket
@@ -36,8 +36,10 @@ the remaining capacity, manufacturer and datacenter views; those cards are now
 owner-Completed. #0095's [maintained refresh workflow](quarterly-refresh.md) is
 explicitly owner-approved, with its RFR lane held for Terry's later move. #0094's
 [integrated localhost review packet](integrated-release-validation.md) now records
-the remaining release validation for owner review. Parent #0017 retains its
-requirement for acceptance of #0094 before parent handoff. See the
+the accepted release validation. Terry explicitly approved #0094; its RFR lane
+is held for his later move. Parent #0017's acceptance prerequisite is satisfied,
+and its [integrated handoff](integrated-production-handoff.md) is ready for owner
+review. See the
 [producer documentation](historical-generator.md) and
 [shared reader handoff](snapshot-reader.md).
 
@@ -75,15 +77,15 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r037**. The
+Current rolling author/reviewer assignments are in private plan **r038**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
 ten-quarter source-batch exceptions do not expand this implementation limit.
 
 Remaining implementation starts with #0007 hosting preparation only after owner
-acceptance of #0094 and the integrated #0017 release. The primary reconciles that
-parent handoff first; no deployment authority or access decision is inferred.
+acceptance of the integrated #0017 release. #0094 is accepted and the parent
+handoff is ready for review; no deployment authority or access decision is inferred.
 #0097 asset minimization remains last behind its unchanged #0007/#0017/#0094
 dependencies. Only these two implementation turns remain planned; pending owner
 reviews stay visible. The roster starts no workers and does not treat RFR alone
