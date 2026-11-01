@@ -5,8 +5,9 @@ data-bearing quarters are retained and independently verified; requested 2013 Q1
 is recorded as unpublished. #0063 remains accepted research. Production
 contracts, generation and UI integration are delivered under #0017.
 
-The remaining scoped work is tracked at P3. Ready for Work can retain
-dependencies; it does not waive their owner-acceptance gates. Move a ticket
+The table below records the original implementation scope. Current priorities
+and assignments are in the rolling plan. Ready for Work can retain dependencies;
+it does not waive their owner-acceptance gates. Move a ticket
 In Progress before implementation, tests or review. Terry controls Completed.
 
 | Ticket | Deliverable | Prerequisites |
@@ -76,11 +77,12 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r054** records the owner-accepted closeout and preserves earlier
-revisions, including **r053**'s author/reviewer assignments. #0101 used a dedicated
-turn authorized for up to twelve active direct subagents at depth one. No workers
-or implementation are scheduled. Future work requires its applicable authority;
-this exception does not expand other turns' worker or card limits.
+Private plan **r055** records #0113's six-worker turn and the next planned work,
+preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
+twelve-worker exception remains historical. The next turn plans #0115's collapsible
+six-view navigation and #0114's Seagate capacity-first ordering, with fresh
+independent reviews; both cards remain Ready for Work and unstarted. Planned
+assignments do not start workers, approve prerequisites or expand current limits.
 
 Terry has moved #0017 and #0097–#0100 to Completed.
 For #0007 he supplied the account, token file and
@@ -147,11 +149,19 @@ compression. Terry chose to retain compression, resolving #0112 without a
 production change, and moved it to Completed. He then explicitly resumed #0101
 for its dedicated cold-quarter rehearsal. The [benchmark and operator record](quarterly-refresh-benchmark-0101.md)
 documents fresh intake, verified B2 retention and catalog discovery, exact local
-recovery and production publication. Release `d402829` is live as deployment
+recovery and production publication. Release `d402829` was published as deployment
 `f290ba5d-abd1-4398-b0c3-f38b164fe0b4`; the prior deployment is preserved for rollback.
-Terry approved #0101 and moved it to Completed on 2026-11-01. The current roster
-has no remaining implementation or review handoff. Architecture ideas #0110/#0111
+Terry approved #0101 and moved it to Completed on 2026-11-01. Its closeout roster
+had no remaining implementation or review handoff. Architecture ideas #0110/#0111
 remain unstarted in Backlog.
 Optional #0107 is Terry-owned research in Backlog, not Bot work or a release gate.
 Planning does not start those cards or authorize later source work or publication.
 Completed lanes remain owner-controlled.
+
+Terry selected #0113 after the closeout. Its [startup-feedback record](matrix-startup-0113.md)
+documents a prompt, accessible loading indicator followed by the complete stable
+view. The original renderer is retained because the measured cleanup did not
+establish a reliable speedup. Source `0b803eb` is live as production deployment
+`7838a3f5-3bfc-405f-b0df-81bc9f359200`; the full hosted union is verified and
+`f290ba5d` remains its rollback predecessor. #0113 awaits Terry's review; #0101
+and #0112 remain owner-Completed.
