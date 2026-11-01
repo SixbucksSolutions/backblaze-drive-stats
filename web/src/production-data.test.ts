@@ -196,6 +196,74 @@ void test('2.1 distinct failures respect the quarter identity bound while 2.0 re
   );
 });
 
+void test('2.1 empty analysis retains supplied evidence and rejects legacy or invented membership', async () => {
+  const descriptor = structuredClone(descriptors[0]!);
+  descriptor.context.versions.rate = '2.1.0';
+  const selection = descriptor.context.selection;
+  selection.analysisModelIds = [];
+  selection.purchaseDefaultModelIds = [];
+  selection.historicalReferenceModelIds = [];
+  // Empty analysis can coexist with a populated HDD context.
+  assert.doesNotThrow(() => parseSnapshotDescriptor(encode(descriptor), index.snapshots[0]!));
+  const matrix = structuredClone(
+    parseProductionMatrix(await bytes(descriptor.matrix.path), descriptors[0]!),
+  );
+  matrix.models = [];
+  matrix.relativeQuarterCount = 24;
+  matrix.rateBasis = 'observed-quarter-distinct-failed-identities-recorded-exposure-v2.1';
+  matrix.rateLabel = 'Observed-history AFR (quarterly unique failures)';
+  assert.doesNotThrow(() => parseProductionMatrix(encode(matrix), descriptor));
+  const legacy = structuredClone(descriptor);
+  legacy.context.versions.rate = '2.0.0';
+  assert.throws(
+    () => parseSnapshotDescriptor(encode(legacy), index.snapshots[0]!),
+    /empty analysis requires/,
+  );
+  const droppedContext = structuredClone(descriptor);
+  droppedContext.context.selection.contextModelIds = [];
+  assert.throws(
+    () => parseSnapshotDescriptor(encode(droppedContext), index.snapshots[0]!),
+    /context membership/,
+  );
+  // Fictional classification variant: supplied observations remain, with no HDD context.
+  for (const model of descriptor.context.inventory) {
+    model.mediaClass = 'unclassified';
+    model.seedMatch = false;
+  }
+  selection.contextModelIds = [];
+  selection.positiveSeed.modelIds = [];
+  assert.doesNotThrow(() => parseSnapshotDescriptor(encode(descriptor), index.snapshots[0]!));
+  for (const quarter of descriptor.quarters.filter((row) => row.payload !== null)) {
+    const payload = structuredClone(
+      parseSupportingQuarter(await bytes(quarter.payload!.path), descriptors[0]!, quarter.quarter),
+    );
+    const supplied = structuredClone(payload.scopes.all_supplied);
+    const selected = payload.scopes.selected_hdd;
+    selected.models = [];
+    selected.manufacturers = [];
+    const value = payload.status === 'complete' ? 0 : null;
+    selected.totals = { count: value, new: value, capacityTB: value };
+    selected.capacityDeltaTB = selected.capacityDeltaReason === 'previous_complete' ? 0 : null;
+    assert.doesNotThrow(() => parseSupportingQuarter(encode(payload), descriptor, quarter.quarter));
+    assert.deepEqual(payload.scopes.all_supplied, supplied);
+    if (payload.status === 'partial') {
+      selected.totals.count = 0;
+      assert.throws(
+        () => parseSupportingQuarter(encode(payload), descriptor, quarter.quarter),
+        /scope totals/,
+      );
+    }
+  }
+  for (const field of ['purchaseDefaultModelIds', 'historicalReferenceModelIds'] as const) {
+    const changed = structuredClone(descriptor);
+    changed.context.selection[field] = [changed.context.inventory[0]!.modelId];
+    assert.throws(
+      () => parseSnapshotDescriptor(encode(changed), index.snapshots[0]!),
+      /default\/reference membership/,
+    );
+  }
+});
+
 void test('large integer population totals and manufacturer counts reconcile exactly', async () => {
   const descriptor = structuredClone(descriptors[0]!);
   const quarter = descriptor.quarters.findLast((row) => row.status === 'complete')!;

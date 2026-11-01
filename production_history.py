@@ -393,7 +393,7 @@ def generate(
         for mid, info in metadata.items()
         if info["mediaClass"] == "hdd" and (info["seedMatch"] or mid in qualifying_ids)
     ]
-    if not context_candidates:
+    if not context_candidates and matrix_calculation_version == "2.0.0":
         raise ValueError("No selected HDD observations; classification action required")
     newest = lifecycle.filter(pl.col("id").is_in(context_candidates))["final"].max()
     aggregates, locations = {}, {}
@@ -518,6 +518,10 @@ def generate(
         if row["mediaClass"] == "hdd" and row["reportingAnchorQuarter"]
     ]
     analysis_ids = selection.get("analysisModelIds", qualified)
+    if not analysis_ids and "analysisModelIds" not in selection:
+        raise ValueError("Empty analysis requires an explicit analysisModelIds selection")
+    if not analysis_ids and matrix_calculation_version == "2.0.0":
+        raise ValueError("Empty analysis requires calculation version 2.1.0")
     for name, ids, allowed in (
         ("analysis", analysis_ids, qualified),
         ("purchase defaults", selection["purchaseDefaultModelIds"], analysis_ids),
@@ -778,7 +782,9 @@ def generate(
                             else None,
                         )
                     )
-                totals = {key: _sum(rows, key) for key in ("count", "new", "capacityTB")}
+                totals = {
+                    key: _sum(rows, key) if full else None for key in ("count", "new", "capacityTB")
+                }
                 manufacturers = []
                 for vendor in sorted({metadata[mid]["vendor"] for mid in ids}):
                     vendor_rows = [

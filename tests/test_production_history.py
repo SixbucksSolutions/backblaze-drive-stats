@@ -103,6 +103,72 @@ class ProductionHistoryTests(unittest.TestCase):
         self.assertEqual(diagnostics["computedQuarters"], [])
         self.assertEqual(len(diagnostics["reusedQuarters"]), 5)
 
+    def test_empty_analysis_retains_real_inventory_and_partial_scope_uncertainty(self):
+        # A known HDD below the cohort threshold is still a real supplied drive.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            inputs = [
+                make_input(root, q, {0: rows(bounds(q)[0], 100, "XYZ26TB-01")}, missing=missing)
+                for q, missing in (("2024-Q1", ()), ("2024-Q2", (1,)))
+            ]
+            args = {
+                **self.args,
+                "cache_root": root / "cache",
+                "history_start": "2024-Q1",
+                "as_of": "2024-Q2",
+                "selection": dict(
+                    version="2.0.0",
+                    analysisModelIds=[],
+                    purchaseDefaultModelIds=[],
+                    historicalReferenceModelIds=[],
+                ),
+            }
+            index, artifacts, _ = generate(inputs, **args)
+            descriptor = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])
+            matrix = json.loads(artifacts[descriptor["matrix"]["path"]])
+            self.assertEqual(matrix["models"], [])
+            self.assertEqual(matrix["relativeQuarterCount"], 24)
+            self.assertEqual(descriptor["context"]["selection"]["contextModelIds"], [])
+            self.assertEqual(descriptor["context"]["inventory"][0]["mediaClass"], "hdd")
+            for reference in descriptor["quarters"]:
+                payload = json.loads(artifacts[reference["payload"]["path"]])
+                selected = payload["scopes"]["selected_hdd"]
+                self.assertEqual(selected["models"], [])
+                self.assertEqual(selected["manufacturers"], [])
+                expected = 0 if payload["status"] == "complete" else None
+                self.assertEqual(
+                    selected["totals"], dict.fromkeys(("count", "new", "capacityTB"), expected)
+                )
+                supplied = payload["scopes"]["all_supplied"]
+                self.assertEqual(len(supplied["models"]), 1)
+                self.assertEqual(supplied["totals"]["count"], 100 if expected == 0 else None)
+            for name in (
+                "analysisModelIds",
+                "purchaseDefaultModelIds",
+                "historicalReferenceModelIds",
+            ):
+                invalid = {**args, "selection": {**args["selection"], name: [self.xyz]}}
+                with self.assertRaisesRegex(ValueError, "Invalid .* membership"):
+                    generate(inputs, **invalid)
+            with self.assertRaisesRegex(ValueError, "No selected HDD observations"):
+                generate(inputs, **args, matrix_calculation_version="2.0.0")
+
+    def test_explicit_empty_analysis_preserves_nonempty_seed_context(self):
+        manifests = sorted((self.root / "cache/quarters").glob("*/*/manifest.json"))
+        args = {
+            **self.args,
+            "selection": dict(
+                version="2.0.0",
+                analysisModelIds=[],
+                purchaseDefaultModelIds=[],
+                historicalReferenceModelIds=[],
+            ),
+        }
+        index, artifacts, _ = generate(summary_manifests=manifests, **args)
+        descriptor = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])
+        self.assertTrue(descriptor["context"]["selection"]["contextModelIds"])
+        self.assertEqual(json.loads(artifacts[descriptor["matrix"]["path"]])["models"], [])
+
     def test_versioned_first_baselines_preserve_legacy_identity_and_components(self):
         manifests = sorted((self.root / "cache/quarters").glob("*/*/manifest.json"))
         index, artifacts, _ = generate(

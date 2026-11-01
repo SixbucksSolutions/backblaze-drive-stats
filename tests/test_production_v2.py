@@ -90,6 +90,28 @@ class ProductionV2Tests(unittest.TestCase):
             load_json(path), {p.name: p.read_bytes() for p in FIXTURES.glob("*.json") if p != path}
         )
 
+    def test_empty_analysis_is_versioned_without_weakening_membership(self):
+        self.context["versions"]["rate"] = "2.1.0"
+        selection = self.context["selection"]
+        for key in ("analysisModelIds", "purchaseDefaultModelIds", "historicalReferenceModelIds"):
+            selection[key] = []
+        self.matrix["models"] = []
+        self.matrix["relativeQuarterCount"] = 24
+        self.matrix["rateBasis"] = (
+            "observed-quarter-distinct-failed-identities-recorded-exposure-v2.1"
+        )
+        self.matrix["rateLabel"] = "Observed-history AFR (quarterly unique failures)"
+        validate_generation(*self.bundle.pack())
+        self.context["versions"]["rate"] = "2.0.0"
+        self.reject("empty analysis requires calculation version")
+        self.context["versions"]["rate"] = "2.1.0"
+        for key in ("purchaseDefaultModelIds", "historicalReferenceModelIds"):
+            selection[key] = [selection["contextModelIds"][0]]
+            self.reject("default subsets")
+            selection[key] = []
+        selection["contextModelIds"] = []
+        self.reject("context must retain")
+
     def test_rebound_21_semantics_require_subtract_zero_without_changing_legacy(self):
         self.context["versions"]["rate"] = "2.1.0"
         self.matrix["rateBasis"] = (

@@ -1060,8 +1060,7 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/supportingModel"
-          },
-          "minItems": 1
+          }
         },
         "totals": {
           "$ref": "#/$defs/aggregate"
@@ -1070,8 +1069,7 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/manufacturer"
-          },
-          "minItems": 1
+          }
         },
         "capacityDeltaTB": {
           "anyOf": [
@@ -1270,8 +1268,7 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/matrixModel"
-          },
-          "minItems": 1
+          }
         }
       }
     },

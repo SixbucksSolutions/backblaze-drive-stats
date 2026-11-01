@@ -690,9 +690,9 @@ const definitions: Record<string, Rule> = {
     additionalProperties: false,
     required: ['models', 'totals', 'manufacturers', 'capacityDeltaTB', 'capacityDeltaReason'],
     properties: {
-      models: { type: 'array', items: { $ref: '#/$defs/supportingModel' }, minItems: 1 },
+      models: { type: 'array', items: { $ref: '#/$defs/supportingModel' } },
       totals: { $ref: '#/$defs/aggregate' },
-      manufacturers: { type: 'array', items: { $ref: '#/$defs/manufacturer' }, minItems: 1 },
+      manufacturers: { type: 'array', items: { $ref: '#/$defs/manufacturer' } },
       capacityDeltaTB: { anyOf: [{ type: 'number' }, { type: 'null' }] },
       capacityDeltaReason: {
         enum: [
@@ -783,7 +783,7 @@ const definitions: Record<string, Rule> = {
       },
       relativeQuarterCount: { type: 'integer', minimum: 24 },
       guideAfterRelativeYear: { type: 'integer', minimum: 1, maximum: 6 },
-      models: { type: 'array', items: { $ref: '#/$defs/matrixModel' }, minItems: 1 },
+      models: { type: 'array', items: { $ref: '#/$defs/matrixModel' } },
     },
   },
   supporting_quarter: {
@@ -1385,6 +1385,10 @@ export function parseSnapshotDescriptor(
   });
   sameMembers(selection.contextModelIds, expectedContext, 'context membership');
   requireValue(
+    selection.analysisModelIds.length > 0 || context.versions.rate === '2.1.0',
+    'empty analysis requires calculation version 2.1.0',
+  );
+  requireValue(
     selection.analysisModelIds.every(
       (id) => qualified.includes(id) && selection.contextModelIds.includes(id),
     ),
@@ -1686,7 +1690,7 @@ export function parseSupportingQuarter(
     ] as const) {
       same(
         scope.totals[key],
-        sum(scope.models.map((row) => row[key])),
+        complete ? sum(scope.models.map((row) => row[key])) : null,
         'scope totals',
         key !== 'capacityTB',
       );

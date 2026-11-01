@@ -346,6 +346,10 @@ def _context(context):
     context_ids = set(selection["contextModelIds"])
     analysis = set(selection["analysisModelIds"])
     _require(
+        analysis or context["versions"]["rate"] == "2.1.0",
+        "empty analysis requires calculation version 2.1.0",
+    )
+    _require(
         context_ids == expected_context,
         "context must retain all seed HDD and qualifying HDD models",
     )
@@ -625,7 +629,7 @@ def _supporting(payload, context, previous):
         for key in ("count", "new", "capacityTB"):
             _same(
                 totals[key],
-                _sum([row[key] for row in rows.values()]),
+                _sum([row[key] for row in rows.values()]) if complete else None,
                 "scope sum reconciliation",
                 exact=key != "capacityTB",
             )
