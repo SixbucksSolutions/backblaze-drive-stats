@@ -106,8 +106,8 @@ The build also performs TypeScript and existing published-data checks.
 
 For local review, run `npm run dev`, then open `http://127.0.0.1:5173/?view=matrix`.
 An immutable fixture can be selected directly, for example
-`?view=matrix&snapshot=synthetic-later-v1` or
-`?view=matrix&snapshot=synthetic-new-manufacturer-v1`.
+`?view=matrix&reference=1&snapshot=synthetic-later-v1` or
+`?view=matrix&reference=1&snapshot=synthetic-new-manufacturer-v1`.
 Browser review should include wide and narrow viewports, both scroll axes,
 the promising 14-row reference against the selected-year guide, the first Toshiba
 spike, the later synthetic gap and an XYZ-only comparison. Source review and

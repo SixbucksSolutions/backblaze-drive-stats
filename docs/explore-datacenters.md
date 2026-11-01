@@ -32,3 +32,24 @@ become exact zero totals.
 Before 2023 Q3 the source datacenter field is unreported. The report explains this
 and omits location bars, retaining the accepted Unknown counts/capacity in the
 table and CSV. This is neither zero capacity nor evidence of flat growth.
+
+For newer generations, a modern quarter whose captured source lacks the field
+also reports Unreported and retains Unknown totals. A present field containing
+only null values remains Reported with Unknown observations and zero known-location
+coverage. Mixed captures remain Reported when per-file header evidence proves
+the field was present in at least one partition; missing values remain Unknown.
+Reported therefore does not imply every partition supplied a location value.
+
+The generator reads header evidence from the checksum-bound import receipt in
+the retained summary, identically for cold and retained inputs. Contradictory or
+incomplete header evidence is rejected before publication. For legacy receipts
+without header metadata, retained known locations prove field presence. A modern
+all-Unknown legacy summary requires captured header evidence before generating a
+new release: Unknown alone cannot distinguish an absent field from present nulls.
+Existing immutable generations and retained cache identities are unchanged.
+If a new generation needs additional header evidence, obtain it through verified
+source intake and a new summary lineage. Existing verified receipts/manifests
+remain immutable; an availability flag is not a substitute for capture evidence.
+The receipt's all-files flag alone proves absence for a single captured file.
+For multiple files, a false flag permits mixed headers and cannot prove absence;
+per-file or column-union evidence resolves that distinction.

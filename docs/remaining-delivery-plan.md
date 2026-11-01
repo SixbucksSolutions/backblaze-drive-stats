@@ -76,7 +76,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r043**. The
+Current rolling author/reviewer assignments are in private plan **r044**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
@@ -100,11 +100,15 @@ fresh Sol / High validation challenged the findings for evidence and practical
 value. Three P3 defects survived, with one conditional test follow-on; no broad
 refactor, language-modernization pass or test deletion was justified.
 
-At Terry's request, #0099 now covers the user README/current-workflow correction
-and the two reference links; #0100 covers captured datacenter availability,
-consistent UI/CSV wording and focused regressions. Both are P3 Ready for Work,
-reference the approved review and have no blocking dependency. No fixes started
-during card creation. The UI wiring scenario remains conditional on the next
-relevant change or an inexpensive harness; no standalone tooling card was created.
-These follow-ups and unfinished #0007 target work remain in the roster. No further
-Astra execution is implied by the completed review.
+#0099's user-focused README, linked navigation/legacy records and reference URLs
+are ready for review. #0100's captured datacenter availability, consistent UI/CSV
+wording and focused cold/retained regressions are also ready for review. Existing
+immutable artifacts and cache identity remain unchanged. Ambiguous modern
+all-Unknown legacy inputs require verified capture evidence for new generations;
+mixed captures preserve valid known locations.
+
+Both cards reference the approved #0098 review and retain no blocking dependency.
+The UI wiring scenario remains conditional on the next relevant change or an
+inexpensive harness; no standalone tooling project was added. Only unfinished
+#0007 target work remains in the implementation roster. No further Astra
+execution is implied by the completed review.

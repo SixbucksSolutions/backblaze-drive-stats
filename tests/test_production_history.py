@@ -7,11 +7,17 @@ from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
 
+import polars as pl
 from test_historical_generator import PATTERNS, REGISTRY, make_input, rows
 
-from historical_generator import Registry, bounds, digest, file_sha
+from historical_generator import QuarterInput, Registry, bounds, digest, file_sha
 from matrix_types import RegistryEntry
-from production_history import catalog_summary_manifests, generate, publish_generation
+from production_history import (
+    _captured_datacenter_available,
+    catalog_summary_manifests,
+    generate,
+    publish_generation,
+)
 
 
 class ProductionHistoryTests(unittest.TestCase):
@@ -92,6 +98,170 @@ class ProductionHistoryTests(unittest.TestCase):
         self.assertEqual(artifacts, self.artifacts)
         self.assertEqual(diagnostics["computedQuarters"], [])
         self.assertEqual(len(diagnostics["reusedQuarters"]), 5)
+
+    def test_captured_datacenter_headers_preserve_cold_retained_parity(self):
+        from datetime import timedelta
+
+        for mode, available in (
+            ("absent", False),
+            ("null", True),
+            ("mixed", True),
+            ("legacy", True),
+            ("legacy_null", None),
+        ):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source = root / "source"
+                source.mkdir()
+                start, end = bounds("2024-Q1")
+                records = []
+                for offset in range((end - start).days + 1):
+                    day = start + timedelta(days=offset)
+                    present = mode != "absent" and (mode != "mixed" or offset != 0)
+                    frame = pl.DataFrame(
+                        rows(day, 2000, location=None if mode in {"null", "legacy_null"} else "A")
+                    )
+                    if not present:
+                        frame = frame.drop("datacenter")
+                    name = f"{day}.parquet"
+                    frame.write_parquet(source / name)
+                    record: dict = dict(date=str(day), rowCount=2000, outputFile=name)
+                    if not mode.startswith("legacy"):
+                        record.update(datacenterAvailable=present, sourceColumns=frame.columns)
+                    records.append(record)
+                receipt = dict(schemaVersion=1, sourceZipSha256="1" * 64, files=records)
+                if not mode.startswith("legacy"):
+                    receipt.update(
+                        datacenterAvailable=all(r["datacenterAvailable"] for r in records),
+                        sourceColumns=sorted({c for r in records for c in r["sourceColumns"]}),
+                    )
+                (source / "import-metadata.json").write_text(json.dumps(receipt))
+                args: dict = dict(
+                    self.args,
+                    history_start="2024-Q1",
+                    as_of="2024-Q1",
+                    cache_root=root / "cache",
+                    selection=dict(
+                        version="2.0.0",
+                        purchaseDefaultModelIds=[self.mid],
+                        historicalReferenceModelIds=[],
+                    ),
+                )
+                if available is None:
+                    with self.assertRaisesRegex(ValueError, "header evidence required"):
+                        generate([QuarterInput("2024-Q1", source)], **args)
+                    manifests = sorted((root / "cache/quarters").glob("*/*/manifest.json"))
+                    with self.assertRaisesRegex(ValueError, "header evidence required"):
+                        generate(summary_manifests=manifests, **args)
+                    continue
+                index, artifacts, _ = generate([QuarterInput("2024-Q1", source)], **args)
+                descriptor = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])
+                payload = json.loads(artifacts[descriptor["quarters"][0]["payload"]["path"]])
+                self.assertEqual(
+                    descriptor["context"]["coverage"][0]["datacenterFieldAvailable"], available
+                )
+                self.assertEqual(payload["datacenters"]["fieldAvailable"], available)
+                self.assertEqual(payload["scopes"]["all_supplied"]["totals"]["count"], 2000)
+                self.assertEqual(payload["scopes"]["all_supplied"]["totals"]["capacityTB"], 32000)
+                self.assertEqual(
+                    payload["datacenters"]["knownLocationPopulationShare"],
+                    0 if mode in {"absent", "null"} else 1,
+                )
+                manifests = sorted((root / "cache/quarters").glob("*/*/manifest.json"))
+                before = {path: path.read_bytes() for path in manifests}
+                with patch(
+                    "production_history.summarize_partitioned_input",
+                    side_effect=AssertionError("daily read"),
+                ):
+                    retained_index, retained_artifacts, _ = generate(
+                        summary_manifests=manifests, **args
+                    )
+                self.assertEqual((retained_index, retained_artifacts), (index, artifacts))
+                self.assertEqual(before, {path: path.read_bytes() for path in manifests})
+
+    def test_captured_datacenter_evidence_rejects_ambiguity_and_preserves_legacy(self):
+        def available(receipt, location="Unknown", q="2024-Q1"):
+            return _captured_datacenter_available(
+                dict(
+                    coverage=dict(quarter=q),
+                    lineage=dict(
+                        receipt=receipt,
+                        partitions=[dict(date=row["date"]) for row in receipt["files"]],
+                    ),
+                ),
+                pl.DataFrame(dict(datacenter=[location])),
+            )
+
+        legacy = dict(files=[dict(date="2024-01-01")])
+        self.assertTrue(available(legacy, location="A"))
+        self.assertFalse(available(legacy, location="A", q="2023-Q2"))
+        self.assertFalse(available(dict(legacy, datacenterAvailable=False, sourceColumns=[])))
+        self.assertFalse(available(dict(legacy, datacenterAvailable=False)))
+        mixed_legacy = dict(files=[dict(date="2024-01-01"), dict(date="2024-01-02")])
+        self.assertTrue(
+            available(dict(mixed_legacy, datacenterAvailable=False, sourceColumns=["datacenter"]))
+        )
+        self.assertTrue(available(dict(mixed_legacy, datacenterAvailable=False), location="A"))
+        future_receipt = dict(
+            files=[
+                dict(date="2024-01-01", datacenterAvailable=False, sourceColumns=[]),
+                dict(date="2024-04-01", datacenterAvailable=True, sourceColumns=["datacenter"]),
+            ],
+            datacenterAvailable=False,
+            sourceColumns=["datacenter"],
+        )
+        self.assertFalse(
+            _captured_datacenter_available(
+                dict(
+                    coverage=dict(quarter="2024-Q1"),
+                    lineage=dict(receipt=future_receipt, partitions=[dict(date="2024-01-01")]),
+                ),
+                pl.DataFrame(dict(datacenter=["Unknown"])),
+            )
+        )
+        for receipt, location in (
+            (legacy, "Unknown"),
+            (dict(mixed_legacy, datacenterAvailable=False), "Unknown"),
+            (dict(legacy, datacenterAvailable=False), "A"),
+            (dict(legacy, datacenterAvailable=False, sourceColumns=["datacenter"]), "Unknown"),
+            (dict(legacy, datacenterAvailable=False, sourceColumns=["datacenter"]), "A"),
+            (dict(legacy, datacenterAvailable=False, sourceColumns=[]), "A"),
+            (dict(legacy, datacenterAvailable="false"), "Unknown"),
+            (
+                dict(files=[dict(date="2024-01-01", datacenterAvailable=True)], sourceColumns=[]),
+                "Unknown",
+            ),
+            (
+                dict(
+                    files=[
+                        dict(date="2024-01-01", datacenterAvailable=True),
+                        dict(date="2024-01-02"),
+                    ]
+                ),
+                "Unknown",
+            ),
+            (
+                dict(
+                    files=[
+                        dict(
+                            date="2024-01-01",
+                            datacenterAvailable=False,
+                            sourceColumns=["datacenter"],
+                        )
+                    ]
+                ),
+                "Unknown",
+            ),
+            (
+                dict(
+                    files=[dict(date="2024-01-01", datacenterAvailable=False)],
+                    datacenterAvailable=True,
+                ),
+                "Unknown",
+            ),
+        ):
+            with self.subTest(receipt=receipt), self.assertRaises(ValueError):
+                available(receipt, location)
 
     def test_as_of_excludes_future_models_exposure_capacity_and_inputs(self):
         args: dict = dict(

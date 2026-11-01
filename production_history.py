@@ -144,6 +144,78 @@ def _rate(failures, days):
     return failures * 36500 / days if days else None
 
 
+def _captured_datacenter_available(manifest, drives):
+    """Read captured header evidence without changing retained summary identity.
+
+    The receipt's aggregate boolean means *all* files contain the field. Mixed
+    captures remain usable when per-file evidence proves at least one presence.
+    """
+    if manifest["coverage"]["quarter"] < "2023-Q3":
+        return False
+    receipt = manifest["lineage"]["receipt"]
+
+    def signal(record):
+        available = record.get("datacenterAvailable")
+        if "datacenterAvailable" in record and type(available) is not bool:
+            raise ValueError("Invalid captured datacenter availability")
+        if "sourceColumns" in record:
+            columns = record["sourceColumns"]
+            if not isinstance(columns, list) or not all(isinstance(c, str) for c in columns):
+                raise ValueError("Invalid captured datacenter columns")
+            present = "datacenter" in columns
+            if available is not None and available != present:
+                raise ValueError("Conflicting captured datacenter evidence")
+            available = present
+        return available
+
+    # Use only partitions admitted to this summary, rather than later receipt days.
+    dates = {row["date"] for row in manifest["lineage"]["partitions"]}
+    records = [row for row in receipt["files"] if row["date"] in dates]
+    if not dates or len(records) != len(dates):
+        raise ValueError("Captured datacenter evidence does not match summary partitions")
+    states = [signal(row) for row in records]
+    aggregate = receipt.get("datacenterAvailable")
+    if "datacenterAvailable" in receipt and type(aggregate) is not bool:
+        raise ValueError("Invalid captured datacenter availability")
+    if states and all(state is not None for state in states):
+        # Validate the all-days flag only when all receipt files were admitted.
+        if (
+            len(records) == len(receipt["files"])
+            and aggregate is not None
+            and aggregate != all(states)
+        ):
+            raise ValueError("Conflicting captured datacenter aggregate")
+        available = any(states)
+        if "sourceColumns" in receipt:
+            union_available = signal(dict(sourceColumns=receipt["sourceColumns"]))
+            if len(records) == len(receipt["files"]) and union_available != available:
+                raise ValueError("Conflicting captured datacenter column union")
+    elif any(state is not None for state in states):
+        raise ValueError("Incomplete captured datacenter evidence")
+    elif len(records) == len(receipt["files"]) and "sourceColumns" in receipt:
+        union_available = signal(dict(sourceColumns=receipt["sourceColumns"]))
+        if (aggregate is True and not union_available) or (
+            aggregate is False and len(records) == 1 and union_available
+        ):
+            raise ValueError("Conflicting captured datacenter evidence")
+        # The column union proves absence when empty, and presence otherwise;
+        # unlike the all-days flag it also resolves mixed captures.
+        available = union_available
+    elif len(records) == len(receipt["files"]) and aggregate is True:
+        available = True
+    elif len(records) == len(receipt["files"]) == 1 and aggregate is False:
+        available = False
+    else:
+        # A multi-file false all-days flag cannot prove all days absent. Legacy known
+        # locations prove presence, but all-Unknown cannot distinguish nulls.
+        available = bool(drives.filter(pl.col("datacenter") != "Unknown").height)
+        if not available:
+            raise ValueError("Captured datacenter header evidence required for all-Unknown summary")
+    if not available and drives.filter(pl.col("datacenter") != "Unknown").height:
+        raise ValueError("Absent captured datacenter field has known locations")
+    return available
+
+
 def generate(
     inputs=(),
     *,
@@ -277,7 +349,7 @@ def generate(
                 reason="All calendar partitions validated"
                 if complete
                 else "Calendar partitions unavailable; known observations retained",
-                datacenterFieldAvailable=q >= "2023-Q3",
+                datacenterFieldAvailable=_captured_datacenter_available(manifest, drives),
                 evidence=evidence,
             )
         )
@@ -733,7 +805,7 @@ def generate(
                 capacityBasis="observed-identity-capacity-mode-v2",
                 scopes=scopes,
                 datacenters=dict(
-                    fieldAvailable=q >= "2023-Q3",
+                    fieldAvailable=byq[q]["datacenterFieldAvailable"],
                     knownLocationPopulationShare=(population - unknown) / population
                     if population
                     else None,

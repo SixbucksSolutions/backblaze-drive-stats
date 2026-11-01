@@ -191,6 +191,20 @@ Datacenters use all supplied identities, assigning each once to its last
 observed location in the quarter. Unknown stays in totals and denominators.
 Before 2023 Q3 the source field is unreported, so location remains Unknown;
 the chart explains unreported locations instead of zero capacity or flat growth.
+
+New generations also mark modern captures unavailable when the checksum-bound
+import receipt proves the datacenter field absent. Present all-null fields remain
+available. Per-file header evidence resolves mixed captures: any captured presence
+makes the field available while missing observations remain Unknown. The receipt's
+top-level flag means all files supplied the header and is not copied blindly.
+A false top-level flag proves absence for a single captured file; for multiple
+files it can describe mixed headers and requires further evidence to prove absence.
+Contradictory or incomplete evidence rejects generation, as does unavailable
+metadata paired with known locations. For legacy receipts without header metadata,
+known retained locations prove presence; modern all-Unknown summaries require
+captured header evidence before a new generation can proceed. They cannot prove
+absence rather than present nulls. Cold and retained generation use the same
+evidence; summary cache identities and existing immutable releases remain unchanged.
 Known-location population share is zero for positive all-Unknown population and
 null for zero/unavailable population. This does not measure customer demand.
 

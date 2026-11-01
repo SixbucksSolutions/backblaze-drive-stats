@@ -115,6 +115,29 @@ void test('partial, missing, unpublished and absent payloads never invent exact 
   assert.equal(datacenterCsvRows(null, null, coverage).at(-1)?.at(-1), 'Reported');
 });
 
+void test('modern absent field retains Unknown totals and explains captured absence in report and CSV', () => {
+  const data: Datacenters = {
+    fieldAvailable: false,
+    knownLocationPopulationShare: 0,
+    locations: [{ name: 'Unknown', count: 10, capacityTB: 100 }],
+  };
+  const source = { ...coverage, quarter: '2024-Q1', datacenterFieldAvailable: false };
+  const html = renderDatacenters(data, totals, source);
+  assert.match(html, /field is absent from the captured source for this quarter/);
+  assert.doesNotMatch(html, /field is unreported before 2023 Q3|<meter /);
+  assert.match(html, /coverage: <strong>0%/);
+  assert.deepEqual(datacenterCsvRows(data, totals, source)[1], [
+    'Unknown',
+    10,
+    100,
+    1,
+    1,
+    0,
+    'Unreported',
+  ]);
+  assert.equal(datacenterSummary(data, totals, source).capacityTB, 100);
+});
+
 void test('null capacity retains known counts; positive all-Unknown and zero denominators stay distinct', () => {
   const nullCapacity: Datacenters = {
     fieldAvailable: true,
