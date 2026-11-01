@@ -50,9 +50,13 @@ holds 4,817 valid dates and 743,490,518 known observations. Thirteen problematic
 captures within the published span and 99 calendar days before publication remain
 explicitly unavailable. Unpublished 2013 Q1 has no dataset or warm-cache count.
 Source computation, B2 retention/readback, isolated restore, preferred publication
-and independent local-mirror acceptance passed. #0023 and its ten final source
-cards are ready for owner review. No further source cards are queued. #0017 remains In Progress for production
-integration; #0063 is owner-Completed research. The rolling plan is r030.
+and independent local-mirror acceptance passed. Terry accepted #0023 and the final
+source cards. No further source cards are queued. #0017 remains In Progress for
+production integration; #0063 is owner-Completed research. The
+[remaining delivery plan](docs/remaining-delivery-plan.md) tracks the flagship and
+each Explore view separately. The [proposed shared v2 contracts](docs/production-data-v2.md)
+are #0084’s current review work; generation and UI adoption remain later tickets.
+The private rolling plan is r031.
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's

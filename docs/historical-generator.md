@@ -14,13 +14,17 @@ Unpublished 2013 Q1 is availability metadata, with no input dataset, synthetic
 zero-row summary or warm-cache hit. Partial full-quarter Count and AFR stay null.
 
 Source computation, B2 retention/readback, isolated restore, preferred publication
-and independent local-mirror acceptance passed. #0023 and its ten final source
-cards are ready for owner review.
+and independent local-mirror acceptance passed. Terry accepted #0023 and all
+source cards.
 #0017 remains In Progress for production source-gap/completeness and cohort/epoch
-integration; #0063 is owner-Completed research. The current worker plan is r030,
+integration; #0063 is owner-Completed research. The current worker plan is r031,
 with no further Ready for Work source cards after this handoff. Source census
 completion does not itself certify complete lifetime exposure or publish a
 production matrix.
+
+The [proposed v2 contracts](production-data-v2.md) are separately reviewed under
+#0084. This generator still implements its existing contracts; #0085 owns adoption
+after acceptance.
 
 Run with the locked project environment:
 

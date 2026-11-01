@@ -1,0 +1,1440 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sixbucks.solutions/contracts/production-v2.schema.json",
+  "title": "Proposed production v2 artifact family",
+  "description": "Internal consistency contract; source authenticity and classification truth require producer evidence and review. Never a complete-lifetime AFR claim.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/snapshot_descriptor"
+    },
+    {
+      "$ref": "#/$defs/matrix"
+    },
+    {
+      "$ref": "#/$defs/supporting_quarter"
+    },
+    {
+      "$ref": "#/$defs/generation_index"
+    }
+  ],
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "sizeBytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+[.-][a-f0-9]{64}\\.json$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sha256",
+        "url"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^/@?#:]+(?:/[^?#]*)?$"
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quarter",
+        "status",
+        "expectedDays",
+        "observedDays",
+        "firstObservedDate",
+        "lastObservedDate",
+        "knownObservationRows",
+        "reason",
+        "datacenterFieldAvailable",
+        "evidence"
+      ],
+      "properties": {
+        "quarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "missing",
+            "unpublished"
+          ]
+        },
+        "expectedDays": {
+          "type": "integer",
+          "minimum": 90,
+          "maximum": 92
+        },
+        "observedDays": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 92
+        },
+        "firstObservedDate": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastObservedDate": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "knownObservationRows": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "datacenterFieldAvailable": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "modelQuarter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quarter",
+        "quarterCount",
+        "knownIdentityLowerBound",
+        "knownFailures",
+        "knownDriveDays",
+        "thresholdProof",
+        "evidence"
+      ],
+      "properties": {
+        "quarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "quarterCount": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "knownIdentityLowerBound": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "knownFailures": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "knownDriveDays": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "thresholdProof": {
+          "enum": [
+            null,
+            "complete_exact_count",
+            "partial_identity_lower_bound"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "inventoryModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelId",
+        "vendor",
+        "modelNumber",
+        "rawAliases",
+        "mediaClass",
+        "classificationEvidence",
+        "seedMatch",
+        "capacityTB",
+        "history",
+        "firstObservedInDeclaredHistory",
+        "firstProvenThresholdInDeclaredHistory",
+        "firstCompleteQualifyingInDeclaredHistory",
+        "reportingAnchorQuarter",
+        "earlierQualificationNotExcluded",
+        "anchorSearchComplete",
+        "recordedHistoryComplete",
+        "lifetimeExposureComplete"
+      ],
+      "properties": {
+        "modelId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vendor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modelNumber": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rawAliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "mediaClass": {
+          "enum": [
+            "hdd",
+            "ssd",
+            "unclassified"
+          ]
+        },
+        "classificationEvidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        },
+        "seedMatch": {
+          "type": "boolean"
+        },
+        "capacityTB": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/modelQuarter"
+          },
+          "minItems": 1
+        },
+        "firstObservedInDeclaredHistory": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{4}-Q[1-4]$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "firstProvenThresholdInDeclaredHistory": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{4}-Q[1-4]$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "firstCompleteQualifyingInDeclaredHistory": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{4}-Q[1-4]$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reportingAnchorQuarter": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{4}-Q[1-4]$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "earlierQualificationNotExcluded": {
+          "type": "boolean"
+        },
+        "anchorSearchComplete": {
+          "type": "boolean"
+        },
+        "recordedHistoryComplete": {
+          "type": "boolean"
+        },
+        "lifetimeExposureComplete": {
+          "const": false
+        }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "normalization",
+        "classification",
+        "selection",
+        "cohort",
+        "rate",
+        "capacity"
+      ],
+      "properties": {
+        "normalization": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "classification": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "selection": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "cohort": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "rate": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "capacity": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "sourceDomain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "historyStartQuarter",
+        "firstPublishedDate",
+        "throughDate",
+        "evidence"
+      ],
+      "properties": {
+        "historyStartQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "firstPublishedDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "throughDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "credit",
+        "url"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "credit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^/@?#:]+(?:/[^?#]*)?$"
+        }
+      }
+    },
+    "positiveSeed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "modelIds",
+        "evidence",
+        "asOfQuarter",
+        "patternsSha256"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "modelIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 1
+        },
+        "asOfQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "patternsSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contextModelIds",
+        "analysisModelIds",
+        "purchaseDefaultModelIds",
+        "historicalReferenceModelIds",
+        "positiveSeed"
+      ],
+      "properties": {
+        "contextModelIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "analysisModelIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "purchaseDefaultModelIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "historicalReferenceModelIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "positiveSeed": {
+          "$ref": "#/$defs/positiveSeed"
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshotId",
+        "asOfQuarter",
+        "cutoffDate",
+        "generatedAt",
+        "kind",
+        "generatorRevision",
+        "sourceManifestSha256",
+        "versions",
+        "sourceDomain",
+        "provenance",
+        "selection",
+        "coverage",
+        "inventory"
+      ],
+      "properties": {
+        "snapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asOfQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "cutoffDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "kind": {
+          "enum": [
+            "sample",
+            "backblaze"
+          ]
+        },
+        "generatorRevision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceManifestSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "versions": {
+          "$ref": "#/$defs/versions"
+        },
+        "sourceDomain": {
+          "$ref": "#/$defs/sourceDomain"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "selection": {
+          "$ref": "#/$defs/selection"
+        },
+        "coverage": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/coverage"
+          },
+          "minItems": 1
+        },
+        "inventory": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inventoryModel"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "quarterReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quarter",
+        "status",
+        "payload"
+      ],
+      "properties": {
+        "quarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "missing",
+            "unpublished"
+          ]
+        },
+        "payload": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/reference"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observedRecordedAfr",
+        "observedRecordedAfrDelta",
+        "count",
+        "populationDelta",
+        "new",
+        "retired",
+        "failed"
+      ],
+      "properties": {
+        "observedRecordedAfr": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observedRecordedAfrDelta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "populationDelta": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "new": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retired": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "failed": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "matrixCell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quarter",
+        "relativeQuarter",
+        "status",
+        "metrics",
+        "quarterAfr",
+        "completeHistoryAfr",
+        "cumulativeKnownFailures",
+        "cumulativeKnownDriveDays",
+        "baselineQuarter",
+        "baselineQuarterDistance",
+        "deltaReason",
+        "retiredReason",
+        "sourceHistoryComplete"
+      ],
+      "properties": {
+        "quarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "relativeQuarter": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "status": {
+          "enum": [
+            "eligible",
+            "below_threshold",
+            "source_incomplete",
+            "missing",
+            "unpublished",
+            "snapshot_end"
+          ]
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        },
+        "quarterAfr": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completeHistoryAfr": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cumulativeKnownFailures": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cumulativeKnownDriveDays": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "baselineQuarter": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{4}-Q[1-4]$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "baselineQuarterDistance": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deltaReason": {
+          "enum": [
+            "initialized",
+            "prior_eligible",
+            "unavailable"
+          ]
+        },
+        "retiredReason": {
+          "enum": [
+            "inferred",
+            "gap_obstructed",
+            "cutoff_failed_proxy",
+            "unavailable"
+          ]
+        },
+        "sourceHistoryComplete": {
+          "type": "boolean"
+        }
+      }
+    },
+    "matrixModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelId",
+        "reportingAnchorQuarter",
+        "sourceHistoryComplete",
+        "lifetimeExposureComplete",
+        "cells"
+      ],
+      "properties": {
+        "modelId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reportingAnchorQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "sourceHistoryComplete": {
+          "type": "boolean"
+        },
+        "lifetimeExposureComplete": {
+          "const": false
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/matrixCell"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "aggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "new",
+        "capacityTB"
+      ],
+      "properties": {
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "new": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capacityTB": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "supportingModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelId",
+        "count",
+        "new",
+        "capacityTB"
+      ],
+      "properties": {
+        "modelId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "new": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capacityTB": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "manufacturer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vendor",
+        "count",
+        "new",
+        "capacityTB",
+        "populationShare",
+        "newShare",
+        "capacityShare"
+      ],
+      "properties": {
+        "vendor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "new": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capacityTB": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "populationShare": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "newShare": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capacityShare": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "models",
+        "totals",
+        "manufacturers",
+        "capacityDeltaTB",
+        "capacityDeltaReason"
+      ],
+      "properties": {
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/supportingModel"
+          },
+          "minItems": 1
+        },
+        "totals": {
+          "$ref": "#/$defs/aggregate"
+        },
+        "manufacturers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/manufacturer"
+          },
+          "minItems": 1
+        },
+        "capacityDeltaTB": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capacityDeltaReason": {
+          "enum": [
+            "previous_complete",
+            "first_quarter",
+            "previous_unavailable",
+            "current_incomplete",
+            "invalid_capacity"
+          ]
+        }
+      }
+    },
+    "scopes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selected_hdd",
+        "all_supplied"
+      ],
+      "properties": {
+        "selected_hdd": {
+          "$ref": "#/$defs/scope"
+        },
+        "all_supplied": {
+          "$ref": "#/$defs/scope"
+        }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "count",
+        "capacityTB"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "count": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "capacityTB": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "datacenters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fieldAvailable",
+        "knownLocationPopulationShare",
+        "locations"
+      ],
+      "properties": {
+        "fieldAvailable": {
+          "type": "boolean"
+        },
+        "knownLocationPopulationShare": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/location"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "snapshot_descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactType",
+        "contractVersion",
+        "context",
+        "contextSha256",
+        "matrix",
+        "quarters"
+      ],
+      "properties": {
+        "artifactType": {
+          "const": "snapshot_descriptor"
+        },
+        "contractVersion": {
+          "const": "2.0.0"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "contextSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "matrix": {
+          "$ref": "#/$defs/reference"
+        },
+        "quarters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/quarterReference"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactType",
+        "contractVersion",
+        "contextSha256",
+        "snapshotId",
+        "asOfQuarter",
+        "rateBasis",
+        "rateLabel",
+        "relativeQuarterCount",
+        "guideAfterRelativeYear",
+        "models"
+      ],
+      "properties": {
+        "artifactType": {
+          "const": "matrix"
+        },
+        "contractVersion": {
+          "const": "2.0.0"
+        },
+        "contextSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "snapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asOfQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "rateBasis": {
+          "const": "observed-recorded-exposure-v2"
+        },
+        "rateLabel": {
+          "const": "Observed-history AFR"
+        },
+        "relativeQuarterCount": {
+          "type": "integer",
+          "minimum": 24
+        },
+        "guideAfterRelativeYear": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/matrixModel"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "supporting_quarter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactType",
+        "contractVersion",
+        "contextSha256",
+        "snapshotId",
+        "asOfQuarter",
+        "quarter",
+        "status",
+        "capacityBasis",
+        "scopes",
+        "datacenters"
+      ],
+      "properties": {
+        "artifactType": {
+          "const": "supporting_quarter"
+        },
+        "contractVersion": {
+          "const": "2.0.0"
+        },
+        "contextSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "snapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asOfQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "quarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial"
+          ]
+        },
+        "capacityBasis": {
+          "const": "observed-identity-capacity-mode-v2"
+        },
+        "scopes": {
+          "$ref": "#/$defs/scopes"
+        },
+        "datacenters": {
+          "$ref": "#/$defs/datacenters"
+        }
+      }
+    },
+    "snapshotEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshotId",
+        "asOfQuarter",
+        "sourceManifestSha256",
+        "descriptor"
+      ],
+      "properties": {
+        "snapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "asOfQuarter": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-Q[1-4]$"
+        },
+        "sourceManifestSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "descriptor": {
+          "$ref": "#/$defs/reference"
+        }
+      }
+    },
+    "generation_index": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactType",
+        "contractVersion",
+        "latestSnapshotId",
+        "snapshots"
+      ],
+      "properties": {
+        "artifactType": {
+          "const": "generation_index"
+        },
+        "contractVersion": {
+          "const": "2.0.0"
+        },
+        "latestSnapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "snapshots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/snapshotEntry"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

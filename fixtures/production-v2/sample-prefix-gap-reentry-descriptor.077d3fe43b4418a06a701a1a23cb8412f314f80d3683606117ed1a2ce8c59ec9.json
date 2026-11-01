@@ -1,0 +1,827 @@
+{
+  "artifactType": "snapshot_descriptor",
+  "contractVersion": "2.0.0",
+  "context": {
+    "snapshotId": "sample-prefix-gap-reentry",
+    "asOfQuarter": "2014-Q2",
+    "cutoffDate": "2014-06-30",
+    "generatedAt": "2026-10-31T00:00:00Z",
+    "kind": "sample",
+    "generatorRevision": "sample-v2-fixture-1",
+    "sourceManifestSha256": "c1e341c9731b7ad59911035072ee97531e4ecf7ad415e81581a2f22b367f2013",
+    "versions": {
+      "normalization": "2.0.0",
+      "classification": "2.0.0",
+      "selection": "2.0.0",
+      "cohort": "2.0.0",
+      "rate": "2.0.0",
+      "capacity": "2.0.0"
+    },
+    "sourceDomain": {
+      "historyStartQuarter": "2013-Q1",
+      "firstPublishedDate": "2013-04-10",
+      "throughDate": "2014-06-30",
+      "evidence": [
+        {
+          "id": "sample-fictional-evidence",
+          "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+          "url": "https://example.org/sample-evidence"
+        }
+      ]
+    },
+    "provenance": {
+      "label": "SAMPLE: wholly fictional aggregate values; no actual drive records",
+      "credit": "Contract design acknowledges Backblaze Drive Stats; these values are fictional",
+      "url": "https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data"
+    },
+    "selection": {
+      "contextModelIds": [
+        "sample-seed-hdd",
+        "sample-context-only-hdd",
+        "sample-new-vendor-hdd"
+      ],
+      "analysisModelIds": [
+        "sample-seed-hdd",
+        "sample-new-vendor-hdd"
+      ],
+      "purchaseDefaultModelIds": [
+        "sample-new-vendor-hdd"
+      ],
+      "historicalReferenceModelIds": [
+        "sample-seed-hdd"
+      ],
+      "positiveSeed": {
+        "version": "2.0.0",
+        "asOfQuarter": "2014-Q2",
+        "patternsSha256": "1ea5347443e21768588a1f5902a3ed25dc760ef12f8bb5ce11d802a2ca181513",
+        "modelIds": [
+          "sample-seed-hdd",
+          "sample-context-only-hdd"
+        ],
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      }
+    },
+    "coverage": [
+      {
+        "quarter": "2013-Q1",
+        "status": "unpublished",
+        "expectedDays": 90,
+        "observedDays": 0,
+        "firstObservedDate": null,
+        "lastObservedDate": null,
+        "knownObservationRows": null,
+        "reason": "Sample: quarter predates publication domain",
+        "datacenterFieldAvailable": false,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      },
+      {
+        "quarter": "2013-Q2",
+        "status": "partial",
+        "expectedDays": 91,
+        "observedDays": 82,
+        "firstObservedDate": "2013-04-10",
+        "lastObservedDate": "2013-06-30",
+        "knownObservationRows": 635500,
+        "reason": "Sample: pre-publication prefix absent; only 82 of 91 dates",
+        "datacenterFieldAvailable": false,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      },
+      {
+        "quarter": "2013-Q3",
+        "status": "complete",
+        "expectedDays": 92,
+        "observedDays": 92,
+        "firstObservedDate": "2013-07-01",
+        "lastObservedDate": "2013-09-30",
+        "knownObservationRows": 910800,
+        "reason": "Sample: every calendar date represented",
+        "datacenterFieldAvailable": false,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      },
+      {
+        "quarter": "2013-Q4",
+        "status": "missing",
+        "expectedDays": 92,
+        "observedDays": 0,
+        "firstObservedDate": null,
+        "lastObservedDate": null,
+        "knownObservationRows": null,
+        "reason": "Sample: source capture absent, population unknown",
+        "datacenterFieldAvailable": false,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      },
+      {
+        "quarter": "2014-Q1",
+        "status": "complete",
+        "expectedDays": 90,
+        "observedDays": 90,
+        "firstObservedDate": "2014-01-01",
+        "lastObservedDate": "2014-03-31",
+        "knownObservationRows": 639000,
+        "reason": "Sample: every calendar date represented",
+        "datacenterFieldAvailable": false,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      },
+      {
+        "quarter": "2014-Q2",
+        "status": "complete",
+        "expectedDays": 91,
+        "observedDays": 91,
+        "firstObservedDate": "2014-04-01",
+        "lastObservedDate": "2014-06-30",
+        "knownObservationRows": 919100,
+        "reason": "Sample: every calendar date represented",
+        "datacenterFieldAvailable": false,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      }
+    ],
+    "inventory": [
+      {
+        "modelId": "sample-seed-hdd",
+        "vendor": "Sample Established",
+        "modelNumber": "SAMPLE-SEED-HDD",
+        "rawAliases": [
+          "SAMPLE-SEED-HDD"
+        ],
+        "mediaClass": "hdd",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": true,
+        "capacityTB": 8.0,
+        "history": [
+          {
+            "quarter": "2013-Q1",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q2",
+            "quarterCount": null,
+            "knownIdentityLowerBound": 2100,
+            "knownFailures": 1,
+            "knownDriveDays": 172200,
+            "thresholdProof": "partial_identity_lower_bound",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q3",
+            "quarterCount": 2200,
+            "knownIdentityLowerBound": 2200,
+            "knownFailures": 1,
+            "knownDriveDays": 202400,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q4",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q1",
+            "quarterCount": 1000,
+            "knownIdentityLowerBound": 1000,
+            "knownFailures": 1,
+            "knownDriveDays": 90000,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q2",
+            "quarterCount": 2300,
+            "knownIdentityLowerBound": 2300,
+            "knownFailures": 1,
+            "knownDriveDays": 209300,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2013-Q2",
+        "firstProvenThresholdInDeclaredHistory": "2013-Q2",
+        "firstCompleteQualifyingInDeclaredHistory": "2013-Q3",
+        "reportingAnchorQuarter": "2013-Q2",
+        "earlierQualificationNotExcluded": true,
+        "anchorSearchComplete": false,
+        "recordedHistoryComplete": false,
+        "lifetimeExposureComplete": false
+      },
+      {
+        "modelId": "sample-context-only-hdd",
+        "vendor": "Sample Established",
+        "modelNumber": "SAMPLE-CONTEXT-ONLY-HDD",
+        "rawAliases": [
+          "SAMPLE-CONTEXT-ONLY-HDD"
+        ],
+        "mediaClass": "hdd",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": true,
+        "capacityTB": 4.0,
+        "history": [
+          {
+            "quarter": "2013-Q1",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q2",
+            "quarterCount": null,
+            "knownIdentityLowerBound": 100,
+            "knownFailures": 1,
+            "knownDriveDays": 8200,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q3",
+            "quarterCount": 100,
+            "knownIdentityLowerBound": 100,
+            "knownFailures": 1,
+            "knownDriveDays": 9200,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q4",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q1",
+            "quarterCount": 100,
+            "knownIdentityLowerBound": 100,
+            "knownFailures": 1,
+            "knownDriveDays": 9000,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q2",
+            "quarterCount": 100,
+            "knownIdentityLowerBound": 100,
+            "knownFailures": 1,
+            "knownDriveDays": 9100,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2013-Q2",
+        "firstProvenThresholdInDeclaredHistory": null,
+        "firstCompleteQualifyingInDeclaredHistory": null,
+        "reportingAnchorQuarter": null,
+        "earlierQualificationNotExcluded": true,
+        "anchorSearchComplete": false,
+        "recordedHistoryComplete": false,
+        "lifetimeExposureComplete": false
+      },
+      {
+        "modelId": "sample-new-vendor-hdd",
+        "vendor": "Sample New Vendor",
+        "modelNumber": "SAMPLE-NEW-VENDOR-HDD",
+        "rawAliases": [
+          "SAMPLE-NEW-VENDOR-HDD"
+        ],
+        "mediaClass": "hdd",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": false,
+        "capacityTB": 12.0,
+        "history": [
+          {
+            "quarter": "2013-Q1",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q2",
+            "quarterCount": null,
+            "knownIdentityLowerBound": 50,
+            "knownFailures": 1,
+            "knownDriveDays": 4100,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q3",
+            "quarterCount": 2100,
+            "knownIdentityLowerBound": 2100,
+            "knownFailures": 1,
+            "knownDriveDays": 193200,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q4",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q1",
+            "quarterCount": 500,
+            "knownIdentityLowerBound": 500,
+            "knownFailures": 1,
+            "knownDriveDays": 45000,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q2",
+            "quarterCount": 2200,
+            "knownIdentityLowerBound": 2200,
+            "knownFailures": 1,
+            "knownDriveDays": 200200,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2013-Q2",
+        "firstProvenThresholdInDeclaredHistory": "2013-Q3",
+        "firstCompleteQualifyingInDeclaredHistory": "2013-Q3",
+        "reportingAnchorQuarter": "2013-Q3",
+        "earlierQualificationNotExcluded": true,
+        "anchorSearchComplete": false,
+        "recordedHistoryComplete": false,
+        "lifetimeExposureComplete": false
+      },
+      {
+        "modelId": "sample-ssd",
+        "vendor": "Sample Solid",
+        "modelNumber": "SAMPLE-SSD",
+        "rawAliases": [
+          "SAMPLE-SSD"
+        ],
+        "mediaClass": "ssd",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": false,
+        "capacityTB": 1.0,
+        "history": [
+          {
+            "quarter": "2013-Q1",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q2",
+            "quarterCount": null,
+            "knownIdentityLowerBound": 3000,
+            "knownFailures": 1,
+            "knownDriveDays": 246000,
+            "thresholdProof": "partial_identity_lower_bound",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q3",
+            "quarterCount": 3000,
+            "knownIdentityLowerBound": 3000,
+            "knownFailures": 1,
+            "knownDriveDays": 276000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q4",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q1",
+            "quarterCount": 3000,
+            "knownIdentityLowerBound": 3000,
+            "knownFailures": 1,
+            "knownDriveDays": 270000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q2",
+            "quarterCount": 3000,
+            "knownIdentityLowerBound": 3000,
+            "knownFailures": 1,
+            "knownDriveDays": 273000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2013-Q2",
+        "firstProvenThresholdInDeclaredHistory": "2013-Q2",
+        "firstCompleteQualifyingInDeclaredHistory": "2013-Q3",
+        "reportingAnchorQuarter": "2013-Q2",
+        "earlierQualificationNotExcluded": true,
+        "anchorSearchComplete": false,
+        "recordedHistoryComplete": false,
+        "lifetimeExposureComplete": false
+      },
+      {
+        "modelId": "sample-unclassified",
+        "vendor": "Unknown",
+        "modelNumber": "SAMPLE-UNCLASSIFIED",
+        "rawAliases": [
+          "SAMPLE-UNCLASSIFIED"
+        ],
+        "mediaClass": "unclassified",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": false,
+        "capacityTB": 2.0,
+        "history": [
+          {
+            "quarter": "2013-Q1",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q2",
+            "quarterCount": null,
+            "knownIdentityLowerBound": 2500,
+            "knownFailures": 1,
+            "knownDriveDays": 205000,
+            "thresholdProof": "partial_identity_lower_bound",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q3",
+            "quarterCount": 2500,
+            "knownIdentityLowerBound": 2500,
+            "knownFailures": 1,
+            "knownDriveDays": 230000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2013-Q4",
+            "quarterCount": null,
+            "knownIdentityLowerBound": null,
+            "knownFailures": 0,
+            "knownDriveDays": 0,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q1",
+            "quarterCount": 2500,
+            "knownIdentityLowerBound": 2500,
+            "knownFailures": 1,
+            "knownDriveDays": 225000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2014-Q2",
+            "quarterCount": 2500,
+            "knownIdentityLowerBound": 2500,
+            "knownFailures": 1,
+            "knownDriveDays": 227500,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2013-Q2",
+        "firstProvenThresholdInDeclaredHistory": "2013-Q2",
+        "firstCompleteQualifyingInDeclaredHistory": "2013-Q3",
+        "reportingAnchorQuarter": "2013-Q2",
+        "earlierQualificationNotExcluded": true,
+        "anchorSearchComplete": false,
+        "recordedHistoryComplete": false,
+        "lifetimeExposureComplete": false
+      }
+    ]
+  },
+  "contextSha256": "87756b8eb0b2fb6c7abfafb6b9e7b3935b3dd09e9e3117939ef5a04d92f7a415",
+  "matrix": {
+    "path": "sample-prefix-gap-reentry-matrix.2586c81944e7b684ed47c1826c7201e0f9dc1ee7e9486d3f66140ccc63d5384a.json",
+    "sha256": "2586c81944e7b684ed47c1826c7201e0f9dc1ee7e9486d3f66140ccc63d5384a",
+    "sizeBytes": 36694
+  },
+  "quarters": [
+    {
+      "quarter": "2013-Q1",
+      "status": "unpublished",
+      "payload": null
+    },
+    {
+      "quarter": "2013-Q2",
+      "status": "partial",
+      "payload": {
+        "path": "sample-prefix-gap-reentry-2013-Q2.a2fe1da4ba59d062f49153e3e20e9f1a091c2eea6d255631b0bf286e4d2b62e4.json",
+        "sha256": "a2fe1da4ba59d062f49153e3e20e9f1a091c2eea6d255631b0bf286e4d2b62e4",
+        "sizeBytes": 3630
+      }
+    },
+    {
+      "quarter": "2013-Q3",
+      "status": "complete",
+      "payload": {
+        "path": "sample-prefix-gap-reentry-2013-Q3.4eb3f91c20bd315fbd3682e21beb00c5fca5996141bec59cf6d6950bd89f1e72.json",
+        "sha256": "4eb3f91c20bd315fbd3682e21beb00c5fca5996141bec59cf6d6950bd89f1e72",
+        "sizeBytes": 3849
+      }
+    },
+    {
+      "quarter": "2013-Q4",
+      "status": "missing",
+      "payload": null
+    },
+    {
+      "quarter": "2014-Q1",
+      "status": "complete",
+      "payload": {
+        "path": "sample-prefix-gap-reentry-2014-Q1.da949c5b0e3359c2870eee743f52fe19f0469701a3d444be6d0d3053c2b7803b.json",
+        "sha256": "da949c5b0e3359c2870eee743f52fe19f0469701a3d444be6d0d3053c2b7803b",
+        "sizeBytes": 3750
+      }
+    },
+    {
+      "quarter": "2014-Q2",
+      "status": "complete",
+      "payload": {
+        "path": "sample-prefix-gap-reentry-2014-Q2.d0b5db711c25c65bdb3322dc228fc1bb60c9604f5f9b467a8d0b0de5b8206724.json",
+        "sha256": "d0b5db711c25c65bdb3322dc228fc1bb60c9604f5f9b467a8d0b0de5b8206724",
+        "sizeBytes": 3813
+      }
+    }
+  ]
+}

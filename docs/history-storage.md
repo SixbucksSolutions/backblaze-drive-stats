@@ -21,8 +21,8 @@ and source-domain metadata while preserving all prior immutable references. Its
 and isolated restore, with zero old-payload transfers. The published catalog
 references 5,029 payloads / 4,554,589,393 bytes. The local mirror passed independent
 full-keyset/hash verification, preserved all 4,182 previous payloads and retained
-the previous discovery record. #0023 and its ten source cards are ready for owner
-review; technical acceptance does not approve the cards. Current worker assignments are r030; no further source
+the previous discovery record. Terry accepted #0023 and all source cards.
+Current worker assignments are r031; no further source
 cards are queued after this handoff. #0017 retains production integration and
 #0063 remains owner-Completed research.
 
@@ -45,6 +45,13 @@ The [four-quarter backfill retention](parallel-quarter-benchmark.md) then added
 previously accepted 2025 Q4 cache. Readback, zero-write reuse and a separate-root
 restore succeeded. Those seven quarters have durable projected data,
 receipts and retained summaries. Raw ZIPs remain outside these processing copies.
+
+## Storage recovery tiers
+
+The owner’s intended recovery hierarchy is **hot: B2 us-east**, **cool: B2 us-west**,
+and **cold: Glacier Deep Archive**. Terry owns In Progress #0096 for cross-region
+B2 backup. This records ownership and intent, not a claim that the west-region
+copy is verified. #0019 retains the later Glacier scope.
 
 ## Real service verification
 

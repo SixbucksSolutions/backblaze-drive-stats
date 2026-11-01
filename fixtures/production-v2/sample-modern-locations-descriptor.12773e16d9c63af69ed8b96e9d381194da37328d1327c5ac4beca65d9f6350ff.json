@@ -1,0 +1,529 @@
+{
+  "artifactType": "snapshot_descriptor",
+  "contractVersion": "2.0.0",
+  "context": {
+    "snapshotId": "sample-modern-locations",
+    "asOfQuarter": "2023-Q4",
+    "cutoffDate": "2023-12-31",
+    "generatedAt": "2026-10-31T00:00:00Z",
+    "kind": "sample",
+    "generatorRevision": "sample-v2-fixture-1",
+    "sourceManifestSha256": "ad90687ba50feaf49f3021ae3cdc34b5d9f0753e29380e549a8136c2599c12cb",
+    "versions": {
+      "normalization": "2.0.0",
+      "classification": "2.0.0",
+      "selection": "2.0.0",
+      "cohort": "2.0.0",
+      "rate": "2.0.0",
+      "capacity": "2.0.0"
+    },
+    "sourceDomain": {
+      "historyStartQuarter": "2023-Q2",
+      "firstPublishedDate": "2013-04-10",
+      "throughDate": "2023-12-31",
+      "evidence": [
+        {
+          "id": "sample-fictional-evidence",
+          "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+          "url": "https://example.org/sample-evidence"
+        }
+      ]
+    },
+    "provenance": {
+      "label": "SAMPLE: wholly fictional aggregate values; no actual drive records",
+      "credit": "Contract design acknowledges Backblaze Drive Stats; these values are fictional",
+      "url": "https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data"
+    },
+    "selection": {
+      "contextModelIds": [
+        "sample-seed-hdd",
+        "sample-context-only-hdd",
+        "sample-new-vendor-hdd"
+      ],
+      "analysisModelIds": [
+        "sample-seed-hdd",
+        "sample-new-vendor-hdd"
+      ],
+      "purchaseDefaultModelIds": [
+        "sample-new-vendor-hdd"
+      ],
+      "historicalReferenceModelIds": [
+        "sample-seed-hdd"
+      ],
+      "positiveSeed": {
+        "version": "2.0.0",
+        "asOfQuarter": "2023-Q4",
+        "patternsSha256": "1ea5347443e21768588a1f5902a3ed25dc760ef12f8bb5ce11d802a2ca181513",
+        "modelIds": [
+          "sample-seed-hdd",
+          "sample-context-only-hdd"
+        ],
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      }
+    },
+    "coverage": [
+      {
+        "quarter": "2023-Q2",
+        "status": "complete",
+        "expectedDays": 91,
+        "observedDays": 91,
+        "firstObservedDate": "2023-04-01",
+        "lastObservedDate": "2023-06-30",
+        "knownObservationRows": 900900,
+        "reason": "Sample: every calendar date represented",
+        "datacenterFieldAvailable": false,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      },
+      {
+        "quarter": "2023-Q3",
+        "status": "complete",
+        "expectedDays": 92,
+        "observedDays": 92,
+        "firstObservedDate": "2023-07-01",
+        "lastObservedDate": "2023-09-30",
+        "knownObservationRows": 929200,
+        "reason": "Sample: every calendar date represented",
+        "datacenterFieldAvailable": true,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      },
+      {
+        "quarter": "2023-Q4",
+        "status": "complete",
+        "expectedDays": 92,
+        "observedDays": 92,
+        "firstObservedDate": "2023-10-01",
+        "lastObservedDate": "2023-12-31",
+        "knownObservationRows": 947600,
+        "reason": "Sample: every calendar date represented",
+        "datacenterFieldAvailable": true,
+        "evidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ]
+      }
+    ],
+    "inventory": [
+      {
+        "modelId": "sample-seed-hdd",
+        "vendor": "Sample Established",
+        "modelNumber": "SAMPLE-SEED-HDD",
+        "rawAliases": [
+          "SAMPLE-SEED-HDD"
+        ],
+        "mediaClass": "hdd",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": true,
+        "capacityTB": 8.0,
+        "history": [
+          {
+            "quarter": "2023-Q2",
+            "quarterCount": 2200,
+            "knownIdentityLowerBound": 2200,
+            "knownFailures": 1,
+            "knownDriveDays": 200200,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q3",
+            "quarterCount": 2300,
+            "knownIdentityLowerBound": 2300,
+            "knownFailures": 1,
+            "knownDriveDays": 211600,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q4",
+            "quarterCount": 2400,
+            "knownIdentityLowerBound": 2400,
+            "knownFailures": 1,
+            "knownDriveDays": 220800,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2023-Q2",
+        "firstProvenThresholdInDeclaredHistory": "2023-Q2",
+        "firstCompleteQualifyingInDeclaredHistory": "2023-Q2",
+        "reportingAnchorQuarter": "2023-Q2",
+        "earlierQualificationNotExcluded": false,
+        "anchorSearchComplete": true,
+        "recordedHistoryComplete": true,
+        "lifetimeExposureComplete": false
+      },
+      {
+        "modelId": "sample-context-only-hdd",
+        "vendor": "Sample Established",
+        "modelNumber": "SAMPLE-CONTEXT-ONLY-HDD",
+        "rawAliases": [
+          "SAMPLE-CONTEXT-ONLY-HDD"
+        ],
+        "mediaClass": "hdd",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": true,
+        "capacityTB": 4.0,
+        "history": [
+          {
+            "quarter": "2023-Q2",
+            "quarterCount": 100,
+            "knownIdentityLowerBound": 100,
+            "knownFailures": 1,
+            "knownDriveDays": 9100,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q3",
+            "quarterCount": 100,
+            "knownIdentityLowerBound": 100,
+            "knownFailures": 1,
+            "knownDriveDays": 9200,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q4",
+            "quarterCount": 100,
+            "knownIdentityLowerBound": 100,
+            "knownFailures": 1,
+            "knownDriveDays": 9200,
+            "thresholdProof": null,
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2023-Q2",
+        "firstProvenThresholdInDeclaredHistory": null,
+        "firstCompleteQualifyingInDeclaredHistory": null,
+        "reportingAnchorQuarter": null,
+        "earlierQualificationNotExcluded": false,
+        "anchorSearchComplete": true,
+        "recordedHistoryComplete": true,
+        "lifetimeExposureComplete": false
+      },
+      {
+        "modelId": "sample-new-vendor-hdd",
+        "vendor": "Sample New Vendor",
+        "modelNumber": "SAMPLE-NEW-VENDOR-HDD",
+        "rawAliases": [
+          "SAMPLE-NEW-VENDOR-HDD"
+        ],
+        "mediaClass": "hdd",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": false,
+        "capacityTB": 12.0,
+        "history": [
+          {
+            "quarter": "2023-Q2",
+            "quarterCount": 2100,
+            "knownIdentityLowerBound": 2100,
+            "knownFailures": 1,
+            "knownDriveDays": 191100,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q3",
+            "quarterCount": 2200,
+            "knownIdentityLowerBound": 2200,
+            "knownFailures": 1,
+            "knownDriveDays": 202400,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q4",
+            "quarterCount": 2300,
+            "knownIdentityLowerBound": 2300,
+            "knownFailures": 1,
+            "knownDriveDays": 211600,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2023-Q2",
+        "firstProvenThresholdInDeclaredHistory": "2023-Q2",
+        "firstCompleteQualifyingInDeclaredHistory": "2023-Q2",
+        "reportingAnchorQuarter": "2023-Q2",
+        "earlierQualificationNotExcluded": false,
+        "anchorSearchComplete": true,
+        "recordedHistoryComplete": true,
+        "lifetimeExposureComplete": false
+      },
+      {
+        "modelId": "sample-ssd",
+        "vendor": "Sample Solid",
+        "modelNumber": "SAMPLE-SSD",
+        "rawAliases": [
+          "SAMPLE-SSD"
+        ],
+        "mediaClass": "ssd",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": false,
+        "capacityTB": 1.0,
+        "history": [
+          {
+            "quarter": "2023-Q2",
+            "quarterCount": 3000,
+            "knownIdentityLowerBound": 3000,
+            "knownFailures": 1,
+            "knownDriveDays": 273000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q3",
+            "quarterCount": 3000,
+            "knownIdentityLowerBound": 3000,
+            "knownFailures": 1,
+            "knownDriveDays": 276000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q4",
+            "quarterCount": 3000,
+            "knownIdentityLowerBound": 3000,
+            "knownFailures": 1,
+            "knownDriveDays": 276000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2023-Q2",
+        "firstProvenThresholdInDeclaredHistory": "2023-Q2",
+        "firstCompleteQualifyingInDeclaredHistory": "2023-Q2",
+        "reportingAnchorQuarter": "2023-Q2",
+        "earlierQualificationNotExcluded": false,
+        "anchorSearchComplete": true,
+        "recordedHistoryComplete": true,
+        "lifetimeExposureComplete": false
+      },
+      {
+        "modelId": "sample-unclassified",
+        "vendor": "Unknown",
+        "modelNumber": "SAMPLE-UNCLASSIFIED",
+        "rawAliases": [
+          "SAMPLE-UNCLASSIFIED"
+        ],
+        "mediaClass": "unclassified",
+        "classificationEvidence": [
+          {
+            "id": "sample-fictional-evidence",
+            "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+            "url": "https://example.org/sample-evidence"
+          }
+        ],
+        "seedMatch": false,
+        "capacityTB": 2.0,
+        "history": [
+          {
+            "quarter": "2023-Q2",
+            "quarterCount": 2500,
+            "knownIdentityLowerBound": 2500,
+            "knownFailures": 1,
+            "knownDriveDays": 227500,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q3",
+            "quarterCount": 2500,
+            "knownIdentityLowerBound": 2500,
+            "knownFailures": 1,
+            "knownDriveDays": 230000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          },
+          {
+            "quarter": "2023-Q4",
+            "quarterCount": 2500,
+            "knownIdentityLowerBound": 2500,
+            "knownFailures": 1,
+            "knownDriveDays": 230000,
+            "thresholdProof": "complete_exact_count",
+            "evidence": [
+              {
+                "id": "sample-fictional-evidence",
+                "sha256": "82bdfabadb0a7ee696396b1267a0bce67eb1578421d352a4f4997a3c0dab357d",
+                "url": "https://example.org/sample-evidence"
+              }
+            ]
+          }
+        ],
+        "firstObservedInDeclaredHistory": "2023-Q2",
+        "firstProvenThresholdInDeclaredHistory": "2023-Q2",
+        "firstCompleteQualifyingInDeclaredHistory": "2023-Q2",
+        "reportingAnchorQuarter": "2023-Q2",
+        "earlierQualificationNotExcluded": false,
+        "anchorSearchComplete": true,
+        "recordedHistoryComplete": true,
+        "lifetimeExposureComplete": false
+      }
+    ]
+  },
+  "contextSha256": "6b6b66637e9af44da2e006b4086dbf771959509d4fc869fbf5697d63bc37ff11",
+  "matrix": {
+    "path": "sample-modern-locations-matrix.7031edaaf794e1bc861c087cedd71864cdec7dce4cb9fd25b16eeb13bc1ffcf6.json",
+    "sha256": "7031edaaf794e1bc861c087cedd71864cdec7dce4cb9fd25b16eeb13bc1ffcf6",
+    "sizeBytes": 36831
+  },
+  "quarters": [
+    {
+      "quarter": "2023-Q2",
+      "status": "complete",
+      "payload": {
+        "path": "sample-modern-locations-2023-Q2.e83637e21c4bf2e4f82bc89b22b4a42b5777bf2723bfe3829f07bc1b0a707f8f.json",
+        "sha256": "e83637e21c4bf2e4f82bc89b22b4a42b5777bf2723bfe3829f07bc1b0a707f8f",
+        "sizeBytes": 3883
+      }
+    },
+    {
+      "quarter": "2023-Q3",
+      "status": "complete",
+      "payload": {
+        "path": "sample-modern-locations-2023-Q3.88117ad590e90a1c6d162c3a2c05ba420ce1b3c9d8d621bc6a188659c863d9da.json",
+        "sha256": "88117ad590e90a1c6d162c3a2c05ba420ce1b3c9d8d621bc6a188659c863d9da",
+        "sizeBytes": 3900
+      }
+    },
+    {
+      "quarter": "2023-Q4",
+      "status": "complete",
+      "payload": {
+        "path": "sample-modern-locations-2023-Q4.40b5c4cf117e99602397c975bf386c7402f826906250c5d3bacfab24d445aa14.json",
+        "sha256": "40b5c4cf117e99602397c975bf386c7402f826906250c5d3bacfab24d445aa14",
+        "sizeBytes": 3889
+      }
+    }
+  ]
+}

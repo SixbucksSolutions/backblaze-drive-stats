@@ -303,7 +303,7 @@ actionable comparisons of purchase-relevant, still-produced models. The regex se
 is a starting interest signal; neither a match nor continued deployment proves
 current manufacturing or availability. Keep all-source discovery and old reference
 models, while separating their cache/inventory scope from the first purchase-focused
-published cohort. Source/domain completion #0023 is ready for owner review:
+published cohort. Source/domain completion #0023 is owner-Completed:
 computation reaches the oldest published observations, with retention and
 independent mirror acceptance passed. Production integration remains separately gated under #0017. The prior
 2013-first audit recommendation is superseded. Language quality gates (#0022)
@@ -408,10 +408,13 @@ The final source workset #0074–#0083 has now completed computation; see the
 captures within the published span and 99 pre-publication calendar days remain
 unavailable. Unpublished 2013 Q1 has no payload dataset or warm-cache count.
 
-#0023 and the final ten source cards are ready for owner review after B2
-retention/readback, restore, preferred publication, independent local-mirror and
-coverage acceptance passed. No further Ready for Work source cards follow this
-handoff. Owner review remains separate from technical verification. #0017 remains In Progress for production integration.
+#0023 and the final source cards are now owner-Completed after verified retention
+and source/domain reconciliation. #0063 remains owner-Completed research.
+#0017 remains In Progress for production integration. The
+[remaining delivery plan](remaining-delivery-plan.md) records #0084–#0095, including
+one ticket per Explore view; the first shared data-contract prerequisite is
+being worked to handoff before downstream implementation. See the
+[proposed v2 contracts](production-data-v2.md) for the versioned policy changes.
 
 Scope handoff: #0063 is the independently reviewed research/candidate proposal
 for the 22-model cohort and its earliest proven threshold evidence in loaded
@@ -493,6 +496,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r030**; r001–r029 are retained as history. Planned workers
+assignment revision is **r031**; r001–r030 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

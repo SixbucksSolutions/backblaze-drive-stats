@@ -1,0 +1,151 @@
+{
+  "artifactType": "supporting_quarter",
+  "contractVersion": "2.0.0",
+  "contextSha256": "87756b8eb0b2fb6c7abfafb6b9e7b3935b3dd09e9e3117939ef5a04d92f7a415",
+  "snapshotId": "sample-prefix-gap-reentry",
+  "asOfQuarter": "2014-Q2",
+  "quarter": "2013-Q2",
+  "status": "partial",
+  "capacityBasis": "observed-identity-capacity-mode-v2",
+  "scopes": {
+    "selected_hdd": {
+      "models": [
+        {
+          "modelId": "sample-seed-hdd",
+          "count": null,
+          "new": null,
+          "capacityTB": null
+        },
+        {
+          "modelId": "sample-context-only-hdd",
+          "count": null,
+          "new": null,
+          "capacityTB": null
+        },
+        {
+          "modelId": "sample-new-vendor-hdd",
+          "count": null,
+          "new": null,
+          "capacityTB": null
+        }
+      ],
+      "totals": {
+        "count": null,
+        "new": null,
+        "capacityTB": null
+      },
+      "manufacturers": [
+        {
+          "vendor": "Sample Established",
+          "count": null,
+          "new": null,
+          "capacityTB": null,
+          "populationShare": null,
+          "newShare": null,
+          "capacityShare": null
+        },
+        {
+          "vendor": "Sample New Vendor",
+          "count": null,
+          "new": null,
+          "capacityTB": null,
+          "populationShare": null,
+          "newShare": null,
+          "capacityShare": null
+        }
+      ],
+      "capacityDeltaTB": null,
+      "capacityDeltaReason": "current_incomplete"
+    },
+    "all_supplied": {
+      "models": [
+        {
+          "modelId": "sample-seed-hdd",
+          "count": null,
+          "new": null,
+          "capacityTB": null
+        },
+        {
+          "modelId": "sample-context-only-hdd",
+          "count": null,
+          "new": null,
+          "capacityTB": null
+        },
+        {
+          "modelId": "sample-new-vendor-hdd",
+          "count": null,
+          "new": null,
+          "capacityTB": null
+        },
+        {
+          "modelId": "sample-ssd",
+          "count": null,
+          "new": null,
+          "capacityTB": null
+        },
+        {
+          "modelId": "sample-unclassified",
+          "count": null,
+          "new": null,
+          "capacityTB": null
+        }
+      ],
+      "totals": {
+        "count": null,
+        "new": null,
+        "capacityTB": null
+      },
+      "manufacturers": [
+        {
+          "vendor": "Sample Established",
+          "count": null,
+          "new": null,
+          "capacityTB": null,
+          "populationShare": null,
+          "newShare": null,
+          "capacityShare": null
+        },
+        {
+          "vendor": "Sample New Vendor",
+          "count": null,
+          "new": null,
+          "capacityTB": null,
+          "populationShare": null,
+          "newShare": null,
+          "capacityShare": null
+        },
+        {
+          "vendor": "Sample Solid",
+          "count": null,
+          "new": null,
+          "capacityTB": null,
+          "populationShare": null,
+          "newShare": null,
+          "capacityShare": null
+        },
+        {
+          "vendor": "Unknown",
+          "count": null,
+          "new": null,
+          "capacityTB": null,
+          "populationShare": null,
+          "newShare": null,
+          "capacityShare": null
+        }
+      ],
+      "capacityDeltaTB": null,
+      "capacityDeltaReason": "current_incomplete"
+    }
+  },
+  "datacenters": {
+    "fieldAvailable": false,
+    "knownLocationPopulationShare": null,
+    "locations": [
+      {
+        "name": "Unknown",
+        "count": null,
+        "capacityTB": null
+      }
+    ]
+  }
+}

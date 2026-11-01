@@ -41,6 +41,10 @@ the production versions are `flagship-metrics-v1`, `calendar-offset-v1`,
 `prior-eligible-v1` and `shared-scales-v1`. Golden numeric parity does not imply
 that unencoded workbook calendar/coverage facts have been proved.
 
+The [v2 production proposal](production-data-v2.md) under #0084 preserves these
+v1 schemas/fixtures while proposing separate observed-history rate and reporting-
+anchor semantics. It does not change the current generator or published data.
+
 ## Seed selection, quarterly discovery, identity and provenance
 
 Owner clarification on 2026-10-30 supersedes the original closed-selection rule:
@@ -143,9 +147,12 @@ For quarter `q`, define ordinal `4 * year + quarter - 1` and
 Every model has exactly one cell for each relative index from 1 through the common
 `display.maxRelativeQuarter`, ordered and without duplicates. Each cell's actual
 quarter follows the formula, even outside the selected snapshot. The common end
-is at least `max(24, longest anchor-to-cutoff span)`. Guides sit **after** quarters
-20 and 24, labeled deployment-history references; the default adjustable guide is
-after 20. Short histories still expose the distance to both guides. This is model
+is at least `max(24, longest anchor-to-cutoff span)`. The historical v1 guide
+description below was superseded for the reviewed UI: the current accepted
+[flagship plan](flagship-afr-plan.md) uses one guide after the selected relative
+year (1–6), default year 6 / quarter 24. V2 carries that current display choice.
+The original v1 fixture/schema description used guides after quarters 20 and 24
+and default after 20; those immutable reference artifacts are preserved. Short histories still expose the distance to both guides. This is model
 deployment history, not each disk's physical age or a conditional survival curve.
 
 | `state` | Eligibility / coverage | Display and inspector meaning |

@@ -1,0 +1,27 @@
+{
+  "artifactType": "generation_index",
+  "contractVersion": "2.0.0",
+  "latestSnapshotId": "sample-modern-locations",
+  "snapshots": [
+    {
+      "snapshotId": "sample-prefix-gap-reentry",
+      "asOfQuarter": "2014-Q2",
+      "sourceManifestSha256": "c1e341c9731b7ad59911035072ee97531e4ecf7ad415e81581a2f22b367f2013",
+      "descriptor": {
+        "path": "sample-prefix-gap-reentry-descriptor.077d3fe43b4418a06a701a1a23cb8412f314f80d3683606117ed1a2ce8c59ec9.json",
+        "sha256": "077d3fe43b4418a06a701a1a23cb8412f314f80d3683606117ed1a2ce8c59ec9",
+        "sizeBytes": 28516
+      }
+    },
+    {
+      "snapshotId": "sample-modern-locations",
+      "asOfQuarter": "2023-Q4",
+      "sourceManifestSha256": "ad90687ba50feaf49f3021ae3cdc34b5d9f0753e29380e549a8136c2599c12cb",
+      "descriptor": {
+        "path": "sample-modern-locations-descriptor.12773e16d9c63af69ed8b96e9d381194da37328d1327c5ac4beca65d9f6350ff.json",
+        "sha256": "12773e16d9c63af69ed8b96e9d381194da37328d1327c5ac4beca65d9f6350ff",
+        "sizeBytes": 18342
+      }
+    }
+  ]
+}

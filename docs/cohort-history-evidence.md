@@ -11,6 +11,12 @@ The [schema](../contracts/cohort-history-evidence-v1.schema.json) and
 requirements reviewable without processing daily data. They validate internal
 consistency; they cannot establish the truth or completeness of upstream evidence.
 
+This is the preserved v1 proposal and its earlier bounded-search context. The
+owner has since accepted #0063’s research and #0023’s complete published-source
+census. The [v2 production proposal](production-data-v2.md) under #0084 handles
+partial threshold proofs and producer/consumer integration; its acceptance is
+separate from the historical evidence fixtures here.
+
 ## Four distinct populations
 
 - **All-source discovery inventory:** every supplied canonical model before seed

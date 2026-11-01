@@ -15,10 +15,10 @@ or warm-cache count; partial full-quarter Count and AFR remain null.
 
 Source computation, independent payload reviews, B2 readback/reuse, isolated
 restore, preferred publication and independent local-mirror acceptance passed.
-#0023 and its final ten source cards are ready for owner review; #0017 remains
-In Progress on production integration. #0063 is owner-Completed
+Terry accepted #0023 and the final source cards. #0017 remains In Progress on
+production integration through the [scoped remainder queue](remaining-delivery-plan.md). #0063 is owner-Completed
 research, preserving its candidate and partial-threshold evidence. Current
-assignments are r030; no further Ready for Work source cards follow this handoff.
+assignments are r031; no further Ready for Work source cards follow this handoff.
 
 ## Earlier pilot and accepted worksets
 
@@ -164,7 +164,7 @@ partial. Do not infer complete quarters from an advertised file count.
 Owner clarification on 2026-10-31 supersedes the former 2013-first starting order:
 work **newest to oldest**, delivering current NAS purchase comparisons before
 complete historical fleet coverage. #0022's language quality gates precede further
-#0017 implementation. Source-domain completion under #0023 is ready for owner review; computation,
+#0017 implementation. Source-domain completion under #0023 is owner-Completed; computation,
 retention, local mirror and independent coverage reconciliation passed.
 
 - Reuse the retained newest-quarter cache first. Regex matches are positive

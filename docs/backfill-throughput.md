@@ -48,9 +48,8 @@ Current computational coverage is **53 datasets / 54 requested periods**,
 observations**; 13 problematic captures within the published span and 99
 pre-publication days remain unavailable. Unpublished 2013 Q1 has no dataset or
 warm-cache count. B2 readback/reuse, isolated restore, preferred publication and
-independent local-mirror acceptance passed. #0023 and its ten source cards are
-ready for owner review; no further source cards remain queued. #0017 remains In Progress for production
-integration; #0063 is owner-Completed research. The current rolling plan is r030.
+independent local-mirror acceptance passed. Terry accepted #0023 and its source cards; no further source cards remain queued. #0017 remains In Progress for production
+integration; #0063 is owner-Completed research. The current rolling plan is r031.
 
 The [completed four-quarter recovery benchmark](parallel-quarter-benchmark.md)
 supersedes this initial sizing proposal. Four audits overlapped with a sampled

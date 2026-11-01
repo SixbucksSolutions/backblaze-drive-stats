@@ -8,6 +8,11 @@ Keep the six existing report families. The flagship is cumulative reliability;
 the other five are calendar-quarter aggregations. This specification reconciles
 their populations explicitly rather than claiming their legacy totals match.
 
+The [v2 proposal](production-data-v2.md) under #0084 separates the supporting HDD
+context from the flagship analysis subset and adds explicit generation binding.
+The v1 schema and examples below retain their original semantics until the
+separate proposal is accepted and implemented by its consumer tickets.
+
 ## Legacy behavior and declared corrections
 
 | Script | Existing scope and aggregation | Future contract decision |
