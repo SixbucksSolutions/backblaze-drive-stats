@@ -76,7 +76,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r048**. The
+Current rolling author/reviewer assignments are in private plan **r049**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
@@ -130,6 +130,12 @@ documents the durable time-warp intent in
 [project navigation](project-navigation.md); #0108 implements
 [static presentation loading](static-page-loading-0108.md). Their new handoffs
 await Terry's review; they are not covered by the earlier blanket approval.
+
+Terry explicitly requested production publication for #0108's review. The verified
+`e001e25` static bundle is now live at
+<https://backblaze-drive-stats-analysis.pages.dev/>. The publication receipt retains
+the accepted #0104 deployment as the rollback target; publication does not mark
+#0108 approved or Completed.
 
 The remaining private roster lists owner-created #0109 for a future caching turn,
 then #0101's dedicated, explicitly held turn. #0109 has only been read for intake.
