@@ -383,7 +383,7 @@ The owner expanded the objective to accurate first >=2,000 starts for every
 2026 Q2 AFR analysis model and clarified **ten source quarters per turn**.
 Reviewed #0063 research identifies ST12000NM0007, ST8000DM002 and ST8000NM0055
 as the older-source frontier. Source cards #0064–#0073 (2017 Q4 through 2015 Q3)
-were then queued for the following workset. #0017/#0063 retain production cohort/history integration
+were then queued for the following workset. #0017 retains production cohort/history integration
 and correction of unjustified completeness claims; no production matrix changed.
 
 That source workset has now [completed the next ten-quarter backfill](ten-quarter-epoch-backfill.md),
@@ -396,6 +396,16 @@ global-inception or complete cumulative-history certifications. The evidence
 amendment is reviewable; production selection/history behavior has not changed.
 The remaining ten source cards #0074–#0083 (2015 Q2 through 2013 Q1) are Ready for
 Work for the next turn. No additional source quarter started this turn.
+
+Scope handoff: #0063 is the independently reviewed research/candidate proposal
+for the 22-model cohort and its earliest proven threshold evidence in loaded
+history. It is ready for owner review, including the explicit partial-threshold
+proposal. It does not certify globally first starts or approve a production
+cohort. All remaining production application belongs to #0017: cohort/contract
+acceptance and versioning, schema/generator/UI integration, accurate relative
+quarters, source-gap/null handling, truthful completeness flags, tests and fresh
+independent implementation review. Those duties were transferred explicitly;
+they were not marked finished by the research handoff.
 
 The original provisional quarter queue reached 2019 Q1. The initial rule was to
 find a fully covered quarter with zero HUH721212ALN604 observations across its
@@ -467,6 +477,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r027**; r001–r026 are retained as history. Planned workers
+assignment revision is **r028**; r001–r027 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

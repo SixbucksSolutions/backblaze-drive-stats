@@ -46,21 +46,24 @@ in 2019 Q1 within this searched window. Global inception remains unproved.
 The owner expanded the target to every 2026 Q2 AFR model and capped source work
 at ten quarters per turn. #0063 records the reviewed cohort/frontier research;
 source cards #0064–#0073 (2017 Q4 through 2015 Q3) were queued for the following
-authorized workset. #0017/#0063 remain active; no new production matrix is published.
+authorized workset. #0017 retains implementation; #0063 supplies the completed
+research/candidate review packet. No new production matrix is published.
 
 The authorized [following ten-quarter workset](ten-quarter-epoch-backfill.md)
 now reaches 2015 Q3. Preferred coverage is 44 quarters, with 38 complete and six
 explicit partials. Reviewed r003 research records the older Seagate threshold
 evidence, including a partial lower bound that proves >=2,000 without supplying
-an exact full-quarter Count or AFR. #0017/#0063 retain production integration
-and policy/coverage claims; no new matrix is published by this source work.
+an exact full-quarter Count or AFR. #0063's research/proposal is ready for owner
+review; #0017 retains production integration and implementation of accepted
+policy/coverage claims. No new matrix is published by this source work.
 Cards #0074–#0083, 2015 Q2 through 2013 Q1, remain Ready for Work and unstarted.
 Their oldest-source inventory must distinguish absent published coverage from
 observed zero populations and account for shared annual archives.
 
 The initial bounded search required a complete quarter with zero observations
-of exact HUH721212ALN604. Complete 2018 Q2 now meets that stopping rule; broader
-all-model eligibility research continues under #0063. Keep first observation
+of exact HUH721212ALN604. Complete 2018 Q2 now meets that stopping rule;
+the completed all-model research is recorded in #0063. Source-domain census and
+production application continue under #0017. Keep first observation
 and first >=2,000-drive quarter separate. The old workbook compresses retained
 positions and does not establish its calendar anchor. One zero quarter is a
 bounded search endpoint, not proof against older deployments or reentry.

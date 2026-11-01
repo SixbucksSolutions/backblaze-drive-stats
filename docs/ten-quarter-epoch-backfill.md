@@ -101,8 +101,10 @@ quarter in the retained data is 2017 Q3 (14,433).
 The existing v1 evidence contract requires a complete qualifying quarter. r003
 therefore proposes a reviewed partial-threshold evidence amendment; it does not
 silently change production eligibility or shift the model's epoch two quarters
-later. #0063/#0017 retain that integration work, the pinned cohort decision and
-correction of unjustified `anchorSearchComplete` claims. No new production AFR
+later. #0063 is the completed research/candidate proposal for owner review.
+#0017 retains production application of the cohort/history decision, contract,
+schema, generator and UI integration, and correction of unjustified
+`anchorSearchComplete` claims. No new production AFR
 matrix or full-domain/cumulative-history certification is published here.
 
 ## Measurements and preservation
