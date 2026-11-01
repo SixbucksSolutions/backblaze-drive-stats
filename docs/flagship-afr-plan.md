@@ -383,8 +383,19 @@ The owner expanded the objective to accurate first >=2,000 starts for every
 2026 Q2 AFR analysis model and clarified **ten source quarters per turn**.
 Reviewed #0063 research identifies ST12000NM0007, ST8000DM002 and ST8000NM0055
 as the older-source frontier. Source cards #0064–#0073 (2017 Q4 through 2015 Q3)
-are Ready for Work only. #0017/#0063 retain production cohort/history integration
+were then queued for the following workset. #0017/#0063 retain production cohort/history integration
 and correction of unjustified completeness claims; no production matrix changed.
+
+That source workset has now [completed the next ten-quarter backfill](ten-quarter-epoch-backfill.md),
+reaching 2015 Q3. The preferred catalog has 44 quarters, 38 complete and six
+explicit partials. r003 research keeps the same 22-model candidate and separates
+ST8000NM0055's proven partial >=2,000 threshold in 2017 Q1 from its first complete
+qualifier in 2017 Q3. ST8000DM002 reaches the threshold in complete 2016 Q2;
+ST12000NM0007 does so in complete 2017 Q4. These searched-window facts are not
+global-inception or complete cumulative-history certifications. The evidence
+amendment is reviewable; production selection/history behavior has not changed.
+The remaining ten source cards #0074–#0083 (2015 Q2 through 2013 Q1) are Ready for
+Work for the next turn. No additional source quarter started this turn.
 
 The original provisional quarter queue reached 2019 Q1. The initial rule was to
 find a fully covered quarter with zero HUH721212ALN604 observations across its
@@ -456,6 +467,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r026**; r001–r025 are retained as history. Planned workers
+assignment revision is **r027**; r001–r026 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

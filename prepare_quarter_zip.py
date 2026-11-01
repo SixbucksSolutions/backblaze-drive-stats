@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 import csv
 import hashlib
 import io
@@ -112,8 +113,23 @@ def read_day(archive: zipfile.ZipFile, member: zipfile.ZipInfo) -> tuple[pl.Data
 
 
 def prepare(
-    input_zip: Path, output_dir: Path, *, source_url: str | None = None, overwrite: bool = False
+    input_zip: Path,
+    output_dir: Path,
+    *,
+    source_url: str | None = None,
+    overwrite: bool = False,
+    quarter: str | None = None,
 ) -> dict:
+    expected_names: set[str] | None = None
+    if quarter is not None:
+        if not re.fullmatch(r"[0-9]{4}-Q[1-4]", quarter) or quarter.startswith("0000"):
+            raise ValueError("quarter must be YYYY-Qn with a valid year and quarter 1-4")
+        year, number = int(quarter[:4]), int(quarter[-1])
+        expected_names = {
+            f"{date(year, month, day).isoformat()}.csv"
+            for month in range((number - 1) * 3 + 1, number * 3 + 1)
+            for day in range(1, calendar.monthrange(year, month)[1] + 1)
+        }
     if source_url is not None:
         parsed = urlsplit(source_url)
         if (
@@ -129,6 +145,15 @@ def prepare(
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
     with zipfile.ZipFile(input_zip) as archive:
         members = daily_members(archive)
+        if expected_names is not None:
+            # Validate all archive names first, but never open an unselected CSV body.
+            members = [
+                member
+                for member in members
+                if PurePosixPath(member.filename).name in expected_names
+            ]
+            if {PurePosixPath(member.filename).name for member in members} != expected_names:
+                raise ValueError("Archive does not contain the complete selected quarter calendar")
         targets = [
             output_dir / (PurePosixPath(member.filename).stem + ".parquet") for member in members
         ]
@@ -188,6 +213,8 @@ def prepare(
             "datacenterAvailable": all(record["datacenterAvailable"] for record in records),
             "files": records,
         }
+        if quarter is not None:
+            metadata["selectedQuarter"] = quarter
         descriptor, temporary = tempfile.mkstemp(
             prefix=".import-metadata.", suffix=".tmp", dir=output_dir
         )
@@ -206,11 +233,16 @@ def main() -> None:
     parser.add_argument("--input-zip", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--source-url")
+    parser.add_argument("--quarter", help="Select a complete calendar quarter (YYYY-Qn)")
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
     try:
         metadata = prepare(
-            args.input_zip, args.output_dir, source_url=args.source_url, overwrite=args.overwrite
+            args.input_zip,
+            args.output_dir,
+            source_url=args.source_url,
+            overwrite=args.overwrite,
+            quarter=args.quarter,
         )
     except Exception:
         parser.exit(

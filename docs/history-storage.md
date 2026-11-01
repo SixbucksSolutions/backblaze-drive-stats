@@ -1,9 +1,9 @@
 # Historical cache transfer and snapshot publication
 
 Current preferred processing storage is **`drive-stats/cache-v2`**, discovered
-through **`drive-stats/current-cache.json`**. Its verified 34-quarter catalog
-covers 2018 Q1 through 2026 Q2: 31 complete quarters and three explicit partials
-(2018 Q1, 2019 Q2 and 2022 Q4). Current
+through **`drive-stats/current-cache.json`**. Its verified 44-quarter catalog
+covers 2015 Q3 through 2026 Q2: 38 complete quarters and six explicit partials
+(2015 Q4, 2017 Q1, 2017 Q2, 2018 Q1, 2019 Q2 and 2022 Q4). Current
 local analysis uses `data/preferred-cache-v2/`; private runtime discovery is
 `data/preferred-cache.json`. `cache-v1` and original local working inputs remain
 legacy recovery evidence. See the [migration/repack report](ten-item-backfill-and-repack.md).
@@ -11,6 +11,10 @@ The [ten-quarter append](ten-quarter-origin-backfill.md) retains all prior
 references and transfers only new payloads, then publishes a new immutable
 catalog behind the same preferred pointer. A catalog extension does not require
 another storage generation or reprocessing old payloads.
+The [next epoch backfill](ten-quarter-epoch-backfill.md) appends ten more source
+quarters, with one exact isolated-root exception preserving the failed original
+2017 Q2 projections. Published object keys remain canonical. Serial local restore
+and mirror copies retain all fixed-root and immutable-write guards.
 
 Implemented for #0016 using local storage first. On 2026-10-31, #0056 verified
 the adapter against the owner's private Backblaze B2 bucket with a dedicated,

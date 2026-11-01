@@ -45,8 +45,18 @@ complete 2018 Q2, first observed on 2018-07-12 and first reaches 2,000 identitie
 in 2019 Q1 within this searched window. Global inception remains unproved.
 The owner expanded the target to every 2026 Q2 AFR model and capped source work
 at ten quarters per turn. #0063 records the reviewed cohort/frontier research;
-the next ten source cards #0064–#0073 cover 2017 Q4 through 2015 Q3 and are queued
-only. #0017/#0063 remain active; no new production matrix is published.
+source cards #0064–#0073 (2017 Q4 through 2015 Q3) were queued for the following
+authorized workset. #0017/#0063 remain active; no new production matrix is published.
+
+The authorized [following ten-quarter workset](ten-quarter-epoch-backfill.md)
+now reaches 2015 Q3. Preferred coverage is 44 quarters, with 38 complete and six
+explicit partials. Reviewed r003 research records the older Seagate threshold
+evidence, including a partial lower bound that proves >=2,000 without supplying
+an exact full-quarter Count or AFR. #0017/#0063 retain production integration
+and policy/coverage claims; no new matrix is published by this source work.
+Cards #0074–#0083, 2015 Q2 through 2013 Q1, remain Ready for Work and unstarted.
+Their oldest-source inventory must distinguish absent published coverage from
+observed zero populations and account for shared annual archives.
 
 The initial bounded search required a complete quarter with zero observations
 of exact HUH721212ALN604. Complete 2018 Q2 now meets that stopping rule; broader
@@ -144,8 +154,8 @@ complete historical fleet coverage. #0022's language quality gates precede furth
   defaults and historical references in the #0017 contract amendment. A UI-only
   filter cannot remove the current generator's older-cohort history obligations.
 - Work backward in bounded batches. Verified processing coverage now reaches
-  2018 Q1, retaining explicit 2018 Q1, 2019 Q2 and 2022 Q4 source gaps.
-  The next ten queued cards (#0064–#0073) cover 2017 Q4 through 2015 Q3.
+  2015 Q3, retaining six explicit incomplete quarters rather than inventing rows.
+  The next ten queued cards (#0074–#0083) cover 2015 Q2 through 2013 Q1.
   Recheck lane, prerequisite, source and resource gates before launch; cap
   source execution at ten quarters per turn.
 - Establish each candidate's anchor and pre-eligibility exposure honestly. The

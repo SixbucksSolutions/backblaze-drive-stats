@@ -40,6 +40,9 @@ through 2020 Q3 and publish a verified preferred cache generation with the 2026 
 The [ten-quarter origin search](docs/ten-quarter-origin-backfill.md) reaches 2018 Q1,
 records two more source defects, separates ALN604's first observation from eligibility,
 and measures the six-column daily Parquet at about 1.6% of original CSV size.
+The [following ten-quarter epoch backfill](docs/ten-quarter-epoch-backfill.md) reaches
+2015 Q3, adds safe annual-archive selection and records the three older Seagate
+threshold starts, including explicit partial-data evidence.
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's

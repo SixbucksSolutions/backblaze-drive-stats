@@ -7,7 +7,9 @@ import tempfile
 import unittest
 import warnings
 import zipfile
+from datetime import date, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 import polars as pl
 import pyarrow.parquet as pq
@@ -58,6 +60,7 @@ class ZipImportTests(unittest.TestCase):
             )
             self.assertEqual(metadata["dates"], ["2026-04-01"])
             self.assertEqual(metadata["parquetProfile"], PROFILE_ID)
+            self.assertNotIn("selectedQuarter", metadata)
             self.assertEqual(
                 pq.read_metadata(root / "out/2026-04-01.parquet")
                 .metadata[b"backblaze.parquet_profile"]
@@ -68,6 +71,144 @@ class ZipImportTests(unittest.TestCase):
             self.assertEqual(json.loads(receipt), metadata)
             self.assertNotIn("private-serial", receipt)
             self.assertFalse(list((root / "out").rglob("*.csv")))
+
+    def quarter_entries(self, year=2015, quarter=3):
+        start = date(year, (quarter - 1) * 3 + 1, 1)
+        end = date(year + (quarter == 4), quarter * 3 % 12 + 1, 1)
+        return [
+            (f"annual/{day.isoformat()}.csv", HEADER + ROW.replace("2026-04-01", str(day)))
+            for offset in range((end - start).days)
+            for day in [start + timedelta(days=offset)]
+        ]
+
+    def test_annual_selection_reads_only_selected_bodies_and_preserves_source_identity(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            selected = self.quarter_entries()
+            selected_names = {name for name, _ in selected}
+            start = date(2015, 1, 1)
+            outside = [
+                (f"annual/{day.isoformat()}.csv", b"\xffpoison CSV body")
+                for offset in range(365)
+                for day in [start + timedelta(days=offset)]
+                if f"annual/{day.isoformat()}.csv" not in selected_names
+            ]
+            outside.append(("2014-07-01.csv", b"\xffother-year poison"))
+            archive = self.make_zip(root, selected + outside)
+            original_open = zipfile.ZipFile.open
+
+            def selected_only(archive, member, *args, **kwargs):
+                self.assertIn(member.filename, selected_names)
+                return original_open(archive, member, *args, **kwargs)
+
+            with patch.object(zipfile.ZipFile, "open", autospec=True, side_effect=selected_only):
+                metadata = prepare(
+                    archive,
+                    root / "out",
+                    quarter="2015-Q3",
+                    source_url="https://example.org/annual.zip",
+                )
+            self.assertEqual(metadata["selectedQuarter"], "2015-Q3")
+            self.assertEqual(metadata["dates"], [Path(name).stem for name, _ in selected])
+            self.assertEqual(metadata["fileCount"], 92)
+            self.assertEqual(len(list((root / "out").glob("*.parquet"))), 92)
+            self.assertEqual(metadata["sourceUrl"], "https://example.org/annual.zip")
+            self.assertEqual(
+                metadata["sourceZipSha256"], hashlib.sha256(archive.read_bytes()).hexdigest()
+            )
+            with zipfile.ZipFile(archive) as source:
+                self.assertEqual(
+                    [record["memberCrc32"] for record in metadata["files"]],
+                    [f"{source.getinfo(name).CRC:08x}" for name, _ in selected],
+                )
+            self.assertEqual(json.loads((root / "out/import-metadata.json").read_text()), metadata)
+
+    def test_invalid_quarter_and_incomplete_calendar_never_mutate_outputs(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            output = root / "out"
+            output.mkdir()
+            receipt = output / "import-metadata.json"
+            receipt.write_bytes(b"existing receipt")
+            for quarter in ["2015-Q0", "2015-Q5", "15-Q3", "2015-q3", "0000-Q1", "2015-Q3\n"]:
+                with self.subTest(quarter=quarter), self.assertRaisesRegex(ValueError, "quarter"):
+                    prepare(root / "missing.zip", output, quarter=quarter, overwrite=True)
+                self.assertEqual(receipt.read_bytes(), b"existing receipt")
+            for entries in [self.quarter_entries()[:-1], [("2015-01-01.csv", "poison")]]:
+                archive = self.make_zip(root, entries)
+                with (
+                    patch.object(zipfile.ZipFile, "open", side_effect=AssertionError("body read")),
+                    self.assertRaisesRegex(ValueError, "complete selected quarter"),
+                ):
+                    prepare(archive, output, quarter="2015-Q3", overwrite=True)
+                self.assertEqual(receipt.read_bytes(), b"existing receipt")
+                self.assertEqual(list(output.iterdir()), [receipt])
+                with self.assertRaises(ValueError):
+                    prepare(archive, root / "new", quarter="2015-Q3")
+                self.assertFalse((root / "new").exists())
+
+    def test_quarter_selection_does_not_bypass_archive_name_validation(self):
+        invalid = [
+            [("../2015-01-01.csv", "poison")],
+            [("2015-01-01.csv", "poison"), ("other/2015-01-01.csv", "poison")],
+            [("2015-07-01.csv", "poison")],
+            [("2015-02-30.csv", "poison")],
+        ]
+        for extra in invalid:
+            with self.subTest(extra=extra), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                archive = self.make_zip(root, self.quarter_entries() + extra)
+                with (
+                    patch.object(zipfile.ZipFile, "open", side_effect=AssertionError("body read")),
+                    self.assertRaises(ValueError),
+                ):
+                    prepare(archive, root / "out", quarter="2015-Q3")
+                self.assertFalse((root / "out").exists())
+
+    def test_default_and_explicit_none_keep_output_bytes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            archive = self.make_zip(root, [("2026-04-01.csv", HEADER + ROW)])
+            prepare(archive, root / "out")
+            before = {path.name: path.read_bytes() for path in (root / "out").iterdir()}
+            prepare(archive, root / "out", quarter=None, overwrite=True)
+            self.assertEqual(
+                before, {path.name: path.read_bytes() for path in (root / "out").iterdir()}
+            )
+
+    def test_selected_members_still_require_schema_dates_and_crc(self):
+        for failure in ["schema", "date", "crc"]:
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                entries = self.quarter_entries()
+                name, content = entries[0]
+                if failure == "schema":
+                    entries[0] = (name, "date\n2015-07-01\n")
+                elif failure == "date":
+                    entries[0] = (name, content.replace("2015-07-01", "2015-07-02"))
+                archive = self.make_zip(root, entries)
+                if failure == "crc":
+                    archive.write_bytes(
+                        archive.read_bytes().replace(b"private-serial", b"damaged-serial", 1)
+                    )
+                with self.assertRaises(ValueError):
+                    prepare(archive, root / "out", quarter="2015-Q3")
+                self.assertFalse((root / "out/import-metadata.json").exists())
+                self.assertFalse(list((root / "out").glob("*.parquet")))
+
+    def test_selected_leap_quarter_requires_february_29(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            archive = self.make_zip(
+                root,
+                [entry for entry in self.quarter_entries(2016, 1) if "2016-02-29" not in entry[0]],
+            )
+            with (
+                patch.object(zipfile.ZipFile, "open", side_effect=AssertionError("body read")),
+                self.assertRaisesRegex(ValueError, "complete selected quarter"),
+            ):
+                prepare(archive, root / "out", quarter="2016-Q1")
+            self.assertFalse((root / "out").exists())
 
     def test_datacenter_only_when_explicitly_present(self):
         with tempfile.TemporaryDirectory() as folder:

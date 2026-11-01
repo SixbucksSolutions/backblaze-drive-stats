@@ -21,6 +21,20 @@ and `outputFile`. Each record must identify exactly one daily Parquet partition.
 Supply the full retained input set for each selected as-of window. Omitted quarters
 are explicit source gaps; they are never measured zero populations.
 
+For an annual archive, select one quarter before reading daily CSV bodies:
+
+```powershell
+uv run --frozen --no-sync python prepare_quarter_zip.py --input-zip data/raw/data_2015.zip --quarter 2015-Q3 --output-dir data/processed/2015-Q3 --source-url https://f001.backblazeb2.com/file/Backblaze-Hard-Drive-Data/data_2015.zip
+```
+
+The optional Python API is `prepare(..., quarter="2015-Q3")`. Selection checks
+the requested calendar before output changes, retains the whole official ZIP's
+SHA-256/URL and records `selectedQuarter` in the receipt. Only selected daily
+members are parsed; archive-wide path and duplicate checks still apply. Omitting
+the option preserves existing behavior and default receipt bytes. Daily source
+validation remains strict; [reviewed source exceptions](ten-quarter-epoch-backfill.md)
+use explicit incomplete-coverage evidence.
+
 The generator revision must identify the actual code revision used, including
 working changes when applicable. Do not label modified code with an unchanged
 release identifier. `patterns` is the retained positive 2025 Q4 seed list, matched

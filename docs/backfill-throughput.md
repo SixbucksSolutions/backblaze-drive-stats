@@ -20,7 +20,15 @@ four-pipeline groups. Original worker envelopes were 69.08 and 56.29 seconds;
 each group stopped one genuine source defect and subsequently received a
 separate explicit partial recovery. These timings are not ten full-quarter
 successes, a controlled speedup or ten-heavy capacity evidence. The next ten
-source cards stay Ready for Work for a later turn.
+source cards were then queued for the following authorized workset.
+
+The [following ten-quarter workset](ten-quarter-epoch-backfill.md) reached 2015 Q3.
+Its native 64.38-second envelope includes one shared annual download and ten
+pipelines, ending with seven complete successes and three source-validation
+failures. Separate explicit partial recoveries followed. Sampled worker working
+set peaked at 2.57 GiB with 32.17 GiB available system RAM. These are different,
+smaller source quarters; no controlled scaling speedup is established. The next
+ten source cards cover 2015 Q2 through 2013 Q1 and remain queued only.
 
 The [completed four-quarter recovery benchmark](parallel-quarter-benchmark.md)
 supersedes this initial sizing proposal. Four audits overlapped with a sampled
