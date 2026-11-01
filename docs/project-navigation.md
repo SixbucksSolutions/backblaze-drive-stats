@@ -4,6 +4,28 @@ Start with the [README](../README.md) to open the committed-data explorer.
 This index keeps technical details and historical evidence available without
 requiring them for ordinary viewing.
 
+## Product intent: history at the selected cutoff
+
+Treat the explorer as though it had existed since Backblaze began publishing
+its drive data. All six views should let people select any relevant historical
+cutoff for which their evidence supports the view. A selection describes the
+fleet actually observed through that cutoff, rather than projecting a modern
+fleet backward. No later observations, capacity evidence, exposure or threshold
+proof may leak into an earlier snapshot.
+
+The customer-HDD fleet uses the owner’s nominal capacity floor of 1 TB and
+explicit observed model exclusions. Supporting HDD views include eligible models
+below the separate >=2,000-drive threshold used for AFR analysis. All-supplied
+capacity has a broader scope. Datacenter views depend on captured location data,
+which starts in 2023 Q3. Partial and unpublished source coverage remains
+unknown where an exact value cannot be established; it is never filled in as
+zero.
+
+The [production data contract](production-data-v2.md) defines these semantics;
+the [full-history refresh record](full-history-refresh-0104.md) documents the
+current release and its evidence boundaries. Its cutoff count is a release fact,
+not a permanent limit on future refreshes.
+
 ## Explorer and data definitions
 
 - [Matrix interface and reading guide](flagship-ui.md)
