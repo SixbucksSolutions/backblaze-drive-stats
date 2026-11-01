@@ -166,7 +166,8 @@ export async function checkHostingRemote(manifest, baseUrl, request = fetch) {
         }
         try {
           assert.equal(response.status, 200, 'Hosted release asset did not return 200');
-          result.assetBytes += await verifyBody(response, asset);
+          const verifiedBytes = await verifyBody(response, asset);
+          result.assetBytes += verifiedBytes;
           result.assets += 1;
         } finally {
           if (!response.body?.locked) {

@@ -4,6 +4,8 @@ Compare hard-drive failure rates and explore quarterly drive populations and
 capacity using Backblaze's open Drive Stats data. This independent project is by
 [Sixbucks Solutions](https://github.com/SixbucksSolutions).
 
+**[Open the explorer](https://backblaze-drive-stats-analysis.pages.dev/)**
+
 **Made possible by Backblaze.** Thank you to Backblaze for collecting, maintaining
 and openly publishing the [Drive Stats dataset](https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data).
 Read their [official Drive Stats reports](https://www.backblaze.com/blog/category/hard-drive-stats/)

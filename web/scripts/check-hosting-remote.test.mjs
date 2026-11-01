@@ -129,6 +129,45 @@ test('foreign origins and unsafe inventory paths fail before any request', async
   await assert.rejects(checkHostingRemote(unsafe, origin, noRequest), /inventory entry/);
 });
 
+test('sums every verified byte when four response bodies complete concurrently', async () => {
+  const mock = fixture();
+  const waiting = [];
+  let delayed = 0;
+  const request = async (url, options) => {
+    const response = await mock.request(url, options);
+    if (response.status !== 200 || delayed >= 4) {
+      return response;
+    }
+    delayed += 1;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const stream = new ReadableStream(
+      {
+        pull(controller) {
+          waiting.push(() => {
+            controller.enqueue(bytes);
+            controller.close();
+          });
+          if (waiting.length === 4) {
+            for (const release of waiting) {
+              release();
+            }
+          }
+        },
+      },
+      { highWaterMark: 0 },
+    );
+    return new Response(stream, { status: response.status, headers: response.headers });
+  };
+  const result = await checkHostingRemote(manifest, origin, request);
+  const expectedBytes = manifest.assets
+    .filter((asset) => asset.served)
+    .reduce((sum, asset) => sum + asset.sizeBytes, 0);
+  assert.equal(delayed, 4);
+  assert.equal(result.assetBytes, expectedBytes);
+  assert.equal(result.assets, manifest.assets.length - 1);
+  assert.ok(mock.peak() <= 4);
+});
+
 for (const [name, change, expected] of [
   [
     'hash',
