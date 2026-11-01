@@ -76,10 +76,10 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r053**. The
-roster preserves earlier revisions and records #0101's dedicated turn, authorized
-for up to twelve active direct subagents at depth one. It schedules no further
-implementation after this handoff. Future work requires its applicable authority;
+Private plan **r054** records the owner-accepted closeout and preserves earlier
+revisions, including **r053**'s author/reviewer assignments. #0101 used a dedicated
+turn authorized for up to twelve active direct subagents at depth one. No workers
+or implementation are scheduled. Future work requires its applicable authority;
 this exception does not expand other turns' worker or card limits.
 
 Terry has moved #0017 and #0097–#0100 to Completed.
@@ -149,8 +149,9 @@ for its dedicated cold-quarter rehearsal. The [benchmark and operator record](qu
 documents fresh intake, verified B2 retention and catalog discovery, exact local
 recovery and production publication. Release `d402829` is live as deployment
 `f290ba5d-abd1-4398-b0c3-f38b164fe0b4`; the prior deployment is preserved for rollback.
-The current roster has no unfinished authorized implementation after #0101's
-handoff. Architecture ideas #0110/#0111 remain unstarted in Backlog.
+Terry approved #0101 and moved it to Completed on 2026-11-01. The current roster
+has no remaining implementation or review handoff. Architecture ideas #0110/#0111
+remain unstarted in Backlog.
 Optional #0107 is Terry-owned research in Backlog, not Bot work or a release gate.
 Planning does not start those cards or authorize later source work or publication.
 Completed lanes remain owner-controlled.
