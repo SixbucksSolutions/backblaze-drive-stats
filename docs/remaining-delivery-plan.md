@@ -76,11 +76,11 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r052**. The
-roster covers all remaining planned turns, preserves earlier revisions and
-does not start workers or approve prerequisites. Normal implementation is at
-most three cards per turn, with six direct subagents and depth one; past
-ten-quarter source-batch exceptions do not expand this implementation limit.
+Current rolling author/reviewer assignments are in private plan **r053**. The
+roster preserves earlier revisions and records #0101's dedicated turn, authorized
+for up to twelve active direct subagents at depth one. It schedules no further
+implementation after this handoff. Future work requires its applicable authority;
+this exception does not expand other turns' worker or card limits.
 
 Terry has moved #0017 and #0097–#0100 to Completed.
 For #0007 he supplied the account, token file and
@@ -132,7 +132,7 @@ documents the durable time-warp intent in
 both cards and moved them to Completed.
 
 Terry explicitly requested production publication for #0108's review. The verified
-`e001e25` static bundle is now live at
+`e001e25` static bundle was published at
 <https://backblaze-drive-stats-analysis.pages.dev/>. The publication receipt retains
 the accepted #0104 deployment as the rollback target; publication does not mark
 #0108 approved or Completed. Terry subsequently reviewed and completed it.
@@ -144,9 +144,13 @@ Terry has approved #0109 and moved it to Completed. Follow-up #0112 investigates
 [HTML reload validators](cloudflare-hosting.md#html-reload-validation-0112).
 Its verified static candidate obtains body-free `304`s at the cost of HTML
 compression. Terry chose to retain compression, resolving #0112 without a
-production change. The remaining private roster retains only #0101's dedicated,
-explicitly held turn. Architecture ideas #0110/#0111 remain unstarted in Backlog;
-they are not implementation authority for #0112.
+production change, and moved it to Completed. He then explicitly resumed #0101
+for its dedicated cold-quarter rehearsal. The [benchmark and operator record](quarterly-refresh-benchmark-0101.md)
+documents fresh intake, verified B2 retention and catalog discovery, exact local
+recovery and production publication. Release `d402829` is live as deployment
+`f290ba5d-abd1-4398-b0c3-f38b164fe0b4`; the prior deployment is preserved for rollback.
+The current roster has no unfinished authorized implementation after #0101's
+handoff. Architecture ideas #0110/#0111 remain unstarted in Backlog.
 Optional #0107 is Terry-owned research in Backlog, not Bot work or a release gate.
-Planning does not start those cards, authorize #0101's source moves, downloads or
-ETL, or upload a new website release. Completed lanes remain owner-controlled.
+Planning does not start those cards or authorize later source work or publication.
+Completed lanes remain owner-controlled.

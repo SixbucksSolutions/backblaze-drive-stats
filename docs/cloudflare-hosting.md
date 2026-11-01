@@ -12,6 +12,8 @@ are supplied privately at release time; no token is stored in this repository.
 The hosting card #0007 records the actual project/deployment receipt, qualified
 release commit and hosted verification. This runbook describes the repeatable
 build and publication procedure; a configured URL alone is not a deployment receipt.
+The [#0101 replay record](quarterly-refresh-benchmark-0101.md) records the later
+verified production deployment and retained union.
 
 ## Build and inspect
 

@@ -71,8 +71,9 @@ identities; it does not prove physical exit. Terminal Retired is unavailable
 (`right_censored`), with no Failed proxy. Earlier source gaps still obstruct
 inference. Old `2.0.0` retains its prior sentinel and proxy. The identity includes
 this convention, even with identical inputs, revision and timestamp. Existing
-`2.0.0` objects remain
-unchanged and indexed. The recorded exposure denominator, cohort and source
+`2.0.0` objects remain immutable in preserved predecessor graphs; they are not
+advertised in the current active 53-snapshot corrected `2.1.0` index. The recorded
+exposure denominator, cohort and source
 completeness policies are unchanged. Inspect the plan's
 `matrixCalculationVersion` before an authorized refresh; a code change alone
 does not authorize generation/publication.
@@ -264,6 +265,8 @@ keys, contact B2, update processing pointers, delete old objects, or claim that 
 fake-client test verifies an actual remote copy. Reuse the verified commands in
 [history storage](history-storage.md); prefer unchanged-object reuse and retain
 their exact manifests for recovery. Public site deployment is separate again.
+Keep local preparation and network transfer under a consistent OS identity so
+temporary-file permissions do not prevent the transfer process reading its inputs.
 
 Before promoting staged JSON, run the normative Python graph validator and the
 maintained browser-reader release checker against the staged directory. The
@@ -284,7 +287,7 @@ only as part of a reviewed later release. Use the standard Python/web gates
 and owner review before promoting a changed release or deploying it. No paid or
 unattended schedule is created by these tools.
 
-## Qualification evidence
+## Original #0095 qualification evidence
 
 The real retained qualification defaulted to 2026 Q2, reused all 53 accepted
 quarter summaries, reported eight known pending classifications and no new
@@ -299,4 +302,6 @@ Synthetic tests cover a new quarter/vendor, versioned admission, unresolved medi
 cache/source integrity, projection interruption, immutable publication recovery,
 same-quarter revisions and reader compatibility. Windows junction probes use
 fictional records in private staging only. No real source download, daily rescan,
-preferred-cache update, cloud operation or deployment is part of this handoff.
+preferred-cache update, cloud operation or deployment was part of the original
+#0095 handoff. The later [#0101 replay](quarterly-refresh-benchmark-0101.md)
+records its actual download, retention and deployment.
