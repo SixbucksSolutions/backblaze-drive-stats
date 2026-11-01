@@ -303,11 +303,13 @@ actionable comparisons of purchase-relevant, still-produced models. The regex se
 is a starting interest signal; neither a match nor continued deployment proves
 current manufacturing or availability. Keep all-source discovery and old reference
 models, while separating their cache/inventory scope from the first purchase-focused
-published cohort. Complete fleet history back to the oldest source is later backlog
-work (#0023), not a prerequisite for the actionable release. The prior 2013-first
-audit recommendation is superseded. Language quality gates (#0022) come first.
+published cohort. Source/domain completion #0023 is ready for owner review:
+computation reaches the oldest published observations, with retention and
+independent mirror acceptance passed. Production integration remains separately gated under #0017. The prior
+2013-first audit recommendation is superseded. Language quality gates (#0022)
+come first.
 
-The current local 2026 Q2 data cannot supply the complete flagship history. The
+The 2026 Q2 dataset alone cannot supply the complete flagship history. The
 XLSX files provide visual/golden fixtures, but omit the calendar/exposure metadata
 needed to reconstruct a trustworthy production matrix from them alone.
 
@@ -326,6 +328,8 @@ cards and one newest-first pilot. #0027 imported and verified 2026 Q1 within its
 2 GiB source/10 GiB additional-disk envelope. See the [pilot result](quarter-pilot.md).
 No paid compute, broad historical fanout or production publication is implied.
 
+### Earlier approved worksets
+
 The owner accepted #0027 and B2 setup #0056, then cleared the next turn:
 2025 Q4 #0028, the Q1/Q2 durable cache copy #0057 and the additive
 [cohort/history evidence proposal](cohort-history-evidence.md) within #0017.
@@ -339,7 +343,7 @@ The owner accepted #0028/#0057 and the four-quarter batch #0029–#0032 has now
 completed private ingestion and independent artifact review. Its
 [benchmark and recovery record](parallel-quarter-benchmark.md) distinguishes the
 interrupted first attempt, successful recovery, actual phase overlap and durable
-B2 copy. Loaded source coverage now reaches 2024 Q4; the reference model remains
+B2 copy. At that handoff, loaded coverage reached 2024 Q4; the reference model remained
 present above threshold, so no original anchor or zero boundary is established.
 The owner chose eight quarters next, then doubling while resources and required
 history permit. Keep the six-direct-agent/depth-one ceiling and budget native
@@ -350,9 +354,9 @@ The next eight-card batch #0033–#0040 has completed seven full-quarter audits 
 a reviewed 91/92-day partial recovery for 2022 Q4. The December 10-named source
 contains December 11 observations; dates were not relabeled or imputed. The
 [batch/capacity report](eight-quarter-benchmark.md) preserves that source issue,
-retention evidence and measured eight-heavy-summary capacity. Current loaded
-history reaches 2022 Q4 with that explicit one-day gap, and the reference model
-is present. No original anchor or cumulative-history completeness is certified.
+retention evidence and measured eight-heavy-summary capacity. At that handoff,
+loaded history reached 2022 Q4 with that explicit one-day gap, and the reference
+model was present. No original anchor or cumulative-history completeness is certified.
 
 The owner then capped backfill at **10 quarters per batch**, replacing doubling.
 The owner also requested a lossless 2026 Q2 repack (#0058). Prioritize it plus
@@ -372,7 +376,7 @@ generation; legacy objects and recovery references remain intact.
 
 Terry initially approved #0033–#0040 while retaining their RFR lanes, then
 approved and moved all preceding RFR cards to Completed. The
-[next ten-quarter source workset](ten-quarter-origin-backfill.md) now reaches
+[next ten-quarter source workset](ten-quarter-origin-backfill.md) reached
 2018 Q1: eight complete additions and two explicit partial recoveries. Preferred
 processing coverage totals 34 quarters, 31 complete and three partial. Within
 the searched window ALN604 has complete 2018 Q2 absence, first observation on
@@ -386,20 +390,32 @@ as the older-source frontier. Source cards #0064–#0073 (2017 Q4 through 2015 Q
 were then queued for the following workset. #0017 retains production cohort/history integration
 and correction of unjustified completeness claims; no production matrix changed.
 
-That source workset has now [completed the next ten-quarter backfill](ten-quarter-epoch-backfill.md),
-reaching 2015 Q3. The preferred catalog has 44 quarters, 38 complete and six
+That earlier source workset [completed the next ten-quarter backfill](ten-quarter-epoch-backfill.md),
+reaching 2015 Q3. At that accepted handoff, the preferred catalog had 44 quarters, 38 complete and six
 explicit partials. r003 research keeps the same 22-model candidate and separates
 ST8000NM0055's proven partial >=2,000 threshold in 2017 Q1 from its first complete
 qualifier in 2017 Q3. ST8000DM002 reaches the threshold in complete 2016 Q2;
 ST12000NM0007 does so in complete 2017 Q4. These searched-window facts are not
 global-inception or complete cumulative-history certifications. The evidence
 amendment is reviewable; production selection/history behavior has not changed.
-The remaining ten source cards #0074–#0083 (2015 Q2 through 2013 Q1) are Ready for
-Work for the next turn. No additional source quarter started this turn.
+### Current source completion and production handoff
+
+The final source workset #0074–#0083 has now completed computation; see the
+[source-history completion record](source-history-completion.md). The corpus spans
+2013-04-10 through 2026-06-30 with **53 datasets / 54 requested periods**:
+45 complete quarters, eight partials and one unpublished period. It retains
+**4,817 valid dates / 743,490,518 known observations**. Thirteen problematic
+captures within the published span and 99 pre-publication calendar days remain
+unavailable. Unpublished 2013 Q1 has no payload dataset or warm-cache count.
+
+#0023 and the final ten source cards are ready for owner review after B2
+retention/readback, restore, preferred publication, independent local-mirror and
+coverage acceptance passed. No further Ready for Work source cards follow this
+handoff. Owner review remains separate from technical verification. #0017 remains In Progress for production integration.
 
 Scope handoff: #0063 is the independently reviewed research/candidate proposal
 for the 22-model cohort and its earliest proven threshold evidence in loaded
-history. It is ready for owner review, including the explicit partial-threshold
+history. It is owner-Completed research, including the explicit partial-threshold
 proposal. It does not certify globally first starts or approve a production
 cohort. All remaining production application belongs to #0017: cohort/contract
 acceptance and versioning, schema/generator/UI integration, accurate relative
@@ -477,6 +493,6 @@ No automatic cliff detector,
 ranking score or replacement prediction is part of the baseline.
 
 The rolling worker assignments live in the private project plan. The current
-assignment revision is **r028**; r001–r027 are retained as history. Planned workers
+assignment revision is **r030**; r001–r029 are retained as history. Planned workers
 do not occupy slots or authorize execution. Recheck every prerequisite and move
 the card In Progress before design, code, tests or review. Terry retains Completed.

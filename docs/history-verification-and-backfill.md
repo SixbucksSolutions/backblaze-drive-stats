@@ -1,10 +1,26 @@
 # Existing-quarter verification and proposed historical execution
 
 #0016 implementation evidence and #0017 execution status, 2026-10-31.
-The original full-history estimate is retained below; it does not authorize a
-full backfill.
+The original full-history estimate is retained below as historical evidence.
 
-## Approved pilot and current gates
+## Current source scope and remaining gates
+
+The [source-history completion record](source-history-completion.md) covers
+2013-04-10 through 2026-06-30: **53 data-bearing datasets / 54 requested periods**,
+with 45 complete-calendar quarters, eight partials and one unpublished period.
+The corpus contains **4,817 valid dates / 743,490,518 known observations**.
+Thirteen problematic captures within the published span and 99 calendar days
+before publication remain unavailable. 2013 Q1 has no payload dataset, row count
+or warm-cache count; partial full-quarter Count and AFR remain null.
+
+Source computation, independent payload reviews, B2 readback/reuse, isolated
+restore, preferred publication and independent local-mirror acceptance passed.
+#0023 and its final ten source cards are ready for owner review; #0017 remains
+In Progress on production integration. #0063 is owner-Completed
+research, preserving its candidate and partial-threshold evidence. Current
+assignments are r030; no further Ready for Work source cards follow this handoff.
+
+## Earlier pilot and accepted worksets
 
 The owner accepted the 2026 Q1 pilot (#0027), 2025 Q4 audit (#0028), B2 setup
 (#0056) and first cache migration (#0057). The next four quarter cards
@@ -39,8 +55,8 @@ That handoff was followed by #0050–#0055, 2020 Q2 through 2019 Q1, and eligibl
 #0017 integration.
 
 The subsequent [ten-quarter search](ten-quarter-origin-backfill.md), including
-four required 2018 extensions, now reaches 2018 Q1. The preferred catalog has
-34 quarters: 31 complete and three explicit partials. Exact ALN604 is absent in
+four required 2018 extensions, reached 2018 Q1. At that handoff the preferred
+catalog had 34 quarters: 31 complete and three explicit partials. Exact ALN604 is absent in
 complete 2018 Q2, first observed on 2018-07-12 and first reaches 2,000 identities
 in 2019 Q1 within this searched window. Global inception remains unproved.
 The owner expanded the target to every 2026 Q2 AFR model and capped source work
@@ -50,20 +66,22 @@ authorized workset. #0017 retains implementation; #0063 supplies the completed
 research/candidate review packet. No new production matrix is published.
 
 The authorized [following ten-quarter workset](ten-quarter-epoch-backfill.md)
-now reaches 2015 Q3. Preferred coverage is 44 quarters, with 38 complete and six
+reached 2015 Q3. At that accepted handoff, preferred coverage was 44 quarters, with 38 complete and six
 explicit partials. Reviewed r003 research records the older Seagate threshold
 evidence, including a partial lower bound that proves >=2,000 without supplying
-an exact full-quarter Count or AFR. #0063's research/proposal is ready for owner
-review; #0017 retains production integration and implementation of accepted
-policy/coverage claims. No new matrix is published by this source work.
-Cards #0074–#0083, 2015 Q2 through 2013 Q1, remain Ready for Work and unstarted.
-Their oldest-source inventory must distinguish absent published coverage from
-observed zero populations and account for shared annual archives.
+an exact full-quarter Count or AFR. #0063's research/proposal is now
+owner-Completed; #0017 retains production integration and implementation of
+accepted policy/coverage claims. No new matrix is published by this source work.
+The final source workset #0074–#0083 subsequently completed seven full quarters,
+two explicit partial datasets and one unavailable-period record. Its reviewed
+source inventory distinguishes absent published coverage from observed zero
+populations and accounts for shared annual archives. Retention and local-mirror
+verification also passed as described above.
 
 The initial bounded search required a complete quarter with zero observations
 of exact HUH721212ALN604. Complete 2018 Q2 now meets that stopping rule;
-the completed all-model research is recorded in #0063. Source-domain census and
-production application continue under #0017. Keep first observation
+the completed all-model research is recorded in #0063. Source-domain completion
+remains under #0023; production application continues under #0017. Keep first observation
 and first >=2,000-drive quarter separate. The old workbook compresses retained
 positions and does not establish its calendar anchor. One zero quarter is a
 bounded search endpoint, not proof against older deployments or reentry.
@@ -146,7 +164,8 @@ partial. Do not infer complete quarters from an advertised file count.
 Owner clarification on 2026-10-31 supersedes the former 2013-first starting order:
 work **newest to oldest**, delivering current NAS purchase comparisons before
 complete historical fleet coverage. #0022's language quality gates precede further
-#0017 implementation. Broader oldest-source fleet exploration is backlog #0023.
+#0017 implementation. Source-domain completion under #0023 is ready for owner review; computation,
+retention, local mirror and independent coverage reconciliation passed.
 
 - Reuse the retained newest-quarter cache first. Regex matches are positive
   interest hints, not proof that an exact model is still manufactured or buyable.
@@ -156,18 +175,18 @@ complete historical fleet coverage. #0022's language quality gates precede furth
 - Separate discovery inventory, the fixed published analysis cohort, purchase
   defaults and historical references in the #0017 contract amendment. A UI-only
   filter cannot remove the current generator's older-cohort history obligations.
-- Work backward in bounded batches. Verified processing coverage now reaches
-  2015 Q3, retaining six explicit incomplete quarters rather than inventing rows.
-  The next ten queued cards (#0074–#0083) cover 2015 Q2 through 2013 Q1.
-  Recheck lane, prerequisite, source and resource gates before launch; cap
-  source execution at ten quarters per turn.
+- Source computation now reaches the published 2013-04-10 boundary, retaining
+  eight explicit partial quarters and an unpublished-period record. No further
+  source cards remain queued after this handoff. #0023 retention, mirror and
+  coverage-acceptance gates passed; owner review remains separate.
 - Establish each candidate's anchor and pre-eligibility exposure honestly. The
   first loaded qualifying quarter is not proof of the original anchor, and an
   earlier zero quarter does not exclude an older deployment followed by reentry.
   Incomplete search/history must stay explicit; it cannot certify production
   cumulative AFR or silently restart the relative-age timeline.
-- Extend only as far as the purchase cohort's validated history requires for the
-  actionable release. Full-fleet/oldest-date completeness remains a later goal.
+- Apply the completed source census within #0017's production gates. Published
+  observation coverage does not establish physical fleet inception or complete
+  lifetime exposure before capture began.
 
 The Q1 pilot above supersedes the former inventory-only status. Earlier cache
 measurements remain evidence; the old source-order proposal below is retained
@@ -221,6 +240,6 @@ Earlier broad local execution envelope, still subject to separate approval:
 
 At the time of that earlier proposal, no historical archive or remote object had
 been created. The owner has since completed #0015/#0016/#0021/#0022/#0026.
-#0017 is now In Progress; the pilot and B2 status at the top of this document
-describe the current execution, with later history and production integration
-still pending.
+#0017 remains In Progress for production integration. The current source scope
+and retention/mirror gates are recorded at the top; the earlier proposals above
+are preserved as historical evidence.

@@ -26,11 +26,11 @@ synthetic edge cases. The [historical generator](docs/historical-generator.md)
 prepares paired aggregate snapshots offline; its private caches support
 [verified local/B2 transfer](docs/history-storage.md). Parquet uses an
 [explicit enriched metadata profile](docs/parquet-profile.md) with statistics,
-real sorting, page indexes/checksums and selective serial Bloom. Full history and
-primary integration retain their [separate execution gate](docs/history-verification-and-backfill.md).
+real sorting, page indexes/checksums and selective serial Bloom. Primary
+integration retains its [separate execution gate](docs/history-verification-and-backfill.md).
 The first backward quarter, 2026 Q1, now has a [verified pilot result and repeatable audit](docs/quarter-pilot.md).
-The next [2025 Q4 audit](docs/quarter-2025-Q4.md), [durable Q1/Q2 B2 copy](docs/b2-cache-migration.md),
-and additive [cohort/history evidence proposal](docs/cohort-history-evidence.md) document current work.
+The earlier [2025 Q4 audit](docs/quarter-2025-Q4.md), [durable Q1/Q2 B2 copy](docs/b2-cache-migration.md),
+and additive [cohort/history evidence proposal](docs/cohort-history-evidence.md) record earlier verified work.
 The [four-quarter benchmark and recovery](docs/parallel-quarter-benchmark.md) extends verified private history
 through 2024 Q4 and records the next owner-approved eight-quarter scaling step.
 The [eight-quarter batch](docs/eight-quarter-benchmark.md) extends retained observations through 2022 Q4,
@@ -43,6 +43,16 @@ and measures the six-column daily Parquet at about 1.6% of original CSV size.
 The [following ten-quarter epoch backfill](docs/ten-quarter-epoch-backfill.md) reaches
 2015 Q3, adds safe annual-archive selection and records the three older Seagate
 threshold starts, including explicit partial-data evidence.
+The [source-history completion record](docs/source-history-completion.md) now reaches
+2013-04-10 through 2026-06-30: 53 data-bearing datasets across 54 requested periods,
+with 45 complete quarters, eight partials and one unpublished period. The corpus
+holds 4,817 valid dates and 743,490,518 known observations. Thirteen problematic
+captures within the published span and 99 calendar days before publication remain
+explicitly unavailable. Unpublished 2013 Q1 has no dataset or warm-cache count.
+Source computation, B2 retention/readback, isolated restore, preferred publication
+and independent local-mirror acceptance passed. #0023 and its ten final source
+cards are ready for owner review. No further source cards are queued. #0017 remains In Progress for production
+integration; #0063 is owner-Completed research. The rolling plan is r030.
 The current explorer remains the default.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's

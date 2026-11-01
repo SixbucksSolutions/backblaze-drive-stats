@@ -1,20 +1,37 @@
 # Historical cache transfer and snapshot publication
 
-Current preferred processing storage is **`drive-stats/cache-v2`**, discovered
-through **`drive-stats/current-cache.json`**. Its verified 44-quarter catalog
-covers 2015 Q3 through 2026 Q2: 38 complete quarters and six explicit partials
-(2015 Q4, 2017 Q1, 2017 Q2, 2018 Q1, 2019 Q2 and 2022 Q4). Current
-local analysis uses `data/preferred-cache-v2/`; private runtime discovery is
-`data/preferred-cache.json`. `cache-v1` and original local working inputs remain
-legacy recovery evidence. See the [migration/repack report](ten-item-backfill-and-repack.md).
-The [ten-quarter append](ten-quarter-origin-backfill.md) retains all prior
-references and transfers only new payloads, then publishes a new immutable
-catalog behind the same preferred pointer. A catalog extension does not require
-another storage generation or reprocessing old payloads.
-The [next epoch backfill](ten-quarter-epoch-backfill.md) appends ten more source
-quarters, with one exact isolated-root exception preserving the failed original
-2017 Q2 projections. Published object keys remain canonical. Serial local restore
-and mirror copies retain all fixed-root and immutable-write guards.
+Preferred processing storage uses **`drive-stats/cache-v2`**, discovered through
+**`drive-stats/current-cache.json`**. The verified catalog contains 53 datasets
+from 2013 Q2 through 2026 Q2: 45 complete and eight partials. Its requested-period
+ledger separately records unpublished 2013 Q1, making 54 requested periods. Local analysis uses
+`data/preferred-cache-v2/`; private runtime discovery is `data/preferred-cache.json`.
+`cache-v1` and original local working inputs remain legacy recovery evidence.
+
+The [source-history completion record](source-history-completion.md) now covers
+2013-04-10 through 2026-06-30 computationally: **53 datasets / 54 requested
+periods**, comprising 45 complete quarters, eight partials and unpublished 2013 Q1.
+There are **4,817 retained dates / 743,490,518 known observations**, with 13
+problematic captures within the published span and 99 pre-publication calendar
+days unavailable. The unpublished quarter is metadata only, with no payload
+dataset or warm-cache hit.
+
+The accepted append adds nine data-bearing quarters and separate availability
+and source-domain metadata while preserving all prior immutable references. Its
+847 delta payloads / 186,487,415 bytes passed encrypted readback, zero-write reuse
+and isolated restore, with zero old-payload transfers. The published catalog
+references 5,029 payloads / 4,554,589,393 bytes. The local mirror passed independent
+full-keyset/hash verification, preserved all 4,182 previous payloads and retained
+the previous discovery record. #0023 and its ten source cards are ready for owner
+review; technical acceptance does not approve the cards. Current worker assignments are r030; no further source
+cards are queued after this handoff. #0017 retains production integration and
+#0063 remains owner-Completed research.
+
+The earlier [migration/repack report](ten-item-backfill-and-repack.md),
+[ten-quarter append](ten-quarter-origin-backfill.md) and
+[epoch backfill](ten-quarter-epoch-backfill.md) retain their historical acceptance
+evidence. The epoch append preserves the accepted isolated-root 2017 Q2 source;
+published object keys remain canonical. Serial local restore and mirror copies
+retain all fixed-root and immutable-write guards.
 
 Implemented for #0016 using local storage first. On 2026-10-31, #0056 verified
 the adapter against the owner's private Backblaze B2 bucket with a dedicated,

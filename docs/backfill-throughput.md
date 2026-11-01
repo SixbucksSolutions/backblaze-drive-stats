@@ -27,8 +27,30 @@ Its native 64.38-second envelope includes one shared annual download and ten
 pipelines, ending with seven complete successes and three source-validation
 failures. Separate explicit partial recoveries followed. Sampled worker working
 set peaked at 2.57 GiB with 32.17 GiB available system RAM. These are different,
-smaller source quarters; no controlled scaling speedup is established. The next
-ten source cards cover 2015 Q2 through 2013 Q1 and remain queued only.
+smaller source quarters; no controlled scaling speedup is established. That
+workset's original outcomes remain preserved independently of later recoveries.
+
+The [final source workset](source-history-completion.md), #0074–#0083, completed
+source computation through the published 2013-04-10 boundary. The original native
+**14.61-second** envelope reused pre-downloaded annual ZIPs: seven complete
+quarters, one partial published-domain dataset, one unpublished-period record
+and a 2014 Q4 projection failure. Separate reviewed 2014 Q4 recovery took
+**8.27 seconds** and does not revise the original failure. Bootstrap, recovery,
+preservation checks, independent review and cloud work are outside the native
+envelope. This is not ten complete successes, controlled speedup or a capacity
+ceiling. Eight CPU/heavy permits with two Polars threads per worker governed
+admission; sampled peak was 2.47 GiB, minimum available RAM 34.32 GiB and average
+whole-machine CPU 46.98%.
+
+Current computational coverage is **53 datasets / 54 requested periods**,
+45 complete quarters, eight partials and one unpublished period, spanning
+2013-04-10 through 2026-06-30. It retains **4,817 dates / 743,490,518 known
+observations**; 13 problematic captures within the published span and 99
+pre-publication days remain unavailable. Unpublished 2013 Q1 has no dataset or
+warm-cache count. B2 readback/reuse, isolated restore, preferred publication and
+independent local-mirror acceptance passed. #0023 and its ten source cards are
+ready for owner review; no further source cards remain queued. #0017 remains In Progress for production
+integration; #0063 is owner-Completed research. The current rolling plan is r030.
 
 The [completed four-quarter recovery benchmark](parallel-quarter-benchmark.md)
 supersedes this initial sizing proposal. Four audits overlapped with a sampled

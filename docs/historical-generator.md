@@ -4,6 +4,24 @@
 supporting contracts. It performs no downloads, network operations, provisioning
 or cloud writes. Historical execution and backfill remain separately gated.
 
+The [source-history completion record](source-history-completion.md) now supplies
+computationally verified observations from **2013-04-10 through 2026-06-30**:
+53 data-bearing datasets across 54 requested periods, with 45 complete quarters,
+eight partials and one unpublished period. The retained corpus has **4,817 valid
+dates / 743,490,518 known observations**. Thirteen problematic captures within
+the published span and 99 pre-publication calendar days remain unavailable.
+Unpublished 2013 Q1 is availability metadata, with no input dataset, synthetic
+zero-row summary or warm-cache hit. Partial full-quarter Count and AFR stay null.
+
+Source computation, B2 retention/readback, isolated restore, preferred publication
+and independent local-mirror acceptance passed. #0023 and its ten final source
+cards are ready for owner review.
+#0017 remains In Progress for production source-gap/completeness and cohort/epoch
+integration; #0063 is owner-Completed research. The current worker plan is r030,
+with no further Ready for Work source cards after this handoff. Source census
+completion does not itself certify complete lifetime exposure or publish a
+production matrix.
+
 Run with the locked project environment:
 
 ```powershell
@@ -32,7 +50,7 @@ the requested calendar before output changes, retains the whole official ZIP's
 SHA-256/URL and records `selectedQuarter` in the receipt. Only selected daily
 members are parsed; archive-wide path and duplicate checks still apply. Omitting
 the option preserves existing behavior and default receipt bytes. Daily source
-validation remains strict; [reviewed source exceptions](ten-quarter-epoch-backfill.md)
+validation remains strict; [reviewed source exceptions](source-history-completion.md)
 use explicit incomplete-coverage evidence.
 
 The generator revision must identify the actual code revision used, including
