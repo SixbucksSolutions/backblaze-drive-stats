@@ -142,7 +142,8 @@ export type ProductionCell = {
   baselineQuarter: string | null;
   baselineQuarterDistance: number | null;
   deltaReason: 'initialized' | 'prior_eligible' | 'unavailable';
-  retiredReason: 'inferred' | 'gap_obstructed' | 'cutoff_failed_proxy' | 'unavailable';
+  retiredReason:
+    'inferred' | 'gap_obstructed' | 'cutoff_failed_proxy' | 'right_censored' | 'unavailable';
   sourceHistoryComplete: boolean;
 };
 
@@ -222,8 +223,10 @@ export type ProductionMatrix = {
   contextSha256: string;
   snapshotId: string;
   asOfQuarter: string;
-  rateBasis: 'observed-recorded-exposure-v2';
-  rateLabel: 'Observed-history AFR';
+  rateBasis:
+    | 'observed-recorded-exposure-v2'
+    | 'observed-quarter-distinct-failed-identities-recorded-exposure-v2.1';
+  rateLabel: 'Observed-history AFR' | 'Observed-history AFR (quarterly unique failures)';
   relativeQuarterCount: number;
   guideAfterRelativeYear: number;
   models: MatrixModel[];
@@ -597,7 +600,15 @@ const definitions: Record<string, Rule> = {
         anyOf: [{ type: 'integer', minimum: 1, maximum: 9007199254740991 }, { type: 'null' }],
       },
       deltaReason: { enum: ['initialized', 'prior_eligible', 'unavailable'] },
-      retiredReason: { enum: ['inferred', 'gap_obstructed', 'cutoff_failed_proxy', 'unavailable'] },
+      retiredReason: {
+        enum: [
+          'inferred',
+          'gap_obstructed',
+          'cutoff_failed_proxy',
+          'right_censored',
+          'unavailable',
+        ],
+      },
       sourceHistoryComplete: { type: 'boolean' },
     },
   },
@@ -761,8 +772,15 @@ const definitions: Record<string, Rule> = {
       contextSha256: { type: 'string', pattern: '^[a-f0-9]{64}$' },
       snapshotId: { type: 'string', minLength: 1 },
       asOfQuarter: { type: 'string', pattern: '^[0-9]{4}-Q[1-4]$' },
-      rateBasis: { const: 'observed-recorded-exposure-v2' },
-      rateLabel: { const: 'Observed-history AFR' },
+      rateBasis: {
+        enum: [
+          'observed-recorded-exposure-v2',
+          'observed-quarter-distinct-failed-identities-recorded-exposure-v2.1',
+        ],
+      },
+      rateLabel: {
+        enum: ['Observed-history AFR', 'Observed-history AFR (quarterly unique failures)'],
+      },
       relativeQuarterCount: { type: 'integer', minimum: 24 },
       guideAfterRelativeYear: { type: 'integer', minimum: 1, maximum: 6 },
       models: { type: 'array', items: { $ref: '#/$defs/matrixModel' }, minItems: 1 },
@@ -1164,12 +1182,10 @@ export function parseSnapshotDescriptor(
   requireValue(
     ['1.0.0', '2.0.0'].includes(context.versions.normalization) &&
       ['1.0.0', '2.0.0'].includes(context.versions.classification) &&
-      [
-        context.versions.selection,
-        context.versions.cohort,
-        context.versions.rate,
-        context.versions.capacity,
-      ].every((version) => version === '2.0.0'),
+      ['2.0.0', '2.1.0'].includes(context.versions.rate) &&
+      [context.versions.selection, context.versions.cohort, context.versions.capacity].every(
+        (version) => version === '2.0.0',
+      ),
     'unsupported semantic version',
   );
   const coverage = context.coverage;
@@ -1314,6 +1330,12 @@ export function parseSnapshotDescriptor(
           : null;
       requireValue(row.thresholdProof === proof, 'threshold proof');
       requireValue(row.knownFailures <= row.knownDriveDays, 'failure exposure budget');
+      if (context.versions.rate === '2.1.0') {
+        requireValue(
+          row.knownFailures <= (row.knownIdentityLowerBound ?? 0),
+          'distinct failure/identity budget',
+        );
+      }
     });
     const firstProof = model.history.find((row) => row.thresholdProof !== null)?.quarter ?? null;
     const firstComplete =
@@ -1403,6 +1425,18 @@ export function parseProductionMatrix(
   const matrix = artifact<ProductionMatrix>(bytes, 'matrix');
   binding(matrix, descriptor);
   const context = descriptor.context;
+  const uniqueFailures = context.versions.rate === '2.1.0';
+  requireValue(
+    matrix.rateBasis ===
+      (uniqueFailures
+        ? 'observed-quarter-distinct-failed-identities-recorded-exposure-v2.1'
+        : 'observed-recorded-exposure-v2') &&
+      matrix.rateLabel ===
+        (uniqueFailures
+          ? 'Observed-history AFR (quarterly unique failures)'
+          : 'Observed-history AFR'),
+    'rate basis/label differs from calculation version',
+  );
   sameMembers(
     matrix.models.map((model) => model.modelId),
     context.selection.analysisModelIds,
@@ -1511,8 +1545,18 @@ export function parseProductionMatrix(
             cell.deltaReason === 'initialized',
           'first eligible baseline',
         );
-        same(cell.metrics.populationDelta, 0, 'initial population delta', true);
-        same(cell.metrics.observedRecordedAfrDelta, 0, 'initial rate delta');
+        const subtractZero = context.versions.rate === '2.1.0';
+        same(
+          cell.metrics.populationDelta,
+          subtractZero ? cell.metrics.count : 0,
+          'initial population delta',
+          true,
+        );
+        same(
+          cell.metrics.observedRecordedAfrDelta,
+          subtractZero ? cell.metrics.observedRecordedAfr : 0,
+          'initial rate delta',
+        );
       } else {
         requireValue(
           cell.baselineQuarter === prior.quarter &&
@@ -1541,9 +1585,11 @@ export function parseProductionMatrix(
       );
       if (cell.quarter === context.asOfQuarter) {
         requireValue(
-          cell.retiredReason === 'cutoff_failed_proxy' &&
-            cell.metrics.retired === cell.metrics.failed,
-          'cutoff retirement proxy',
+          uniqueFailures
+            ? cell.retiredReason === 'right_censored' && cell.metrics.retired === null
+            : cell.retiredReason === 'cutoff_failed_proxy' &&
+                cell.metrics.retired === cell.metrics.failed,
+          uniqueFailures ? 'terminal retirement right-censoring' : 'cutoff retirement proxy',
         );
       } else if (
         context.coverage.some(

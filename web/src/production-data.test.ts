@@ -183,6 +183,19 @@ void test('producer retained normalizer/classification lineage remains compatibl
   }
 });
 
+void test('2.1 distinct failures respect the quarter identity bound while 2.0 retains flag counts', () => {
+  const changed = structuredClone(descriptors[0]!);
+  const ledger = changed.context.inventory[0]!.history[1]!;
+  ledger.knownFailures = ledger.knownIdentityLowerBound! + 1;
+  assert.ok(ledger.knownFailures <= ledger.knownDriveDays);
+  assert.doesNotThrow(() => parseSnapshotDescriptor(encode(changed), index.snapshots[0]!));
+  changed.context.versions.rate = '2.1.0';
+  assert.throws(
+    () => parseSnapshotDescriptor(encode(changed), index.snapshots[0]!),
+    /distinct failure\/identity budget/,
+  );
+});
+
 void test('large integer population totals and manufacturer counts reconcile exactly', async () => {
   const descriptor = structuredClone(descriptors[0]!);
   const quarter = descriptor.quarters.findLast((row) => row.status === 'complete')!;

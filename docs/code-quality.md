@@ -6,7 +6,7 @@ maintainability findings. Neither linter enables an indiscriminate all-rules pre
 
 ## Tool ownership and current pins
 
-Verified on 2026-10-31:
+Verified on 2026-11-01 (see the [buildchain freshness audit](buildchain-freshness-0102.md)):
 
 | Concern | Tool | Version / scope |
 | --- | --- | --- |
@@ -162,8 +162,12 @@ uv sync --frozen --extra postgres
 uv export --frozen --format requirements-txt --no-hashes --no-dev --output-file requirements.txt
 ```
 
-From `web/`, inspect `npm outdated`, then update the selected tooling packages with
-exact pins; do not broadly upgrade unrelated runtime dependencies to install a linter.
+Audit every direct runtime, optional and development dependency against official
+release/registry metadata, including Python/Node/npm/uv, CI tool pins and Wrangler's
+locked workerd compatibility-date ceiling. Record unavailable or incompatible
+updates explicitly. From `web/`, inspect `npm outdated`, then update selected
+packages with exact pins; do not broadly upgrade unrelated runtime dependencies
+to install a linter.
 Language servers update with their owning Pyright and TypeScript dependencies, not
 through unpinned global installs. After an update, run the quality/tests/build and
 real code-query smoke checks. Recheck known-error probes after rule/backend changes:

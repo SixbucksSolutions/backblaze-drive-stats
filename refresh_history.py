@@ -109,6 +109,8 @@ def _configuration(config):
     timestamp(config["generatedAt"])
     if not config["generatorRevision"].strip():
         raise ValueError("Explicit generator revision required")
+    if config.get("matrixCalculationVersion", "2.0.0") not in {"2.0.0", "2.1.0"}:
+        raise ValueError("Unsupported matrix calculation version")
     if "analysisModelIds" not in config["selection"]:
         raise ValueError("Refresh requires an explicit analysis cohort decision")
     if config["selection"].get("version") != "2.0.0" or config["selection"].get(
@@ -238,6 +240,9 @@ def _inventory(config):
 
 
 def _candidate(config, as_of, manifests, baseline_index, baseline_artifacts):
+    baseline_context = _context(baseline_index, baseline_artifacts)
+    baseline_version = baseline_context["versions"]["rate"]
+    desired_version = config.get("matrixCalculationVersion", baseline_version)
     args = dict(
         summary_manifests=manifests,
         as_of=as_of,
@@ -249,21 +254,25 @@ def _candidate(config, as_of, manifests, baseline_index, baseline_artifacts):
         kind=config.get("kind", "backblaze"),
         generated_at=config["generatedAt"],
         first_published_date=config.get("firstPublishedDate", "2013-04-10"),
+        matrix_calculation_version=desired_version,
     )
-    baseline_context = _context(baseline_index, baseline_artifacts)
     # Reproduce an unchanged baseline with its established timestamp/revision.
     # A changed input still uses the explicitly supplied new generation metadata.
     if (
         as_of == baseline_context["asOfQuarter"]
         and config["generatorRevision"] == baseline_context["generatorRevision"]
+        and desired_version == baseline_version
     ):
         old_args = dict(
             args,
             generated_at=baseline_context["generatedAt"],
             generator_revision=baseline_context["generatorRevision"],
+            matrix_calculation_version=baseline_version,
         )
         old_index, old_artifacts, diagnostics = generate(**old_args)
-        if all(row in baseline_index["snapshots"] for row in old_index["snapshots"]):
+        if desired_version == baseline_version and all(
+            row in baseline_index["snapshots"] for row in old_index["snapshots"]
+        ):
             return old_index, old_artifacts, diagnostics
     return generate(**args)
 
@@ -340,6 +349,7 @@ def _report(config, as_of, index, artifacts, diagnostics, baseline_index, baseli
         configurationSha256=digest(config),
         generatedAt=context["generatedAt"],
         generatorRevision=context["generatorRevision"],
+        matrixCalculationVersion=context["versions"]["rate"],
         reusedQuarters=diagnostics["reusedQuarters"],
         computedQuarters=diagnostics["computedQuarters"],
         **_policy(config, _context(baseline_index, baseline_artifacts), context, diagnostics),

@@ -54,6 +54,28 @@ published period**, not an internet discovery claim or an assumption that the
 previous calendar quarter has been released. An explicit cutoff bounds which
 quarter objects can be read. Do not include source observations beyond it.
 
+`matrixCalculationVersion` optionally selects supported Count/AFR delta semantics
+(`2.0.0` or `2.1.0`). When omitted, refresh inherits the baseline's
+`context.versions.rate`; an old configuration therefore preserves the old
+zero-initialized-delta generation and warm zero-write behavior. Direct producer
+calls default to `2.1.0`, but that default does not silently migrate refresh.
+
+An explicit `"matrixCalculationVersion": "2.1.0"` creates a newly bound snapshot
+whose first eligible Count/AFR deltas subtract synthetic zero, matching the
+original XLSX first-row calculation. It also applies Terry's 2026-11-01 decision
+to count a failing model/serial once per quarter for both Failed and the AFR
+numerator; a serial can count again in a later quarter. His Retired refinement
+counts final-observed identities in nonterminal quarters, including failed
+identities; it does not prove physical exit. Terminal Retired is unavailable
+(`right_censored`), with no Failed proxy. Earlier source gaps still obstruct
+inference. Old `2.0.0` retains its prior sentinel and proxy. The identity includes
+this convention, even with identical inputs, revision and timestamp. Existing
+`2.0.0` objects remain
+unchanged and indexed. The recorded exposure denominator, cohort and source
+completeness policies are unchanged. Inspect the plan's
+`matrixCalculationVersion` before an authorized refresh; a code change alone
+does not authorize generation/publication.
+
 ## Inspect, execute and verify
 
 From the repository root:

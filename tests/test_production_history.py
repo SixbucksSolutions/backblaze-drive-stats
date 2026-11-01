@@ -74,8 +74,11 @@ class ProductionHistoryTests(unittest.TestCase):
         self.assertTrue(all(value is None for value in first["metrics"].values()))
         self.assertAlmostEqual(eligible["metrics"]["observedRecordedAfr"], 3 / 4400 * 36500)
         self.assertIsNone(eligible["completeHistoryAfr"])
-        self.assertEqual(eligible["metrics"]["observedRecordedAfrDelta"], 0)
-        self.assertEqual(eligible["metrics"]["populationDelta"], 0)
+        self.assertEqual(
+            eligible["metrics"]["observedRecordedAfrDelta"],
+            eligible["metrics"]["observedRecordedAfr"],
+        )
+        self.assertEqual(eligible["metrics"]["populationDelta"], 2200)
         self.assertEqual(gap["status"], "missing")
         self.assertEqual(below["status"], "below_threshold")
         self.assertEqual(reentry["relativeQuarter"], 5)
@@ -83,7 +86,8 @@ class ProductionHistoryTests(unittest.TestCase):
         self.assertEqual(reentry["metrics"]["populationDelta"], 100)
         self.assertAlmostEqual(reentry["metrics"]["observedRecordedAfr"], 5 / 8699 * 36500)
         self.assertIsNone(eligible["metrics"]["retired"])
-        self.assertEqual(reentry["metrics"]["retired"], 1)
+        self.assertIsNone(reentry["metrics"]["retired"])
+        self.assertEqual(reentry["retiredReason"], "right_censored")
         self.assertEqual(reentry["metrics"]["new"], 100)
         self.assertEqual(block["cells"][-1]["relativeQuarter"], 24)
 
@@ -98,6 +102,96 @@ class ProductionHistoryTests(unittest.TestCase):
         self.assertEqual(artifacts, self.artifacts)
         self.assertEqual(diagnostics["computedQuarters"], [])
         self.assertEqual(len(diagnostics["reusedQuarters"]), 5)
+
+    def test_versioned_first_baselines_preserve_legacy_identity_and_components(self):
+        manifests = sorted((self.root / "cache/quarters").glob("*/*/manifest.json"))
+        index, artifacts, _ = generate(
+            summary_manifests=manifests,
+            matrix_calculation_version="2.0.0",
+            **self.args,
+        )
+        descriptor = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])
+        legacy = json.loads(artifacts[descriptor["matrix"]["path"]])
+        self.assertNotEqual(index["latestSnapshotId"], self.index["latestSnapshotId"])
+        self.assertEqual(descriptor["context"]["versions"]["rate"], "2.0.0")
+        self.assertEqual(self.descriptor["context"]["versions"]["rate"], "2.1.0")
+        expected_identity = digest(
+            dict(
+                asOf=self.args["as_of"],
+                historyStart=self.args["history_start"],
+                source=descriptor["context"]["sourceManifestSha256"],
+                registry=REGISTRY,
+                patterns=PATTERNS,
+                selection=self.args["selection"],
+                generator=self.args["generator_revision"],
+                kind="sample",
+                firstPublished="2013-04-10",
+                generatedAt=self.args["generated_at"],
+            )
+        )
+        self.assertEqual(
+            index["latestSnapshotId"], self.args["as_of"] + "-v2-" + expected_identity[:24]
+        )
+        for old_model, new_model in zip(legacy["models"], self.matrix["models"], strict=True):
+            first = True
+            for old, new in zip(old_model["cells"], new_model["cells"], strict=True):
+                if first and old["status"] == "eligible":
+                    self.assertEqual(old["metrics"]["populationDelta"], 0)
+                    self.assertEqual(old["metrics"]["observedRecordedAfrDelta"], 0)
+                    old["metrics"]["populationDelta"] = new["metrics"]["count"]
+                    old["metrics"]["observedRecordedAfrDelta"] = new["metrics"][
+                        "observedRecordedAfr"
+                    ]
+                    first = False
+                if new["retiredReason"] == "right_censored":
+                    self.assertEqual(old["retiredReason"], "cutoff_failed_proxy")
+                    self.assertEqual(old["metrics"]["retired"], old["metrics"]["failed"])
+                    old["retiredReason"] = "right_censored"
+                    old["metrics"]["retired"] = None
+                self.assertEqual(old, new)
+
+    def test_unsupported_matrix_calculation_version_rejected_before_input(self):
+        with self.assertRaisesRegex(ValueError, "Unsupported matrix calculation version"):
+            generate(matrix_calculation_version="2.2.0", **self.args)
+
+    def test_retired_nonterminal_last_seen_includes_failed_and_ignores_global_latest_date(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = bounds("2023-Q1")[0]
+            supplied = [
+                make_input(root, "2023-Q1", {0: rows(first, 2000, failure=1)}),
+                make_input(root, "2023-Q2", {}),
+            ]
+            arguments: dict = dict(
+                self.args,
+                cache_root=root / "cache",
+                as_of="2023-Q2",
+                history_start="2023-Q1",
+                selection=dict(
+                    version="2.0.0",
+                    analysisModelIds=[self.mid],
+                    purchaseDefaultModelIds=[],
+                    historicalReferenceModelIds=[],
+                ),
+            )
+            output = {}
+            for version in ("2.0.0", "2.1.0"):
+                index, artifacts, _ = generate(
+                    supplied, matrix_calculation_version=version, **arguments
+                )
+                descriptor = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])
+                output[version] = json.loads(artifacts[descriptor["matrix"]["path"]])["models"][0][
+                    "cells"
+                ][0]
+            self.assertEqual(output["2.0.0"]["metrics"]["retired"], 0)
+            self.assertEqual(output["2.1.0"]["metrics"]["retired"], 2000)
+            self.assertEqual(output["2.1.0"]["metrics"]["failed"], 1)
+            self.assertEqual(output["2.1.0"]["retiredReason"], "inferred")
+            index, artifacts, _ = generate(supplied, **dict(arguments, as_of="2023-Q1"))
+            descriptor = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])
+            terminal = json.loads(artifacts[descriptor["matrix"]["path"]])["models"][0]["cells"][0]
+            self.assertIsNone(terminal["metrics"]["retired"])
+            self.assertEqual(terminal["retiredReason"], "right_censored")
 
     def test_captured_datacenter_headers_preserve_cold_retained_parity(self):
         from datetime import timedelta

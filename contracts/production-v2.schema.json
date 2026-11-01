@@ -21,11 +21,7 @@
     "reference": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "path",
-        "sha256",
-        "sizeBytes"
-      ],
+      "required": ["path", "sha256", "sizeBytes"],
       "properties": {
         "path": {
           "type": "string",
@@ -45,11 +41,7 @@
     "evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "id",
-        "sha256",
-        "url"
-      ],
+      "required": ["id", "sha256", "url"],
       "properties": {
         "id": {
           "type": "string",
@@ -86,12 +78,7 @@
           "pattern": "^[0-9]{4}-Q[1-4]$"
         },
         "status": {
-          "enum": [
-            "complete",
-            "partial",
-            "missing",
-            "unpublished"
-          ]
+          "enum": ["complete", "partial", "missing", "unpublished"]
         },
         "expectedDays": {
           "type": "integer",
@@ -205,11 +192,7 @@
           "maximum": 9007199254740991
         },
         "thresholdProof": {
-          "enum": [
-            null,
-            "complete_exact_count",
-            "partial_identity_lower_bound"
-          ]
+          "enum": [null, "complete_exact_count", "partial_identity_lower_bound"]
         },
         "evidence": {
           "type": "array",
@@ -265,11 +248,7 @@
           "uniqueItems": true
         },
         "mediaClass": {
-          "enum": [
-            "hdd",
-            "ssd",
-            "unclassified"
-          ]
+          "enum": ["hdd", "ssd", "unclassified"]
         },
         "classificationEvidence": {
           "type": "array",
@@ -429,11 +408,7 @@
     "provenance": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "label",
-        "credit",
-        "url"
-      ],
+      "required": ["label", "credit", "url"],
       "properties": {
         "label": {
           "type": "string",
@@ -573,10 +548,7 @@
           "format": "date-time"
         },
         "kind": {
-          "enum": [
-            "sample",
-            "backblaze"
-          ]
+          "enum": ["sample", "backblaze"]
         },
         "generatorRevision": {
           "type": "string",
@@ -617,23 +589,14 @@
     "quarterReference": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "quarter",
-        "status",
-        "payload"
-      ],
+      "required": ["quarter", "status", "payload"],
       "properties": {
         "quarter": {
           "type": "string",
           "pattern": "^[0-9]{4}-Q[1-4]$"
         },
         "status": {
-          "enum": [
-            "complete",
-            "partial",
-            "missing",
-            "unpublished"
-          ]
+          "enum": ["complete", "partial", "missing", "unpublished"]
         },
         "payload": {
           "anyOf": [
@@ -854,17 +817,14 @@
           ]
         },
         "deltaReason": {
-          "enum": [
-            "initialized",
-            "prior_eligible",
-            "unavailable"
-          ]
+          "enum": ["initialized", "prior_eligible", "unavailable"]
         },
         "retiredReason": {
           "enum": [
             "inferred",
             "gap_obstructed",
             "cutoff_failed_proxy",
+            "right_censored",
             "unavailable"
           ]
         },
@@ -910,11 +870,7 @@
     "aggregate": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "count",
-        "new",
-        "capacityTB"
-      ],
+      "required": ["count", "new", "capacityTB"],
       "properties": {
         "count": {
           "anyOf": [
@@ -956,12 +912,7 @@
     "supportingModel": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "modelId",
-        "count",
-        "new",
-        "capacityTB"
-      ],
+      "required": ["modelId", "count", "new", "capacityTB"],
       "properties": {
         "modelId": {
           "type": "string",
@@ -1146,10 +1097,7 @@
     "scopes": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "selected_hdd",
-        "all_supplied"
-      ],
+      "required": ["selected_hdd", "all_supplied"],
       "properties": {
         "selected_hdd": {
           "$ref": "#/$defs/scope"
@@ -1162,11 +1110,7 @@
     "location": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "name",
-        "count",
-        "capacityTB"
-      ],
+      "required": ["name", "count", "capacityTB"],
       "properties": {
         "name": {
           "type": "string",
@@ -1302,10 +1246,16 @@
           "pattern": "^[0-9]{4}-Q[1-4]$"
         },
         "rateBasis": {
-          "const": "observed-recorded-exposure-v2"
+          "enum": [
+            "observed-recorded-exposure-v2",
+            "observed-quarter-distinct-failed-identities-recorded-exposure-v2.1"
+          ]
         },
         "rateLabel": {
-          "const": "Observed-history AFR"
+          "enum": [
+            "Observed-history AFR",
+            "Observed-history AFR (quarterly unique failures)"
+          ]
         },
         "relativeQuarterCount": {
           "type": "integer",
@@ -1364,10 +1314,7 @@
           "pattern": "^[0-9]{4}-Q[1-4]$"
         },
         "status": {
-          "enum": [
-            "complete",
-            "partial"
-          ]
+          "enum": ["complete", "partial"]
         },
         "capacityBasis": {
           "const": "observed-identity-capacity-mode-v2"

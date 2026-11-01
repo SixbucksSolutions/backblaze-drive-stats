@@ -122,16 +122,17 @@ complete row at relative quarter 2. Reentry never resets the clock.
 The seven display metrics are `observedRecordedAfr`,
 `observedRecordedAfrDelta`, Count, population Delta, New, Retired and Failed.
 
-`observedRecordedAfr = knownFailures / knownDriveDays * 36500`
+`observedRecordedAfr = cumulative knownFailures / cumulative knownDriveDays * 36500`
 
 The percent is annualized using 365 days. One validated identity/date record
 contributes one recorded drive-day. Include all recorded pre-anchor and
 subthreshold exposure through the cell's cutoff; do not reset components after
-gaps or reentry. A zero denominator yields null. Six failure flags over 100,000
-recorded drive-days, for example, yield 2.19% in a fictional example.
+gaps or reentry. A zero denominator yields null. Six numerator units over 100,000
+recorded drive-days yield 2.19% in a fictional example: those units are flags in
+`2.0.0` or quarterly distinct failing-identity counts in `2.1.0`.
 
-The public label is **Observed-history AFR** and rate basis is
-`observed-recorded-exposure-v2`. It is a ratio over recorded observations, not
+The public label and rate basis identify the declared calculation convention
+(specified below). It is a ratio over recorded observations, not
 an estimate of individual-drive survival or an assertion that missing days are
 representative. Source-completeness limitations travel with the value.
 `completeHistoryAfr` is null unless required source history through that cell is
@@ -146,17 +147,64 @@ observations or components. The grid still reaches relative quarter 24 and any
 longer observed history.
 
 Both deltas use the previous eligible complete row at the same rate basis, with
-its actual calendar quarter and elapsed distance. First eligible values use
-explicit initialization from zero. An unavailable baseline rate is not skipped
-to find a convenient older value. A multi-quarter difference is not labeled
-quarter-over-quarter.
+its actual calendar quarter and elapsed distance. The structural
+`contractVersion` remains `2.0.0`. `context.versions.rate` identifies the matrix
+calculation convention for **both** Count and AFR deltas:
+
+- `2.0.0` preserves the established policy of initializing both first eligible
+  deltas to zero. Existing immutable artifacts keep that meaning.
+- `2.1.0` follows the original Python XLSX: first Count Delta equals Count and
+  first AFR Delta equals AFR, subtracting a synthetic zero baseline. This zero
+  is not an earlier observed quarter; baseline quarter/distance remain null.
+  Terry's explicit 2026-11-01 exception to the original flag-summing calculation
+  also deduplicates Failed **per model/serial/quarter** and uses those same
+  quarterly distinct counts for the AFR numerator. Multiple failure days count
+  once in a quarter. A serial flagged in two different quarters counts once in
+  each; cumulative AFR sums quarterly counts, not lifetime-unique serials.
+
+`knownFailures` and `cumulativeKnownFailures` carry the versioned numerator:
+daily flags in `2.0.0`, quarterly distinct failed-identity counts in `2.1.0`.
+The new version bounds each quarter's `knownFailures` by its
+`knownIdentityLowerBound` (and exact Count on complete coverage). Both complete
+and partial recorded components use this basis. The recorded drive-day
+denominator, threshold, cohort, anchor and gap/null policies are unchanged.
+Terry's additional 2026-11-01 Retired refinement applies to `2.1.0`: count unique
+model/serials observed in the quarter whose final recorded observation is in
+that quarter, provided it is before the selected snapshot quarter. There is no
+global latest-observed-date exclusion. Failed identities are included, so
+Retired and Failed can overlap. This describes last recorded observations,
+not a confirmed physical exit or its cause.
+
+For eligible terminal cells, Retired is null with `retiredReason: right_censored`;
+there is no terminal zero or Failed proxy. Explicit gap-obstructed inference
+remains null on earlier cells. Version `2.0.0` preserves its global latest-date
+exclusion and selected-cutoff Retired = Failed flag proxy exactly.
+
+The `2.0.0` matrix keeps `rateBasis: observed-recorded-exposure-v2` and label
+`Observed-history AFR`. The `2.1.0` matrix requires
+`rateBasis: observed-quarter-distinct-failed-identities-recorded-exposure-v2.1`
+and label `Observed-history AFR (quarterly unique failures)`. Validators reject
+a basis/label that disagrees with the context calculation version. Inspector
+components and help use the same versioned units.
+`deltaReason: initialized` means apply the convention declared by `versions.rate`.
+Readers and validators accept these two versions explicitly and reject others.
+An unavailable baseline rate is not skipped to find a convenient older value.
+A multi-quarter difference is not labeled quarter-over-quarter.
+
+`production_history.generate` and its direct JSON configuration default new
+output to calculation version `2.1.0` (`matrix_calculation_version` in Python,
+`matrixCalculationVersion` in JSON). New snapshot identity includes that chosen
+version. Explicit `2.0.0` retains the original identity recipe and arithmetic.
+The refresh workflow preserves the baseline convention unless the refresh
+configuration explicitly requests a supported change; see
+[quarterly refresh](quarterly-refresh.md).
 
 New means first **recorded** observation in supplied history, including the
 initial observed fleet. Gaps and the publication start limit its interpretation
-as an installation date. Retired retains the v1 last-observed inference: source
-gaps that obstruct inference make it unavailable, and the selected cutoff's
-Retired = Failed proxy stays explicitly provisional. Failure flags are not
-necessarily distinct failed identities. No conservation identity equates
+as an installation date. Retired uses the versioned last-observed rules above;
+source gaps that obstruct inference make it unavailable. Retired includes failed
+identities; it does not establish a non-failure retirement cause. Failed and the
+AFR numerator follow the shared versioned basis above. No conservation identity equates
 population Delta with New minus Retired.
 
 The accepted single display guide defaults to **after relative year 6**, after

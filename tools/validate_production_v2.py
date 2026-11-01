@@ -180,6 +180,14 @@ def validate_artifact(value):
 
 
 def _context(context):
+    versions = context["versions"]
+    _require(
+        versions["normalization"] in {"1.0.0", "2.0.0"}
+        and versions["classification"] in {"1.0.0", "2.0.0"}
+        and versions["rate"] in {"2.0.0", "2.1.0"}
+        and all(versions[key] == "2.0.0" for key in ("selection", "cohort", "capacity")),
+        "unsupported semantic version",
+    )
     coverage = context["coverage"]
     domain = context["sourceDomain"]
     start, end = _ordinal(domain["historyStartQuarter"]), _ordinal(context["asOfQuarter"])
@@ -262,6 +270,8 @@ def _context(context):
             count, lower = row["quarterCount"], row["knownIdentityLowerBound"]
             failures, days = row["knownFailures"], row["knownDriveDays"]
             _require(failures <= days, "failure/exposure budget")
+            if versions["rate"] == "2.1.0":
+                _require(failures <= (lower or 0), "distinct failure/identity budget")
             _require((count is not None) == complete, "Count only exact on complete coverage")
             _require((lower is not None) == available, "identity lower bound requires source")
             proof = None
@@ -351,6 +361,22 @@ def _context(context):
 
 
 def _matrix(matrix, context):
+    unique_failures = context["versions"]["rate"] == "2.1.0"
+    _require(
+        matrix["rateBasis"]
+        == (
+            "observed-quarter-distinct-failed-identities-recorded-exposure-v2.1"
+            if unique_failures
+            else "observed-recorded-exposure-v2"
+        )
+        and matrix["rateLabel"]
+        == (
+            "Observed-history AFR (quarterly unique failures)"
+            if unique_failures
+            else "Observed-history AFR"
+        ),
+        "rate basis/label differs from calculation version",
+    )
     models = {model["modelId"]: model for model in context["inventory"]}
     blocks = matrix["models"]
     _require(len(blocks) == len({block["modelId"] for block in blocks}), "duplicate matrix block")
@@ -476,8 +502,18 @@ def _matrix(matrix, context):
                     and cell["deltaReason"] == "initialized",
                     "first eligible initialization",
                 )
-                _same(metrics["populationDelta"], 0, "initial population delta", exact=True)
-                _same(metrics["observedRecordedAfrDelta"], 0, "initial rate delta")
+                subtract_zero = context["versions"]["rate"] == "2.1.0"
+                _same(
+                    metrics["populationDelta"],
+                    metrics["count"] if subtract_zero else 0,
+                    "initial population delta",
+                    exact=True,
+                )
+                _same(
+                    metrics["observedRecordedAfrDelta"],
+                    metrics["observedRecordedAfr"] if subtract_zero else 0,
+                    "initial rate delta",
+                )
             else:
                 _require(
                     cell["baselineQuarter"] == prior["quarter"]
@@ -511,9 +547,15 @@ def _matrix(matrix, context):
             )
             if quarter == context["asOfQuarter"]:
                 _require(
-                    cell["retiredReason"] == "cutoff_failed_proxy"
-                    and metrics["retired"] == metrics["failed"],
-                    "cutoff retirement proxy",
+                    (cell["retiredReason"] == "right_censored" and metrics["retired"] is None)
+                    if unique_failures
+                    else (
+                        cell["retiredReason"] == "cutoff_failed_proxy"
+                        and metrics["retired"] == metrics["failed"]
+                    ),
+                    "terminal retirement right-censoring"
+                    if unique_failures
+                    else "cutoff retirement proxy",
                 )
             elif obstructed:
                 _require(

@@ -1,6 +1,9 @@
 # Python toolchain
 
-Verified for the Python + Polars workflow on 2026-10-30:
+Versions rechecked against official release/registry metadata on 2026-11-01;
+see the [buildchain freshness audit](buildchain-freshness-0102.md) for the current
+quality gate and compatibility holds. Historical data verification below retains
+its original scope.
 
 | Component | Tested version |
 | --- | --- |

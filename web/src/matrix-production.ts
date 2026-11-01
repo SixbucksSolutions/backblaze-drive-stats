@@ -80,7 +80,15 @@ export function adaptProductionV2(
   const { context } = descriptor;
   if (
     matrix.contractVersion !== '2.0.0' ||
-    matrix.rateBasis !== 'observed-recorded-exposure-v2' ||
+    !['2.0.0', '2.1.0'].includes(context.versions.rate) ||
+    matrix.rateBasis !==
+      (context.versions.rate === '2.1.0'
+        ? 'observed-quarter-distinct-failed-identities-recorded-exposure-v2.1'
+        : 'observed-recorded-exposure-v2') ||
+    matrix.rateLabel !==
+      (context.versions.rate === '2.1.0'
+        ? 'Observed-history AFR (quarterly unique failures)'
+        : 'Observed-history AFR') ||
     matrix.snapshotId !== context.snapshotId ||
     matrix.contextSha256 !== descriptor.contextSha256 ||
     matrix.asOfQuarter !== context.asOfQuarter
@@ -158,25 +166,35 @@ export function adaptProductionV2(
               : {
                   kind:
                     cell.deltaReason === 'initialized'
-                      ? 'initial_zero_delta'
+                      ? context.versions.rate === '2.1.0'
+                        ? 'initial_subtract_zero'
+                        : 'initial_zero_delta'
                       : 'Change since prior eligible quarter',
                   priorQuarter: cell.baselineQuarter,
                   elapsedQuarters: cell.baselineQuarterDistance,
                   afr:
                     cell.deltaReason === 'initialized'
-                      ? null
+                      ? context.versions.rate === '2.1.0'
+                        ? 0
+                        : null
                       : (baseline?.metrics.observedRecordedAfr ?? null),
                   count:
-                    cell.deltaReason === 'initialized' ? null : (baseline?.metrics.count ?? null),
+                    cell.deltaReason === 'initialized'
+                      ? context.versions.rate === '2.1.0'
+                        ? 0
+                        : null
+                      : (baseline?.metrics.count ?? null),
                 },
           retirementInference:
-            cell.retiredReason === 'cutoff_failed_proxy'
-              ? 'PROVISIONAL: selected-cutoff Retired = Failed proxy'
-              : cell.retiredReason === 'gap_obstructed'
-                ? 'Unavailable: source gaps obstruct last-observed inference'
-                : cell.retiredReason === 'inferred'
-                  ? 'Inferred from last recorded observation; cause unknown'
-                  : 'Unavailable',
+            cell.retiredReason === 'right_censored'
+              ? 'Unavailable: selected snapshot quarter is right-censored; later observations are unavailable'
+              : cell.retiredReason === 'cutoff_failed_proxy'
+                ? 'PROVISIONAL: selected-cutoff Retired = Failed proxy'
+                : cell.retiredReason === 'gap_obstructed'
+                  ? 'Unavailable: source gaps obstruct last-observed inference'
+                  : cell.retiredReason === 'inferred'
+                    ? 'Unique identities last observed in this nonterminal quarter; includes failed departures; not proof of physical exit'
+                    : 'Unavailable',
           rateUnavailableReason:
             cell.metrics.observedRecordedAfr === null
               ? `Unavailable: ${cell.status}; zero recorded denominator or unavailable display row`
@@ -232,6 +250,7 @@ export function adaptProductionV2(
     label: `${context.asOfQuarter.replace('-Q', ' Q')} · ${context.kind === 'backblaze' ? 'Backblaze observed history' : 'fictional v2 sample'}`,
     kind: context.kind === 'backblaze' ? 'production' : 'sample',
     rateLabel: matrix.rateLabel,
+    matrixCalculationVersion: context.versions.rate,
     sourceUrl: context.provenance.url,
     sourceHash: context.sourceManifestSha256,
     cutoff: context.cutoffDate,
@@ -247,9 +266,11 @@ export function adaptProductionV2(
 
 /** V2 initializes the delta itself; it does not invent a prior measured value. */
 export function initializedBaselineLabel(baseline: MatrixCell['deltaBaseline']): string | null {
-  return baseline?.kind === 'initial_zero_delta'
-    ? 'Deltas initialized to zero. Prior AFR/Count baseline and elapsed span: not applicable.'
-    : null;
+  return baseline?.kind === 'initial_subtract_zero'
+    ? 'First eligible deltas subtract synthetic zero: AFR 0%, Count 0. This is not a prior observed quarter; elapsed span is not applicable.'
+    : baseline?.kind === 'initial_zero_delta'
+      ? 'Deltas initialized to zero. Prior AFR/Count baseline and elapsed span: not applicable.'
+      : null;
 }
 
 /** Only the latest requested validated selection may be committed to the view. */

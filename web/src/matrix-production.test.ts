@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
 import { SnapshotLoader } from './snapshot-loader.ts';
-import { parseProductionIndex } from './production-data.ts';
+import {
+  parseProductionIndex,
+  parseProductionMatrix,
+  parseSnapshotDescriptor,
+  verifyReference,
+} from './production-data.ts';
 import {
   adaptProductionV2,
   initializedBaselineLabel,
@@ -23,6 +29,101 @@ function localLoader(directory: URL, indexName = 'index.json') {
 const production = new URL('../public/data/production/', import.meta.url);
 const samples = new URL('../../fixtures/production-v2/', import.meta.url);
 const sampleIndex = (await readdir(samples)).find((name) => name.startsWith('sample-index.'))!;
+
+void test('2.1 calculation semantics subtract synthetic zero while legacy zero deltas remain versioned', async () => {
+  const { loader } = localLoader(samples, sampleIndex);
+  const index = await loader.loadIndex();
+  const entry = structuredClone(index.snapshots[0]!);
+  const descriptor = structuredClone(await loader.loadSnapshot(entry.snapshotId));
+  const matrix = structuredClone(await loader.loadMatrix(descriptor));
+  const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
+  const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+  const canonical = (value: unknown): unknown =>
+    Array.isArray(value)
+      ? value.map(canonical)
+      : value !== null && typeof value === 'object'
+        ? Object.fromEntries(
+            Object.entries(value)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([key, item]) => [key, canonical(item)]),
+          )
+        : value;
+  descriptor.context.versions.rate = '2.1.0';
+  descriptor.context.snapshotId += '-matrix-2-1';
+  entry.snapshotId = descriptor.context.snapshotId;
+  matrix.snapshotId = entry.snapshotId;
+  descriptor.contextSha256 = hash(encode(canonical(descriptor.context)));
+  matrix.contextSha256 = descriptor.contextSha256;
+  matrix.rateBasis = 'observed-quarter-distinct-failed-identities-recorded-exposure-v2.1';
+  matrix.rateLabel = 'Observed-history AFR (quarterly unique failures)';
+  assert.throws(
+    () => parseProductionMatrix(encode(matrix), descriptor),
+    /initial population delta|initial rate delta/,
+  );
+  for (const model of matrix.models) {
+    const first = model.cells.find((cell) => cell.status === 'eligible');
+    if (first) {
+      first.metrics.populationDelta = first.metrics.count;
+      first.metrics.observedRecordedAfrDelta = first.metrics.observedRecordedAfr;
+    }
+    for (const cell of model.cells) {
+      if (cell.status === 'eligible' && cell.quarter === descriptor.context.asOfQuarter) {
+        cell.metrics.retired = null;
+        cell.retiredReason = 'right_censored';
+      }
+    }
+  }
+  const matrixBytes = encode(matrix);
+  descriptor.matrix = {
+    path: `matrix.${hash(matrixBytes)}.json`,
+    sha256: hash(matrixBytes),
+    sizeBytes: matrixBytes.length,
+  };
+  const descriptorBytes = encode(descriptor);
+  entry.descriptor = {
+    path: `descriptor.${hash(descriptorBytes)}.json`,
+    sha256: hash(descriptorBytes),
+    sizeBytes: descriptorBytes.length,
+  };
+  await verifyReference(descriptorBytes, entry.descriptor);
+  const parsedDescriptor = parseSnapshotDescriptor(descriptorBytes, entry);
+  await verifyReference(matrixBytes, parsedDescriptor.matrix);
+  const parsedMatrix = parseProductionMatrix(matrixBytes, parsedDescriptor);
+  const view = adaptProductionV2(parsedDescriptor, parsedMatrix);
+  assert.equal(view.matrixCalculationVersion, '2.1.0');
+  const first = view.models
+    .flatMap((model) => model.cells)
+    .find((cell) => cell.deltaBaseline?.kind === 'initial_subtract_zero')!;
+  assert.equal(first.metrics.populationDelta, first.metrics.count);
+  assert.equal(first.metrics.afrDelta, first.metrics.afr);
+  assert.equal(first.deltaBaseline?.count, 0);
+  assert.equal(first.deltaBaseline?.afr, 0);
+  assert.match(
+    initializedBaselineLabel(first.deltaBaseline)!,
+    /synthetic zero.*not a prior observed quarter/,
+  );
+  const terminal = parsedMatrix.models
+    .flatMap((model) => model.cells)
+    .find((cell) => cell.status === 'eligible' && cell.quarter === descriptor.context.asOfQuarter)!;
+  const adaptedTerminal = view.models
+    .flatMap((model) => model.cells)
+    .find((cell) => cell.retirementInference?.includes('right-censored'))!;
+  assert.equal(adaptedTerminal.metrics.retired, null);
+  for (const value of [0, terminal.metrics.failed]) {
+    const changed = structuredClone(parsedMatrix);
+    const cell = changed.models
+      .flatMap((model) => model.cells)
+      .find((row) => row.status === 'eligible' && row.quarter === descriptor.context.asOfQuarter)!;
+    cell.metrics.retired = value;
+    assert.throws(
+      () => parseProductionMatrix(encode(changed), parsedDescriptor),
+      /terminal retirement right-censoring/,
+    );
+  }
+  const legacyDescriptor = structuredClone(parsedDescriptor);
+  legacyDescriptor.context.versions.rate = '2.0.0';
+  assert.throws(() => parseProductionMatrix(matrixBytes, legacyDescriptor), /rate basis\/label/);
+});
 
 void test('real three-snapshot matrix maps every v2 display value without changing source semantics or shared domains', async () => {
   const { loader, calls } = localLoader(production);

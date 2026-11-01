@@ -72,6 +72,7 @@ export type MatrixSnapshot = {
   label: string;
   kind: 'reference' | 'sample' | 'production';
   rateLabel?: string;
+  matrixCalculationVersion?: string;
   sourceUrl: string | null;
   sourceHash: string;
   cutoff: string | null;

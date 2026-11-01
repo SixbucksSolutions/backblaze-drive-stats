@@ -35,6 +35,7 @@ from history_storage import atomic_write, json_bytes, object_key
 from tools.validate_production_v2 import _walk, load_json, validate_generation
 
 VERSION = "2.0.0"
+MATRIX_CALCULATION_VERSION = "2.1.0"
 METRICS = (
     "observedRecordedAfr",
     "observedRecordedAfrDelta",
@@ -230,6 +231,7 @@ def generate(
     kind="backblaze",
     generated_at,
     first_published_date="2013-04-10",
+    matrix_calculation_version=MATRIX_CALCULATION_VERSION,
 ):
     """Return (index, exact-byte artifact map, diagnostics), without publication.
 
@@ -238,9 +240,17 @@ def generate(
     omitting it admits every evidenced qualifying HDD in this versioned generation.
     Inputs and summary_manifests are mutually exclusive. Future summaries/inputs
     are excluded before reading their bytes. The as-of cutoff is quarter end.
+    Matrix calculation 2.0.0 preserves daily flags and zero-initialized deltas;
+    2.1.0 counts failing identities once per quarter for Failed/AFR and subtracts
+    synthetic zero for the first eligible Count/AFR deltas. Its Retired counts
+    final-observed identities only in nonterminal quarters; terminal Retired is
+    right-censored. No summary rewrite
+    is required; the selected convention is bound into new snapshot identity.
     """
     if kind not in {"backblaze", "sample"} or not generator_revision.strip():
         raise ValueError("Explicit code revision and source kind required")
+    if matrix_calculation_version not in {"2.0.0", "2.1.0"}:
+        raise ValueError("Unsupported matrix calculation version")
     if not selection.get("version"):
         raise ValueError("Explicit versioned cohort selection required")
     for name in ("purchaseDefaultModelIds", "historicalReferenceModelIds"):
@@ -394,10 +404,18 @@ def generate(
             for row in enriched.group_by("id")
             .agg(
                 pl.len().alias("count"),
-                pl.col("failures").sum(),
+                (
+                    (pl.col("failures") > 0).sum()
+                    if matrix_calculation_version == "2.1.0"
+                    else pl.col("failures").sum()
+                ).alias("failures"),
                 pl.col("driveDays").sum(),
                 (pl.col("first") == pl.col("inception")).sum().alias("new"),
-                ((pl.col("last") == pl.col("final")) & (pl.col("last") < newest))
+                (
+                    (pl.col("last") == pl.col("final"))
+                    if matrix_calculation_version == "2.1.0"
+                    else ((pl.col("last") == pl.col("final")) & (pl.col("last") < newest))
+                )
                 .sum()
                 .alias("retired"),
             )
@@ -535,6 +553,11 @@ def generate(
             kind=kind,
             firstPublished=first_published_date,
             generatedAt=generated_at,
+            **(
+                {"matrixCalculationVersion": matrix_calculation_version}
+                if matrix_calculation_version != "2.0.0"
+                else {}
+            ),
         )
     )
     sid = as_of + "-v2-" + identity[:24]
@@ -551,7 +574,7 @@ def generate(
             classification=selection.get("classificationVersion", "1.0.0"),
             selection=selection["version"],
             cohort=selection["version"],
-            rate=VERSION,
+            rate=matrix_calculation_version,
             capacity=VERSION,
         ),
         sourceDomain=dict(
@@ -620,7 +643,11 @@ def generate(
                     cov["status"] != "complete" for cov in coverage if cov["quarter"] >= q
                 )
                 retired_reason = (
-                    "cutoff_failed_proxy"
+                    (
+                        "right_censored"
+                        if matrix_calculation_version == "2.1.0"
+                        else "cutoff_failed_proxy"
+                    )
                     if q == as_of
                     else "gap_obstructed"
                     if obstructed
@@ -635,11 +662,19 @@ def generate(
                         else None
                     )
                     if prior
+                    else rate
+                    if matrix_calculation_version == "2.1.0"
                     else 0,
                     count=row["quarterCount"],
-                    populationDelta=row["quarterCount"] - prior["metrics"]["count"] if prior else 0,
+                    populationDelta=row["quarterCount"] - prior["metrics"]["count"]
+                    if prior
+                    else row["quarterCount"]
+                    if matrix_calculation_version == "2.1.0"
+                    else 0,
                     new=agg.get("new", 0),
-                    retired=row["knownFailures"]
+                    retired=(
+                        None if matrix_calculation_version == "2.1.0" else row["knownFailures"]
+                    )
                     if q == as_of
                     else None
                     if obstructed
@@ -707,8 +742,12 @@ def generate(
     matrix = dict(
         artifactType="matrix",
         **common,
-        rateBasis="observed-recorded-exposure-v2",
-        rateLabel="Observed-history AFR",
+        rateBasis="observed-quarter-distinct-failed-identities-recorded-exposure-v2.1"
+        if matrix_calculation_version == "2.1.0"
+        else "observed-recorded-exposure-v2",
+        rateLabel="Observed-history AFR (quarterly unique failures)"
+        if matrix_calculation_version == "2.1.0"
+        else "Observed-history AFR",
         relativeQuarterCount=extent,
         guideAfterRelativeYear=6,
         models=blocks,
@@ -911,6 +950,9 @@ def main():
         kind=config.get("kind", "backblaze"),
         generated_at=config["generatedAt"],
         first_published_date=config.get("firstPublishedDate", "2013-04-10"),
+        matrix_calculation_version=config.get(
+            "matrixCalculationVersion", MATRIX_CALCULATION_VERSION
+        ),
     )
     publish_generation(config["outputDirectory"], index, artifacts)
     print(json.dumps(dict(snapshotId=index["latestSnapshotId"], **diagnostics)))

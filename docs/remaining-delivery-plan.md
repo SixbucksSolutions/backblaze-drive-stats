@@ -76,7 +76,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r045**. The
+Current rolling author/reviewer assignments are in private plan **r046**. The
 roster covers all remaining planned turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
@@ -110,6 +110,20 @@ mixed captures preserve valid known locations.
 
 Both cards reference the approved #0098 review and retain no blocking dependency.
 The UI wiring scenario remains conditional on the next relevant change or an
-inexpensive harness; no standalone tooling project was added. Only unfinished
-#0007 target work remains in the implementation roster. No further Astra
-execution is implied by the completed review.
+inexpensive harness; no standalone tooling project was added. #0007 owner
+acceptance remains pending. No further Astra execution is implied by
+the completed review.
+
+#0102's [buildchain audit](buildchain-freshness-0102.md) qualifies exact npm pins
+and two Python transitive updates. #0103's
+[metric reconciliation](afr-metric-reconciliation-0103.md) implements versioned
+quarterly unique Failed/AFR counts, final-observed Retired with a censored terminal
+quarter, and original-code delta baselines. Both are prepared for owner review;
+existing public generations and the live site retain their previous semantics.
+
+Terry explicitly held #0101 for its own turn. It remains Ready for Work and has
+not started. New #0104 tracks a separate, consistent full-history production
+refresh and deployment after #0103 and hosting acceptance; creating it did not
+start that work. The roster lists that future turn and #0101's dedicated held
+turn separately. It does not authorize source moves, downloads, ETL, B2
+publication or a Pages deployment.

@@ -44,10 +44,13 @@ class RefreshHistoryTests(unittest.TestCase):
             kind="sample",
             generated_at="2026-10-30T00:00:00Z",
             selection=cls.selection,
+            matrix_calculation_version="2.0.0",
         )
         first = bounds("2024-Q1")[0]
         q1 = make_input(
-            cls.root, "2024-Q1", {0: rows(first, 2100) + rows(first, 2100, "MYSTERY", prefix="u")}
+            cls.root,
+            "2024-Q1",
+            {0: rows(first, 2100, failure=1) + rows(first, 2100, "MYSTERY", prefix="u")},
         )
         index, artifacts, _ = generate([q1], **cls.args)
         cls.baseline = cls.root / "baseline"
@@ -148,6 +151,41 @@ class RefreshHistoryTests(unittest.TestCase):
             self.assertEqual(receipt["publicWrites"], 0)
             self.assertEqual(verify_refresh(self.config)["status"], "verified")
             self.assertNotIn(str(self.root), Path(self.config["receiptPath"]).read_text())
+
+    def test_explicit_calculation_migration_cannot_reuse_legacy_zero_delta_graph(self):
+        self.config["matrixCalculationVersion"] = "2.1.0"
+        with patch(
+            "production_history.summarize_partitioned_input",
+            side_effect=AssertionError("daily read"),
+        ):
+            plan = plan_refresh(self.config)
+            self.assertEqual(plan["matrixCalculationVersion"], "2.1.0")
+            self.assertNotEqual(plan["snapshotId"], self.baseline_index["latestSnapshotId"])
+            self.assertEqual(plan["generatedAt"], self.config["generatedAt"])
+            receipt = run_refresh(self.config)
+        self.assertGreater(receipt["publicWrites"], 0)
+        index, artifacts = load_generation(self.config["outputDirectory"])
+        self.assertEqual(len(index["snapshots"]), 2)
+        old_index, old_artifacts = load_generation(self.baseline)
+        for path, raw in old_artifacts.items():
+            self.assertEqual(artifacts[path], raw)
+        self.assertIn(old_index["snapshots"][0], index["snapshots"])
+        latest = next(
+            row for row in index["snapshots"] if row["snapshotId"] == index["latestSnapshotId"]
+        )
+        descriptor = json.loads(artifacts[latest["descriptor"]["path"]])
+        matrix = json.loads(artifacts[descriptor["matrix"]["path"]])
+        first = matrix["models"][0]["cells"][0]["metrics"]
+        self.assertGreater(first["observedRecordedAfr"], 0)
+        self.assertEqual(first["observedRecordedAfrDelta"], first["observedRecordedAfr"])
+        self.assertEqual(first["populationDelta"], first["count"])
+        self.assertEqual(verify_refresh(self.config)["status"], "verified")
+
+    def test_unsupported_calculation_version_rejected_without_writes(self):
+        self.config["matrixCalculationVersion"] = "2.2.0"
+        with self.assertRaisesRegex(ValueError, "Unsupported matrix calculation version"):
+            plan_refresh(self.config)
+        self.assertFalse(Path(self.config["outputDirectory"]).exists())
 
     def test_new_quarter_alias_and_new_vendor_require_versioned_explicit_admission(self):
         self.add_quarter("2024-Q2")

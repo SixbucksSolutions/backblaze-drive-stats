@@ -90,6 +90,59 @@ class ProductionV2Tests(unittest.TestCase):
             load_json(path), {p.name: p.read_bytes() for p in FIXTURES.glob("*.json") if p != path}
         )
 
+    def test_rebound_21_semantics_require_subtract_zero_without_changing_legacy(self):
+        self.context["versions"]["rate"] = "2.1.0"
+        self.matrix["rateBasis"] = (
+            "observed-quarter-distinct-failed-identities-recorded-exposure-v2.1"
+        )
+        self.matrix["rateLabel"] = "Observed-history AFR (quarterly unique failures)"
+        # Rebinding all byte/context references alone cannot reinterpret old
+        # initialized-zero values as the newly declared calculation convention.
+        self.reject("initial population delta|initial rate delta")
+        for model in self.matrix["models"]:
+            first = next((cell for cell in model["cells"] if cell["status"] == "eligible"), None)
+            if first:
+                first["metrics"]["populationDelta"] = first["metrics"]["count"]
+                first["metrics"]["observedRecordedAfrDelta"] = first["metrics"][
+                    "observedRecordedAfr"
+                ]
+            for cell in model["cells"]:
+                if cell["status"] == "eligible" and cell["quarter"] == self.context["asOfQuarter"]:
+                    cell["metrics"]["retired"] = None
+                    cell["retiredReason"] = "right_censored"
+        validate_generation(*self.bundle.pack())
+        terminal = next(
+            cell
+            for model in self.matrix["models"]
+            for cell in model["cells"]
+            if cell["status"] == "eligible" and cell["quarter"] == self.context["asOfQuarter"]
+        )
+        terminal["metrics"]["retired"] = 0
+        self.reject("terminal retirement right-censoring")
+        terminal["metrics"]["retired"] = terminal["metrics"]["failed"]
+        terminal["retiredReason"] = "cutoff_failed_proxy"
+        self.reject("terminal retirement right-censoring")
+        terminal["metrics"]["retired"] = None
+        terminal["retiredReason"] = "right_censored"
+        self.context["versions"]["rate"] = "2.0.0"
+        self.matrix["rateBasis"] = "observed-recorded-exposure-v2"
+        self.matrix["rateLabel"] = "Observed-history AFR"
+        self.reject("initial population delta|initial rate delta")
+
+    def test_distinct_failure_counts_cannot_exceed_observed_identity_budget(self):
+        self.context["versions"]["rate"] = "2.1.0"
+        row = self.context["inventory"][0]["history"][1]
+        row["knownFailures"] = row["knownIdentityLowerBound"] + 1
+        self.reject("distinct failure/identity budget")
+
+    def test_new_calculation_cannot_keep_old_failure_flag_rate_basis(self):
+        self.context["versions"]["rate"] = "2.1.0"
+        self.reject("rate basis/label")
+
+    def test_unsupported_calculation_semantics_reject_even_with_fresh_bindings(self):
+        self.context["versions"]["rate"] = "2.2.0"
+        self.reject("unsupported semantic version")
+
     def test_duplicate_and_nonfinite_json_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "bad.json"
