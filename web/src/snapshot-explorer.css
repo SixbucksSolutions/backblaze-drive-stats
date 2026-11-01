@@ -79,6 +79,47 @@
   border: 1px solid #dce4d6;
   border-radius: 6px;
 }
+.report-chart > h2,
+.report-chart > p {
+  margin: 16px 24px;
+}
+.report-table caption,
+.table-scroll caption {
+  padding: 12px;
+  color: #415c3a;
+  text-align: left;
+  line-height: 1.6;
+}
+.capacity-plot {
+  max-width: 100%;
+  overflow: auto;
+  margin: 12px;
+}
+.capacity-chart {
+  display: block;
+  min-width: 900px;
+  width: 100%;
+  height: auto;
+  color: #187d72;
+}
+.selected-capacity-row {
+  outline: 2px solid #187d72;
+  outline-offset: -2px;
+}
+.selected-capacity-point {
+  stroke: #102c25;
+  stroke-width: 2px;
+}
+.snapshot-layout .table-scroll {
+  max-width: 100%;
+}
+.snapshot-layout table {
+  width: 100%;
+}
+.snapshot-layout table td,
+.snapshot-layout table th {
+  overflow-wrap: normal;
+}
 .report-reading {
   margin: 8px 24px 16px;
   color: #415c3a;

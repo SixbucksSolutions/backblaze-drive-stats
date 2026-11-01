@@ -8,8 +8,15 @@ import {
   selectRows,
   selectionCsv,
   selectionTotals,
+  reportCsv,
 } from './snapshot-selection.ts';
-import type { ModelFilter, ModelSort } from './snapshot-selection.ts';
+import type { ModelFilter, ModelSort, ReportCsvMetadata } from './snapshot-selection.ts';
+import { CapacityHistoryReader, renderCapacity, capacityCsvRows } from './capacity-report.ts';
+import type { CapacityPoint } from './capacity-report.ts';
+import { renderManufacturers, manufacturerCsvRows } from './manufacturer-report.ts';
+import type { ManufacturerSort } from './manufacturer-report.ts';
+import { renderDatacenters, datacenterCsvRows } from './datacenter-report.ts';
+import { renderScopeMetrics } from './snapshot-summary.ts';
 import './snapshot-explorer.css';
 import { renderDeployments } from './deployment-report.ts';
 import { renderDistribution } from './distribution-report.ts';
@@ -44,6 +51,24 @@ const snapshotReports: Record<
     title: 'A closer look at the observed fleet.',
     description:
       'Distinct HDD identities observed anywhere in the calendar quarter, grouped by model.',
+  },
+  capacity: {
+    label: 'Total capacity',
+    title: 'Capacity over recorded history.',
+    description:
+      'All-supplied nominal raw capacity across calendar quarters, with unavailable periods left explicit.',
+  },
+  manufacturers: {
+    label: 'By manufacturer',
+    title: 'The manufacturers behind the HDD context.',
+    description:
+      'Capacity, observed population and first recorded additions, with distinct whole-context share denominators.',
+  },
+  datacenters: {
+    label: 'By datacenter',
+    title: 'Where the observed capacity lives.',
+    description:
+      'All supplied drive identities assigned once to their last observed location within each quarter.',
   },
 };
 const esc = (value: unknown) =>
@@ -97,6 +122,9 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
   let index: ProductionIndex | undefined;
   let descriptor: SnapshotDescriptor | undefined;
   let payload: SupportingQuarter | null = null;
+  const capacityReader = new CapacityHistoryReader(loader);
+  let capacityHistory: readonly CapacityPoint[] = [];
+  let manufacturerSort: ManufacturerSort = { key: 'capacityTB', descending: true };
   let snapshotId = params.get('snapshot') ?? '';
   let quarter = params.get('quarter') ?? '';
   let report = snapshotReport(params);
@@ -136,11 +164,33 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
     const currentReport = snapshotReports[report];
     document.title = `Drive Stats — ${currentReport.label}`;
     const deployments = report === 'deployments';
+    const allSupplied = report === 'capacity' || report === 'datacenters';
+    const specialized = allSupplied || report === 'manufacturers';
     const coverage = context?.coverage.find((entry) => entry.quarter === quarter);
     const visible = rows();
     const totals = selectionTotals(visible, payload?.status === 'complete');
     const whole = payload?.scopes.selected_hdd.totals;
     const all = payload?.scopes.all_supplied.totals;
+    const reportMarkup =
+      report === 'capacity'
+        ? renderCapacity(capacityHistory, quarter)
+        : report === 'manufacturers' && whole
+          ? renderManufacturers(visible, whole, payload?.status === 'complete', manufacturerSort)
+          : report === 'manufacturers'
+            ? '<div class="state-panel" role="status">No manufacturer observations are available for this period. Unknown metrics are not zero.</div>'
+            : report === 'datacenters' && coverage
+              ? renderDatacenters(payload?.datacenters ?? null, all ?? null, coverage)
+              : report === 'deployments'
+                ? renderDeployments(visible, payload?.status === 'complete')
+                : report === 'distribution'
+                  ? renderDistribution(visible, payload?.status === 'complete')
+                  : '';
+    const canExport =
+      report === 'capacity'
+        ? capacityHistory.length > 0
+        : report === 'datacenters'
+          ? payload !== null
+          : payload !== null && visible.length > 0;
     const vendors = [
       ...new Set(
         context?.inventory
@@ -162,7 +212,7 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
         )}</nav><p class="nav-label">OTHER QUARTERLY REPORTS</p><nav aria-label="Other quarterly reports">${Object.entries(
         reportNames,
       )
-        .filter(([id]) => id !== 'deployments' && id !== 'distribution')
+        .filter(([id]) => id === 'reliability')
         .map(([id, label]) => `<a class="nav-item" href="?view=${id}">${label}</a>`)
         .join(
           '',
@@ -199,8 +249,11 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
             : context
               ? `
       <div class="coverage-banner"><strong>${esc(coverage?.status ?? 'Unavailable')} source coverage · ${quarterLabel(quarter)}</strong><span>${esc(coverage?.reason ?? '')} ${coverage ? `${coverage.observedDays}/${coverage.expectedDays} calendar days observed.` : ''} Snapshot cutoff: ${esc(context.cutoffDate)}. Full-quarter metrics remain unavailable for incomplete coverage.</span></div>
-      <section class="metrics" aria-label="Population scopes"><article class="metric"><div class="metric-label">${deployments ? 'FILTERED FIRST RECORDED HDDs' : 'FILTERED HDD OBSERVED DRIVES'}</div><strong>${number(deployments ? totals.new : totals.count)}</strong><small>${visible.length} models in the visible selection</small></article><article class="metric"><div class="metric-label">${deployments ? 'WHOLE HDD CONTEXT FIRST RECORDED' : 'WHOLE SELECTED-HDD CONTEXT'}</div><strong>${number((deployments ? whole?.new : whole?.count) ?? null)}</strong><small>Includes seeded and smaller-population context</small></article><article class="metric"><div class="metric-label">ALL SUPPLIED OBSERVED DRIVES</div><strong>${number(all?.count ?? null)}</strong><small>Includes SSDs and unresolved media</small></article><article class="metric"><div class="metric-label">ALL SUPPLIED RAW CAPACITY</div><strong>${capacity(all?.capacityTB ?? null)}</strong><small>Aggregate capacity; decimal PB / EB</small></article></section>
-      <section class="panel table-panel"><div class="panel-header"><div><p class="eyebrow">COMPLETE SELECTED-HDD RESULTS</p><h2>${deployments ? 'First recorded additions by model' : 'Selected HDD observations'}</h2></div><button id="snapshot-download" class="button" ${!payload || !visible.length ? 'disabled' : ''}>Download CSV</button></div>
+      ${renderScopeMetrics(report, totals, payload, coverage, visible.length)}
+      <section class="panel table-panel"><div class="panel-header"><div><p class="eyebrow">${allSupplied ? 'ALL SUPPLIED OBSERVATIONS' : 'COMPLETE SELECTED-HDD RESULTS'}</p><h2>${specialized ? currentReport.label : deployments ? 'First recorded additions by model' : 'Selected HDD observations'}</h2></div><button id="snapshot-download" class="button" ${!canExport ? 'disabled' : ''}>Download CSV</button></div>
+      ${
+        !allSupplied
+          ? `
       <div class="filters"><label class="search"><input id="snapshot-search" type="search" aria-label="Find a model or vendor" placeholder="Find a model or vendor…" value="${esc(filter.search)}"></label><label>Vendor<select id="snapshot-vendor"><option value="">All vendors</option>${vendors.map((vendor) => `<option value="${esc(vendor)}" ${filter.vendor === vendor ? 'selected' : ''}>${esc(vendor)}</option>`).join('')}</select></label>${report === 'overview' ? `<label>Model set<select id="snapshot-preset"><option value="context" ${filter.preset === 'context' ? 'selected' : ''}>Whole HDD context</option><option value="purchase" ${filter.preset === 'purchase' ? 'selected' : ''}>Purchase comparison defaults</option><option value="reference" ${filter.preset === 'reference' ? 'selected' : ''}>Historical references</option></select></label>` : ''}<button id="snapshot-reset" class="text-button">Clear filters</button></div>
       <details class="snapshot-model-picker" id="snapshot-model-picker"><summary>Choose models (${filter.modelIds?.size ?? context.selection.contextModelIds.length} selected)</summary><div class="snapshot-model-actions"><button id="models-all" class="text-button">All models</button><button id="models-none" class="text-button">No models</button></div><div class="snapshot-model-list">${context.inventory
         .filter((model) => context.selection.contextModelIds.includes(model.modelId))
@@ -208,28 +261,32 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
           (model) =>
             `<label><input type="checkbox" id="model-${esc(model.modelId)}" data-model-id="${esc(model.modelId)}" ${!filter.modelIds || filter.modelIds.has(model.modelId) ? 'checked' : ''}><span>${esc(model.vendor)} · ${esc(model.modelNumber)}</span></label>`,
         )
-        .join('')}</div></details>
-      <p class="snapshot-note">Filters affect this table and its export. Whole-context and all-supplied totals keep their own denominators. Capacity is aggregate model capacity, not per-drive capacity. First recorded is not an installation date.</p>
-      ${report === 'deployments' ? renderDeployments(visible, payload?.status === 'complete') : report === 'distribution' ? renderDistribution(visible, payload?.status === 'complete') : ''}
+        .join('')}</div></details>`
+          : '<p class="snapshot-note">This report uses all supplied observations, including HDDs, SSDs and unresolved media. HDD model/vendor filters do not change its totals. Capacity is nominal raw capacity, not utilized space.</p>'
+      }
+      ${!allSupplied ? '<p class="snapshot-note">Filters affect this table and its export. Whole-context share denominators remain unchanged. Capacity is aggregate model capacity, not per-drive capacity. First recorded is not an installation date.</p>' : ''}
+      ${reportMarkup}
       ${
-        payload
-          ? `<div class="table-scroll"><table><caption class="sr-only">Selected HDD context for ${quarterLabel(quarter)}, snapshot as of ${quarterLabel(context.asOfQuarter)}</caption><thead><tr>${(
-              [
-                ['modelNumber', 'Model'],
-                ['vendor', 'Vendor'],
-                ['count', 'Observed drives'],
-                ['new', 'First recorded'],
-                ['capacityTB', 'Raw capacity'],
-              ] as const
-            )
-              .map(
-                ([key, label]) =>
-                  `<th aria-sort="${sort === key ? (descending ? 'descending' : 'ascending') : 'none'}"><button id="sort-${key}" data-snapshot-sort="${key}">${label}${sort === key ? (descending ? ' ↓' : ' ↑') : ''}</button></th>`,
+        specialized
+          ? ''
+          : payload
+            ? `<div class="table-scroll"><table><caption class="sr-only">Selected HDD context for ${quarterLabel(quarter)}, snapshot as of ${quarterLabel(context.asOfQuarter)}</caption><thead><tr>${(
+                [
+                  ['modelNumber', 'Model'],
+                  ['vendor', 'Vendor'],
+                  ['count', 'Observed drives'],
+                  ['new', 'First recorded'],
+                  ['capacityTB', 'Raw capacity'],
+                ] as const
               )
-              .join(
-                '',
-              )}</tr></thead><tbody>${visible.map((row) => `<tr data-render-key="${esc(row.modelId)}"><th scope="row">${esc(row.modelNumber)}</th><td>${esc(row.vendor)}</td><td>${number(row.count)}</td><td>${number(row.new)}</td><td>${capacity(row.capacityTB)}</td></tr>`).join('')}</tbody></table>${!visible.length ? '<p class="snapshot-note" role="status">No models match the current filters.</p>' : ''}</div>`
-          : '<div class="state-panel" role="status">No observations are published for this period. Unknown values are not zero drives or capacity.</div>'
+                .map(
+                  ([key, label]) =>
+                    `<th aria-sort="${sort === key ? (descending ? 'descending' : 'ascending') : 'none'}"><button id="sort-${key}" data-snapshot-sort="${key}">${label}${sort === key ? (descending ? ' ↓' : ' ↑') : ''}</button></th>`,
+                )
+                .join(
+                  '',
+                )}</tr></thead><tbody>${visible.map((row) => `<tr data-render-key="${esc(row.modelId)}"><th scope="row">${esc(row.modelNumber)}</th><td>${esc(row.vendor)}</td><td>${number(row.count)}</td><td>${number(row.new)}</td><td>${capacity(row.capacityTB)}</td></tr>`).join('')}</tbody></table>${!visible.length ? '<p class="snapshot-note" role="status">No models match the current filters.</p>' : ''}</div>`
+            : '<div class="state-panel" role="status">No observations are published for this period. Unknown values are not zero drives or capacity.</div>'
       }</section>
       <details class="methodology panel" id="snapshot-methodology"><summary>Coverage, scope and source information</summary><div class="methodology-body"><p>${esc(context.provenance.label)}. ${esc(context.provenance.credit)}.</p><p>History begins ${quarterLabel(context.sourceDomain.historyStartQuarter)}; source publication begins ${esc(context.sourceDomain.firstPublishedDate)}. Recorded observations do not establish complete lifetime exposure. Datacenter fields are ${coverage?.datacenterFieldAvailable ? 'reported' : 'unreported; earlier locations stay Unknown'} for this period.</p><p>Snapshot ${esc(context.snapshotId)}. Generated ${esc(context.generatedAt)}. <a href="${esc(context.provenance.url)}">Source dataset</a>.</p></div></details>`
               : ''
@@ -256,6 +313,17 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
         sort = report === 'deployments' ? 'new' : 'count';
         descending = true;
         syncUrl();
+        void load(snapshotId, quarter);
+      };
+    });
+    app.querySelectorAll<HTMLButtonElement>('[data-manufacturer-sort]').forEach((button) => {
+      button.onclick = () => {
+        const key = button.dataset.manufacturerSort as ManufacturerSort['key'];
+        manufacturerSort = {
+          key,
+          descending:
+            key === manufacturerSort.key ? !manufacturerSort.descending : key !== 'vendor',
+        };
         render();
       };
     });
@@ -346,27 +414,68 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
     const download = app.querySelector<HTMLButtonElement>('#snapshot-download');
     if (download) {
       download.onclick = () => {
-        if (!descriptor || !payload) {
+        if (!descriptor) {
           return;
         }
         const exportRows = rows();
-        if (!exportRows.length) {
-          return;
-        }
-        const content = selectionCsv(exportRows, {
+        const coverage = descriptor.context.coverage.find((row) => row.quarter === quarter)!;
+        const allSupplied = report === 'capacity' || report === 'datacenters';
+        const scope = allSupplied ? payload?.scopes.all_supplied : payload?.scopes.selected_hdd;
+        const metadata: ReportCsvMetadata = {
           snapshotId,
           asOfQuarter: descriptor.context.asOfQuarter,
           quarter,
-          status: payload.status,
+          status: coverage.status,
           kind: descriptor.context.kind,
           sourceUrl: descriptor.context.provenance.url,
-          scope: 'selected_hdd',
-          contextCount: payload.scopes.selected_hdd.totals.count,
-          contextNew: payload.scopes.selected_hdd.totals.new,
+          scope: allSupplied ? 'all_supplied' : 'selected_hdd',
+          contextCount: scope?.totals.count ?? null,
+          contextNew: scope?.totals.new ?? null,
           report,
-          filterDescription: `Vendor: ${filter.vendor || 'all'}; search: ${filter.search || 'none'}; model selection: ${filter.modelIds ? [...filter.modelIds].join(' ') : 'all context'}; model set: ${report === 'overview' ? filter.preset : 'context'}`,
+          filterDescription: allSupplied
+            ? 'All supplied observations; HDD model/vendor filters do not apply'
+            : `Vendor: ${filter.vendor || 'all'}; search: ${filter.search || 'none'}; model selection: ${filter.modelIds ? [...filter.modelIds].join(' ') : 'all context'}; model set: ${report === 'overview' ? filter.preset : 'context'}`,
           sourceHistoryStart: descriptor.context.sourceDomain.historyStartQuarter,
-        });
+        };
+        let content: string;
+        if (report === 'capacity') {
+          if (!capacityHistory.length) {
+            return;
+          }
+          content = reportCsv(capacityCsvRows(capacityHistory), (index) => ({
+            ...metadata,
+            quarter: capacityHistory[index]!.quarter,
+            status: capacityHistory[index]!.status,
+            contextCount: capacityHistory[index]!.count,
+            contextNew: null,
+          }));
+        } else if (report === 'datacenters') {
+          if (!payload) {
+            return;
+          }
+          content = reportCsv(
+            datacenterCsvRows(payload.datacenters, payload.scopes.all_supplied.totals, coverage),
+            metadata,
+          );
+        } else if (report === 'manufacturers') {
+          if (!payload || !exportRows.length) {
+            return;
+          }
+          content = reportCsv(
+            manufacturerCsvRows(
+              exportRows,
+              payload.scopes.selected_hdd.totals,
+              payload.status === 'complete',
+              manufacturerSort,
+            ),
+            metadata,
+          );
+        } else {
+          if (!payload || !exportRows.length) {
+            return;
+          }
+          content = selectionCsv(exportRows, metadata);
+        }
         const url = URL.createObjectURL(
           new Blob(['\ufeff', content], { type: 'text/csv;charset=utf-8' }),
         );
@@ -387,6 +496,7 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
     busy = true;
     error = '';
     payload = null;
+    capacityHistory = [];
     // Never offer a previous generation's quarter choices while a new descriptor loads.
     if (nextSnapshot !== snapshotId) {
       descriptor = undefined;
@@ -417,7 +527,12 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
       if (id !== request) {
         return;
       }
+      const history = report === 'capacity' ? await capacityReader.load(target, combined) : [];
+      if (id !== request) {
+        return;
+      }
       payload = loadedPayload;
+      capacityHistory = history;
     } catch {
       if (id !== request) {
         return;

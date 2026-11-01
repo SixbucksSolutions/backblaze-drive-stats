@@ -4,7 +4,8 @@
 [production v2 contracts](production-data-v2.md). Real artifacts and individual
 report integrations retain their own tickets. #0087 now makes the real matrix the
 landing view. #0089 deployments and #0090 distribution use this shared shell;
-the remaining capacity/manufacturer/datacenter integrations stay queued.
+the capacity, manufacturer and datacenter views now share it as well. Integrated
+release validation and the maintained refresh workflow retain their own gates.
 
 ## Local review
 
@@ -20,7 +21,9 @@ for 2026 Q2 and the two workbook cutoffs. A missing index produces an error/retr
 state and an explicit example link; the
 reader never substitutes fictional values for a missing real dataset. Navigation
 links connect the real matrix, deployments, distribution and shared context.
-Other quarterly report links retain their existing implementations.
+The five specialized reports are also directly addressable by `view=deployments`,
+`distribution`, `capacity`, `manufacturers` and `datacenters`. Explicit `legacy=1`
+keeps the original quarterly implementations addressable.
 
 ## Reader API and boundaries
 
@@ -51,7 +54,9 @@ survives only when included in the new descriptor. Initial context includes ever
 supporting HDD, including seeds below the flagship threshold. Purchase and
 historical presets are explicit subsets on the overview only. Deployments and
 distribution always start from the whole context, independent of those presets.
-Model checkboxes, vendor/model search and nullable sorting
+Capacity history and datacenters use all supplied observations and hide HDD
+filters. Manufacturer filters narrow numerators while all three share denominators
+retain their own whole-context metrics. Model checkboxes, search and nullable sorting
 do not change the whole-context or all-supplied denominators shown alongside.
 
 The accessible numeric table preserves zero separately from unavailable values
@@ -62,7 +67,9 @@ Shared helpers can be reused by later report views.
 
 CSV uses the visible rows and carries data kind, report, filters, snapshot, as-of,
 reporting quarter, coverage, scope, whole-context Count/New and attribution.
-Empty selections disable export. Unavailable values
+History CSV binds each calendar row's actual quarter, coverage and count; an
+unavailable selected quarter does not disable export of the full history.
+Empty filtered model selections disable export. Unavailable values
 remain explicit. Formula-like text, including formulas after leading whitespace,
 is neutralized. Numeric negative values remain numeric. No serial field or
 individual-drive selector is introduced.

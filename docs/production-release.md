@@ -122,5 +122,9 @@ for first recorded additions, and `?view=distribution` for observed population.
 The shared model context stays at `?view=explore`. Snapshot as-of and Explore
 calendar quarter remain independent selections. Explicit fictional examples stay
 at `?view=explore&example=1`; immutable workbook previews use
-`?view=matrix&reference=1`. The remaining specialized Explore views and integrated
-release validation retain their separate tickets. No deployment is implied.
+`?view=matrix&reference=1`. Capacity, manufacturer and datacenter reports are also
+integrated at `?view=capacity`, `?view=manufacturers` and `?view=datacenters`.
+All-supplied scope is explicit for capacity history and datacenters; manufacturer
+shares use the selected-HDD context with separate metric denominators. The
+maintained refresh workflow and integrated validation retain separate tickets.
+No deployment is implied.

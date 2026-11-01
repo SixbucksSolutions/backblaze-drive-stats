@@ -10,6 +10,14 @@ import {
   heatmapPaint,
   relativeLuminance,
 } from './matrix-contrast.ts';
+
+void test('discovered vendor names matching object prototypes receive readable fallback paint', () => {
+  for (const vendor of ['__proto__', 'constructor', 'toString', 'New vendor']) {
+    const paint = vendorPaint(vendor);
+    assert.equal(paint.background, '#485963');
+    assert.ok(paint.contrast >= 4.5);
+  }
+});
 import { vendorPaint, VENDOR_COLORS } from './matrix-brand.ts';
 
 function fixture(path: `workbooks/${string}`): Workbook;

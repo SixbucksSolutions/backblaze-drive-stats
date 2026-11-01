@@ -13,9 +13,9 @@ for Backblaze's own analysis and context.
 
 The site opens a real-data, vendor-grouped AFR comparison aligned by relative
 quarter, preserving seven adjacent metrics and conditional colors. The latest
-snapshot is 2026 Q2. Explore deployments and drive distribution use the paired
-calendar-quarter data, while the other supporting views retain their existing
-quarterly explorer until their individual integration tickets are accepted.
+snapshot is 2026 Q2. All five Explore views use the paired calendar-quarter data:
+deployments, distribution, total capacity, manufacturer shares and datacenter
+capacity. Their scope and source-coverage limits stay explicit.
 See the [flagship plan](docs/flagship-afr-plan.md) for scope and implementation gates.
 
 The accepted [v2 contracts](docs/production-data-v2.md) define production data;
@@ -68,9 +68,13 @@ The [real production v2 aggregate release](docs/production-release.md) now suppl
 The real matrix is now the default. Explore [deployments](docs/explore-deployments.md)
 at `?view=deployments` and [drive distribution](docs/explore-distribution.md) at
 `?view=distribution`; the shared model context remains at `?view=explore`.
-The private rolling plan is r034. The original quarterly reliability view remains
-at `?view=reliability`; explicit `legacy=1` preserves its deployments/distribution
-routes for comparison.
+Explore [capacity history](docs/explore-capacity.md) at `?view=capacity`,
+[manufacturer shares](docs/explore-manufacturers.md) at `?view=manufacturers`, and
+[datacenters](docs/explore-datacenters.md) at `?view=datacenters`. Capacity history
+and datacenters use all supplied observations; model and manufacturer reports
+use the separate selected-HDD context. The private rolling plan is r035.
+The original quarterly reliability view remains at `?view=reliability`;
+explicit `legacy=1` preserves the original report routes for comparison.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's
 source data, name, branding and other third-party material retain their own rights

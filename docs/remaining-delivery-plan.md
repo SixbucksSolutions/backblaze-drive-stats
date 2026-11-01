@@ -30,8 +30,9 @@ context are owner-Completed. #0086's [real aggregate release](production-release
 is owner-approved: 2026 Q2 plus the 2025 Q3/Q4 workbook cutoffs, with
 explicit [reconciliation limits](production-workbook-reconciliation.md). Terry
 asked to record approval without moving #0086's RFR lane; that explicit approval
-satisfies the dependent acceptance gate. #0087, #0089 and #0090 now implement the
-real flagship, deployments and distribution for owner review. See the
+satisfies the dependent acceptance gate. Terry also approved #0087, #0089 and
+#0090 while reserving their later lane moves. #0091, #0092 and #0093 now implement
+the remaining capacity, manufacturer and datacenter views for owner review. See the
 [producer documentation](historical-generator.md) and
 [shared reader handoff](snapshot-reader.md).
 
@@ -69,14 +70,15 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r034**. The
+Current rolling author/reviewer assignments are in private plan **r035**. The
 roster covers the next three remaining turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
 ten-quarter source-batch exceptions do not expand this implementation limit.
 
-The remaining three-turn roster starts with #0091/#0092/#0093; #0086 and #0088
-acceptance is satisfied. Next is #0095's refresh workflow with a fresh Sol / High
-recovery/provenance review, followed by #0094 integrated validation only after all
-view and workflow handoffs are accepted. Hosting #0007 remains visible beyond
-that window. The roster does not start those cards.
+The remaining three-turn roster starts with #0095's refresh workflow and a fresh
+Sol / High recovery/provenance review. Next is #0094 integrated validation only
+after every view and workflow handoff is accepted. #0007 hosting preparation is
+planned third, conditional on owner acceptance of the integrated #0017 release;
+it does not authorize deployment or waive access decisions. The roster starts no
+future workers and does not treat RFR alone as approval.

@@ -98,30 +98,29 @@ export function exploreUrl(current: string, snapshotId: string, quarter: string,
 }
 
 /** Export the same filtered rows as the table, with the unfiltered scope made explicit. */
-export function selectionCsv(
-  rows: DisplayRow[],
-  metadata: {
-    snapshotId: string;
-    asOfQuarter: string;
-    quarter: string;
-    status: string;
-    kind: string;
-    sourceUrl: string;
-    scope: ScopeName;
-    contextCount: number | null;
-    contextNew?: number | null;
-    report?: string;
-    filterDescription?: string;
-    sourceHistoryStart?: string;
-  },
+export type ReportCsvMetadata = {
+  snapshotId: string;
+  asOfQuarter: string;
+  quarter: string;
+  status: string;
+  kind: string;
+  sourceUrl: string;
+  scope: ScopeName;
+  contextCount: number | null;
+  contextNew?: number | null;
+  report?: string;
+  filterDescription?: string;
+  sourceHistoryStart?: string;
+};
+
+/** Add the same scope/source attribution to model, grouped and history exports. */
+export function reportCsv(
+  rows: (string | number)[][],
+  metadata: ReportCsvMetadata | ((dataRow: number) => ReportCsvMetadata),
 ) {
   return csv([
     [
-      'Vendor',
-      'Model',
-      'Observed drives',
-      'First recorded',
-      'Aggregate raw capacity TB',
+      ...rows[0]!,
       'Snapshot',
       'As of quarter',
       'Reporting quarter',
@@ -137,26 +136,41 @@ export function selectionCsv(
       'Supplied history starts',
       'Observation interpretation',
     ],
-    ...rows.map((row) => [
-      row.vendor,
-      row.modelNumber,
-      row.count ?? 'Unavailable',
-      row.new ?? 'Unavailable',
-      row.capacityTB ?? 'Unavailable',
-      metadata.snapshotId,
-      metadata.asOfQuarter,
-      metadata.quarter,
-      metadata.status,
-      metadata.kind,
-      metadata.scope,
-      metadata.contextCount ?? 'Unavailable',
-      'Backblaze Drive Stats; independent Sixbucks Solutions analysis',
-      metadata.sourceUrl,
-      metadata.report ?? 'overview',
-      metadata.filterDescription ?? 'Whole context',
-      metadata.contextNew ?? 'Unavailable',
-      metadata.sourceHistoryStart ?? 'See source coverage',
-      'Count is observed anywhere in the quarter, not quarter-end stock. First recorded includes the initial observed fleet; publication boundaries and source gaps prevent inferring physical installation dates.',
-    ]),
+    ...rows.slice(1).map((row, index) => {
+      const meta = typeof metadata === 'function' ? metadata(index) : metadata;
+      return [
+        ...row,
+        meta.snapshotId,
+        meta.asOfQuarter,
+        meta.quarter,
+        meta.status,
+        meta.kind,
+        meta.scope,
+        meta.contextCount ?? 'Unavailable',
+        'Backblaze Drive Stats; independent Sixbucks Solutions analysis',
+        meta.sourceUrl,
+        meta.report ?? 'overview',
+        meta.filterDescription ?? 'Whole context',
+        meta.contextNew ?? 'Unavailable',
+        meta.sourceHistoryStart ?? 'See source coverage',
+        'Count is observed anywhere in the quarter, not quarter-end stock. Capacity is nominal raw capacity, not utilized space. First recorded includes the initial observed fleet; publication boundaries and gaps prevent inferring installation dates.',
+      ];
+    }),
   ]);
+}
+
+export function selectionCsv(rows: DisplayRow[], metadata: ReportCsvMetadata) {
+  return reportCsv(
+    [
+      ['Vendor', 'Model', 'Observed drives', 'First recorded', 'Aggregate raw capacity TB'],
+      ...rows.map((row) => [
+        row.vendor,
+        row.modelNumber,
+        row.count ?? 'Unavailable',
+        row.new ?? 'Unavailable',
+        row.capacityTB ?? 'Unavailable',
+      ]),
+    ],
+    metadata,
+  );
 }

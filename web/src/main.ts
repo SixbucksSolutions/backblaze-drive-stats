@@ -349,7 +349,7 @@ function bindEvents() {
   document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((button) =>
     button.addEventListener('click', () => {
       const next = button.dataset.view as View;
-      if (params.get('legacy') !== '1' && (next === 'deployments' || next === 'distribution')) {
+      if (params.get('legacy') !== '1' && next !== 'reliability') {
         const url = new URL(location.href);
         url.searchParams.set('view', next);
         location.assign(url);
