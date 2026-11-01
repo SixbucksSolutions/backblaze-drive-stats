@@ -111,8 +111,11 @@ class ProductionHistoryTests(unittest.TestCase):
                 make_input(root, q, {0: rows(bounds(q)[0], 100, "XYZ26TB-01")}, missing=missing)
                 for q, missing in (("2024-Q1", ()), ("2024-Q2", (1,)))
             ]
+            registry = deepcopy(REGISTRY)
+            registry["models"][2]["mediaClass"] = "ssd"
             args = {
                 **self.args,
+                "registry": registry,
                 "cache_root": root / "cache",
                 "history_start": "2024-Q1",
                 "as_of": "2024-Q2",
@@ -152,6 +155,209 @@ class ProductionHistoryTests(unittest.TestCase):
                     generate(inputs, **invalid)
             with self.assertRaisesRegex(ValueError, "No selected HDD observations"):
                 generate(inputs, **args, matrix_calculation_version="2.0.0")
+
+    def test_historical_fleet_is_source_bounded_and_not_a_modern_allowlist(self):
+        from refresh_history import _policy
+        from tools.validate_production_v2 import _context, validate_generation
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            inputs = [
+                make_input(
+                    root,
+                    "2024-Q1",
+                    {
+                        0: rows(bounds("2024-Q1")[0], 2000)
+                        + rows(bounds("2024-Q1")[0], 10, "XYZ26TB-01", prefix="small")
+                        + rows(bounds("2024-Q1")[0], 2001, "SSD", prefix="ssd")
+                        + rows(bounds("2024-Q1")[0], 2001, "UNCLASSIFIED", prefix="unknown")
+                    },
+                ),
+                make_input(
+                    root,
+                    "2024-Q2",
+                    {0: rows(bounds("2024-Q2")[0], 2100, "XYZ26TB-01", prefix="new")},
+                ),
+            ]
+            args = {
+                **self.args,
+                "cache_root": root / "cache",
+                "history_start": "2024-Q1",
+                "selection": dict(
+                    version="2.1.0",
+                    minimumCapacityTB=1.0,
+                    excludedModelIds=[],
+                    classificationVersion="2.0.0",
+                    purchaseDefaultModelIds=[],
+                    historicalReferenceModelIds=[],
+                ),
+            }
+            for cutoff, expected_analysis in (
+                ("2024-Q1", {self.mid}),
+                ("2024-Q2", {self.mid, self.xyz}),
+            ):
+                index, artifacts, _ = generate(inputs, **{**args, "as_of": cutoff})
+                validate_generation(index, artifacts)
+                descriptor = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])
+                context = descriptor["context"]
+                self.assertEqual(set(context["selection"]["contextModelIds"]), {self.mid, self.xyz})
+                self.assertEqual(set(context["selection"]["analysisModelIds"]), expected_analysis)
+                changed = deepcopy(context)
+                changed["selection"]["contextModelIds"].remove(self.xyz)
+                with self.assertRaises(ValueError):
+                    _context(changed)
+                changed = deepcopy(context)
+                changed["selection"]["analysisModelIds"] = []
+                with self.assertRaisesRegex(ValueError, "every qualified"):
+                    _context(changed)
+                excluded_index, excluded_artifacts, excluded_diagnostics = generate(
+                    inputs,
+                    **{
+                        **args,
+                        "as_of": cutoff,
+                        "selection": {**args["selection"], "excludedModelIds": [self.xyz]},
+                    },
+                )
+                validate_generation(excluded_index, excluded_artifacts)
+                excluded_context = json.loads(
+                    excluded_artifacts[excluded_index["snapshots"][0]["descriptor"]["path"]]
+                )["context"]
+                self.assertEqual(excluded_context["selection"]["contextModelIds"], [self.mid])
+                self.assertEqual(excluded_context["selection"]["analysisModelIds"], [self.mid])
+                self.assertEqual(excluded_context["inventory"], context["inventory"])
+                policy = _policy(
+                    {"selection": args["selection"]},
+                    context,
+                    excluded_context,
+                    excluded_diagnostics,
+                )
+                self.assertEqual(
+                    policy["publicationGates"], ["versioned_selection_update_required"]
+                )
+                update = dict(
+                    decisionVersion="fictional-exclusion",
+                    reason="Owner excludes fictional HDD",
+                    previousSelectionSha256=digest(context["selection"]),
+                    admittedModelIds=[],
+                    removedModelIds=[self.xyz] if self.xyz in expected_analysis else [],
+                )
+                approved = _policy(
+                    {"selection": {**args["selection"], "update": update}},
+                    context,
+                    excluded_context,
+                    excluded_diagnostics,
+                )
+                self.assertEqual(approved["publicationGates"], [])
+
+                frozen = {
+                    **args,
+                    "as_of": cutoff,
+                    "selection": {**args["selection"], "analysisModelIds": [self.xyz]},
+                }
+                with self.assertRaisesRegex(ValueError, "every qualified"):
+                    generate(inputs, **frozen)
+
+    def test_historical_capacity_floor_boundary_unknown_and_frozen_selection(self):
+        from tools.validate_production_v2 import validate_generation
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = deepcopy(REGISTRY)
+            registry["models"][2]["mediaClass"] = "hdd"
+            day = bounds("2024-Q1")[0]
+            source = make_input(
+                root,
+                "2024-Q1",
+                {
+                    0: rows(day, 2100, capacity=0.5e12)
+                    + rows(day, 2100, "XYZ26TB-01", capacity=1e12, prefix="boundary")
+                    + rows(day, 2100, "SSD", capacity=0, prefix="unknown")
+                },
+            )
+            selection = dict(
+                version="2.1.0",
+                minimumCapacityTB=1.0,
+                excludedModelIds=[],
+                purchaseDefaultModelIds=[],
+                historicalReferenceModelIds=[],
+            )
+            args = {
+                **self.args,
+                "cache_root": root / "cache",
+                "registry": registry,
+                "as_of": "2024-Q1",
+                "history_start": "2024-Q1",
+                "selection": selection,
+            }
+            index, artifacts, _ = generate([source], **args)
+            validate_generation(index, artifacts)
+            context = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])["context"]
+            self.assertEqual(context["selection"]["contextModelIds"], [self.xyz])
+            self.assertEqual(context["selection"]["analysisModelIds"], [self.xyz])
+            self.assertEqual(len(context["inventory"]), 3)
+            for floor in (None, True, 0, -1, float("nan"), float("inf")):
+                with self.assertRaisesRegex(ValueError, "positive finite"):
+                    generate(
+                        [source], **{**args, "selection": {**selection, "minimumCapacityTB": floor}}
+                    )
+            missing = dict(selection)
+            del missing["minimumCapacityTB"]
+            with self.assertRaisesRegex(ValueError, "positive finite"):
+                generate([source], **{**args, "selection": missing})
+            with self.assertRaisesRegex(ValueError, "every qualified"):
+                generate(
+                    [source],
+                    **{
+                        **args,
+                        "selection": {**selection, "analysisModelIds": [self.mid, self.xyz]},
+                    },
+                )
+
+    def test_historical_exclusions_preserve_source_facts_and_reject_invalid_ids(self):
+        from tools.validate_production_v2 import validate_generation
+
+        manifests = sorted((self.root / "cache/quarters").glob("*/*/manifest.json"))
+        selection = dict(
+            version="2.1.0",
+            minimumCapacityTB=1.0,
+            excludedModelIds=[self.xyz],
+            purchaseDefaultModelIds=[],
+            historicalReferenceModelIds=[],
+        )
+        args = {**self.args, "selection": selection}
+        index, artifacts, _ = generate(summary_manifests=manifests, **args)
+        validate_generation(index, artifacts)
+        context = json.loads(artifacts[index["snapshots"][0]["descriptor"]["path"]])["context"]
+        self.assertEqual(context["selection"]["contextModelIds"], [self.mid])
+        self.assertEqual(context["selection"]["analysisModelIds"], [self.mid])
+        self.assertEqual(context["selection"]["excludedModelIds"], [self.xyz])
+        self.assertEqual(
+            next(model for model in context["inventory"] if model["modelId"] == self.xyz)[
+                "mediaClass"
+            ],
+            "hdd",
+        )
+        for exclusions in ([self.xyz, self.xyz], ["unobserved"], [""], None):
+            with self.assertRaisesRegex(ValueError, "unique observed"):
+                generate(
+                    summary_manifests=manifests,
+                    **{**args, "selection": {**selection, "excludedModelIds": exclusions}},
+                )
+        missing = dict(selection)
+        del missing["excludedModelIds"]
+        with self.assertRaisesRegex(ValueError, "explicit excludedModelIds"):
+            generate(summary_manifests=manifests, **{**args, "selection": missing})
+        for field in ("purchaseDefaultModelIds", "historicalReferenceModelIds"):
+            with self.assertRaisesRegex(ValueError, "membership"):
+                generate(
+                    summary_manifests=manifests,
+                    **{**args, "selection": {**selection, field: [self.xyz]}},
+                )
+        with self.assertRaisesRegex(ValueError, "selection version"):
+            generate(
+                summary_manifests=manifests,
+                **{**args, "selection": {**selection, "version": "2.0.0"}},
+            )
 
     def test_explicit_empty_analysis_preserves_nonempty_seed_context(self):
         manifests = sorted((self.root / "cache/quarters").glob("*/*/manifest.json"))

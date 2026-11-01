@@ -111,9 +111,12 @@ def _configuration(config):
         raise ValueError("Explicit generator revision required")
     if config.get("matrixCalculationVersion", "2.0.0") not in {"2.0.0", "2.1.0"}:
         raise ValueError("Unsupported matrix calculation version")
-    if "analysisModelIds" not in config["selection"]:
+    if (
+        "analysisModelIds" not in config["selection"]
+        and config["selection"].get("version") != "2.1.0"
+    ):
         raise ValueError("Refresh requires an explicit analysis cohort decision")
-    if config["selection"].get("version") != "2.0.0" or config["selection"].get(
+    if config["selection"].get("version") not in {"2.0.0", "2.1.0"} or config["selection"].get(
         "classificationVersion", "1.0.0"
     ) not in {"1.0.0", "2.0.0"}:
         raise ValueError("Refresh requires supported selection and classification semantics")
@@ -285,24 +288,46 @@ def _policy(config, baseline_context, context, diagnostics):
     }
     pending = set(diagnostics["pendingClassification"])
     new_pending = sorted(pending - known_pending)
+    previous = baseline_context["selection"]
+    current = context["selection"]
+    excluded = set(current.get("excludedModelIds", []))
+    old_excluded = set(previous.get("excludedModelIds", []))
     qualified = {
         row["modelId"]
         for row in context["inventory"]
-        if row["mediaClass"] == "hdd" and row["reportingAnchorQuarter"]
+        if row["mediaClass"] == "hdd"
+        and row["reportingAnchorQuarter"]
+        and (
+            "minimumCapacityTB" not in current
+            or (row["capacityTB"] is not None and row["capacityTB"] >= current["minimumCapacityTB"])
+        )
     }
     old_qualified = {
         row["modelId"]
         for row in baseline_context["inventory"]
-        if row["mediaClass"] == "hdd" and row["reportingAnchorQuarter"]
+        if row["mediaClass"] == "hdd"
+        and row["reportingAnchorQuarter"]
+        and (
+            "minimumCapacityTB" not in previous
+            or (
+                row["capacityTB"] is not None and row["capacityTB"] >= previous["minimumCapacityTB"]
+            )
+        )
     }
-    new_hdds = sorted(qualified - old_qualified)
-    previous = baseline_context["selection"]
-    current = context["selection"]
+    new_hdds = sorted((qualified - excluded) - (old_qualified - old_excluded))
     added = sorted(set(current["analysisModelIds"]) - set(previous["analysisModelIds"]))
     removed = sorted(set(previous["analysisModelIds"]) - set(current["analysisModelIds"]))
-    changed = any(
-        previous[key] != current[key]
-        for key in ("analysisModelIds", "purchaseDefaultModelIds", "historicalReferenceModelIds")
+    changed = (
+        previous.get("minimumCapacityTB") != current.get("minimumCapacityTB")
+        or previous.get("excludedModelIds", []) != current.get("excludedModelIds", [])
+        or any(
+            previous[key] != current[key]
+            for key in (
+                "analysisModelIds",
+                "purchaseDefaultModelIds",
+                "historicalReferenceModelIds",
+            )
+        )
     )
     gates = []
     if new_pending:

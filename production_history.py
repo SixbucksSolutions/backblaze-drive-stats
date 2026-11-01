@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 from collections import defaultdict
 from datetime import date
@@ -251,8 +252,20 @@ def generate(
         raise ValueError("Explicit code revision and source kind required")
     if matrix_calculation_version not in {"2.0.0", "2.1.0"}:
         raise ValueError("Unsupported matrix calculation version")
-    if not selection.get("version"):
+    if selection.get("version") not in {"2.0.0", "2.1.0"}:
         raise ValueError("Explicit versioned cohort selection required")
+    historical_fleet = selection["version"] == "2.1.0"
+    minimum_capacity = selection.get("minimumCapacityTB")
+    if historical_fleet:
+        if (
+            isinstance(minimum_capacity, bool)
+            or not isinstance(minimum_capacity, (int, float))
+            or not math.isfinite(minimum_capacity)
+            or minimum_capacity <= 0
+        ):
+            raise ValueError("Historical selection requires positive finite minimumCapacityTB")
+    elif "minimumCapacityTB" in selection:
+        raise ValueError("Minimum capacity requires selection version 2.1.0")
     for name in ("purchaseDefaultModelIds", "historicalReferenceModelIds"):
         if name not in selection:
             raise ValueError("Explicit purchase/default reference decisions required")
@@ -385,13 +398,34 @@ def generate(
             pl.col("last").max().alias("final"),
         )
     )
+    capacity = {
+        mid: min(values, key=lambda c: (-values[c], c)) / 1e12
+        for mid, values in frequencies.items()
+        if values
+    }
+    exclusions = selection.get("excludedModelIds", [])
+    if historical_fleet and "excludedModelIds" not in selection:
+        raise ValueError("Historical selection requires explicit excludedModelIds")
+    if not historical_fleet and "excludedModelIds" in selection:
+        raise ValueError("Exclusions require selection version 2.1.0")
+    if (
+        not isinstance(exclusions, list)
+        or any(not isinstance(mid, str) or not mid for mid in exclusions)
+        or len(exclusions) != len(set(exclusions))
+        or not set(exclusions) <= set(metadata)
+    ):
+        raise ValueError("Exclusions must be unique observed model IDs")
+    excluded_ids = set(exclusions)
     qualifying_ids = set()
     for frame in frames.values():
         qualifying_ids.update(frame.group_by("id").len().filter(pl.col("len") >= 2000)["id"])
     context_candidates = [
         mid
         for mid, info in metadata.items()
-        if info["mediaClass"] == "hdd" and (info["seedMatch"] or mid in qualifying_ids)
+        if info["mediaClass"] == "hdd"
+        and mid not in excluded_ids
+        and (not historical_fleet or (mid in capacity and capacity[mid] >= minimum_capacity))
+        and (historical_fleet or info["seedMatch"] or mid in qualifying_ids)
     ]
     if not context_candidates and matrix_calculation_version == "2.0.0":
         raise ValueError("No selected HDD observations; classification action required")
@@ -429,11 +463,6 @@ def generate(
             .len()
             .to_dicts()
         )
-    capacity = {
-        mid: min(values, key=lambda c: (-values[c], c)) / 1e12
-        for mid, values in frequencies.items()
-        if values
-    }
     inventory = []
     for mid, info in sorted(metadata.items()):
         history = []
@@ -510,15 +539,29 @@ def generate(
     context_ids = [
         row["modelId"]
         for row in inventory
-        if row["mediaClass"] == "hdd" and (row["seedMatch"] or row["reportingAnchorQuarter"])
+        if row["mediaClass"] == "hdd"
+        and row["modelId"] not in excluded_ids
+        and (
+            not historical_fleet
+            or (row["capacityTB"] is not None and row["capacityTB"] >= minimum_capacity)
+        )
+        and (historical_fleet or row["seedMatch"] or row["reportingAnchorQuarter"])
     ]
     qualified = [
         row["modelId"]
         for row in inventory
-        if row["mediaClass"] == "hdd" and row["reportingAnchorQuarter"]
+        if row["mediaClass"] == "hdd"
+        and row["modelId"] not in excluded_ids
+        and (
+            not historical_fleet
+            or (row["capacityTB"] is not None and row["capacityTB"] >= minimum_capacity)
+        )
+        and row["reportingAnchorQuarter"]
     ]
     analysis_ids = selection.get("analysisModelIds", qualified)
-    if not analysis_ids and "analysisModelIds" not in selection:
+    if historical_fleet and set(analysis_ids) != set(qualified):
+        raise ValueError("Historical analysis must include every qualified HDD model")
+    if not historical_fleet and not analysis_ids and "analysisModelIds" not in selection:
         raise ValueError("Empty analysis requires an explicit analysisModelIds selection")
     if not analysis_ids and matrix_calculation_version == "2.0.0":
         raise ValueError("Empty analysis requires calculation version 2.1.0")
@@ -531,7 +574,7 @@ def generate(
             raise ValueError(f"Invalid {name} membership")
     if set(selection["purchaseDefaultModelIds"]) & set(selection["historicalReferenceModelIds"]):
         raise ValueError("Purchase defaults and historical references must be disjoint")
-    selected = dict(
+    selected: dict[str, object] = dict(
         contextModelIds=context_ids,
         analysisModelIds=analysis_ids,
         purchaseDefaultModelIds=selection["purchaseDefaultModelIds"],
@@ -544,6 +587,9 @@ def generate(
             evidence=_evidence("positive-seed", digest(patterns)),
         ),
     )
+    if historical_fleet:
+        selected["excludedModelIds"] = exclusions
+        selected["minimumCapacityTB"] = minimum_capacity
     source_hash = digest(keys)
     identity = digest(
         dict(

@@ -475,6 +475,17 @@
         "positiveSeed"
       ],
       "properties": {
+        "minimumCapacityTB": {
+          "description": "Positive finite nominal capacity floor in decimal TB; mandatory for selection 2.1.0 only. Unknown capacity is ineligible. Owner customer-HDD policy uses 1.0 TB.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "excludedModelIds": {
+          "description": "Explicit observed model identities excluded by owner eligibility policy; required only for selection 2.1.0. Inventory and media facts remain unchanged.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
         "contextModelIds": {
           "type": "array",
           "items": {

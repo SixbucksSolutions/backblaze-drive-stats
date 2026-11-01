@@ -85,6 +85,8 @@ export type PositiveSeed = {
 };
 
 export type Selection = {
+  minimumCapacityTB?: number;
+  excludedModelIds?: string[];
   contextModelIds: string[];
   analysisModelIds: string[];
   purchaseDefaultModelIds: string[];
@@ -451,6 +453,12 @@ const definitions: Record<string, Rule> = {
       'positiveSeed',
     ],
     properties: {
+      minimumCapacityTB: { type: 'number', exclusiveMinimum: 0 },
+      excludedModelIds: {
+        type: 'array',
+        items: { type: 'string', minLength: 1 },
+        uniqueItems: true,
+      },
       contextModelIds: {
         type: 'array',
         items: { type: 'string', minLength: 1 },
@@ -1183,9 +1191,9 @@ export function parseSnapshotDescriptor(
     ['1.0.0', '2.0.0'].includes(context.versions.normalization) &&
       ['1.0.0', '2.0.0'].includes(context.versions.classification) &&
       ['2.0.0', '2.1.0'].includes(context.versions.rate) &&
-      [context.versions.selection, context.versions.cohort, context.versions.capacity].every(
-        (version) => version === '2.0.0',
-      ),
+      ['2.0.0', '2.1.0'].includes(context.versions.selection) &&
+      context.versions.cohort === context.versions.selection &&
+      context.versions.capacity === '2.0.0',
     'unsupported semantic version',
   );
   const coverage = context.coverage;
@@ -1366,10 +1374,23 @@ export function parseSnapshotDescriptor(
       model.seedMatch === selection.positiveSeed.modelIds.includes(model.modelId),
       'seed membership',
     );
-    if (model.mediaClass === 'hdd' && firstProof) {
+    const capacityEligible =
+      context.versions.selection !== '2.1.0' ||
+      (model.capacityTB !== null && model.capacityTB >= (selection.minimumCapacityTB ?? Infinity));
+    if (
+      model.mediaClass === 'hdd' &&
+      capacityEligible &&
+      firstProof &&
+      !selection.excludedModelIds?.includes(model.modelId)
+    ) {
       qualified.push(model.modelId);
     }
-    if (model.mediaClass === 'hdd' && (model.seedMatch || firstProof)) {
+    if (
+      model.mediaClass === 'hdd' &&
+      capacityEligible &&
+      !selection.excludedModelIds?.includes(model.modelId) &&
+      (context.versions.selection === '2.1.0' || model.seedMatch || firstProof)
+    ) {
       expectedContext.push(model.modelId);
     }
   }
@@ -1383,7 +1404,23 @@ export function parseSnapshotDescriptor(
       );
     }
   });
+  requireValue(
+    'minimumCapacityTB' in selection === (context.versions.selection === '2.1.0') &&
+      (selection.minimumCapacityTB === undefined ||
+        (Number.isFinite(selection.minimumCapacityTB) && selection.minimumCapacityTB > 0)),
+    'positive finite minimum capacity required for selection 2.1.0',
+  );
+  requireValue(
+    'excludedModelIds' in selection === (context.versions.selection === '2.1.0') &&
+      (selection.excludedModelIds ?? []).every((id) =>
+        context.inventory.some((model) => model.modelId === id),
+      ),
+    'exclusions must be explicit unique observed model IDs for selection 2.1.0',
+  );
   sameMembers(selection.contextModelIds, expectedContext, 'context membership');
+  if (context.versions.selection === '2.1.0') {
+    sameMembers(selection.analysisModelIds, qualified, 'historical analysis membership');
+  }
   requireValue(
     selection.analysisModelIds.length > 0 || context.versions.rate === '2.1.0',
     'empty analysis requires calculation version 2.1.0',

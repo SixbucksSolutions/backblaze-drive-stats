@@ -537,8 +537,57 @@ class RefreshHistoryTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(receipt["selectionDecisionVersion"], "fictional-decision-2")
 
-    def test_semantic_version_change_requires_explicit_consumer_migration(self):
+    def test_excluded_new_qualified_hdd_requires_decision_without_admission(self):
+        self.add_quarter("2024-Q2")
+        self.config["selection"].update(
+            version="2.1.0", minimumCapacityTB=1.0, excludedModelIds=[self.xyz]
+        )
+        plan = plan_refresh(self.config)
+        self.assertEqual(plan["newQualifyingHdds"], [])
+        self.assertEqual(plan["publicationGates"], ["versioned_selection_update_required"])
+        self.config["selection"]["update"] = dict(
+            decisionVersion="fictional-exclusion",
+            previousSelectionSha256=self.baseline_selection_sha256,
+            admittedModelIds=[],
+            removedModelIds=[],
+            reason="Owner excludes fictional model",
+        )
+        receipt = run_refresh(self.config)
+        self.assertEqual(receipt["publicationGates"], [])
+
+    def test_capacity_policy_change_requires_versioned_decision_without_membership_delta(self):
+        self.config["selection"].update(version="2.1.0", minimumCapacityTB=1.0, excludedModelIds=[])
+        plan = plan_refresh(self.config)
+        self.assertEqual(plan["publicationGates"], ["versioned_selection_update_required"])
+        self.config["selection"]["update"] = dict(
+            decisionVersion="fictional-floor",
+            previousSelectionSha256=self.baseline_selection_sha256,
+            admittedModelIds=[],
+            removedModelIds=[],
+            reason="Owner capacity floor",
+        )
+        self.assertEqual(plan_refresh(self.config)["publicationGates"], [])
+
+    def test_historical_selection_derives_qualified_cohort(self):
         self.config["selection"]["version"] = "2.1.0"
+        self.config["selection"]["excludedModelIds"] = []
+        self.config["selection"]["minimumCapacityTB"] = 1.0
+        del self.config["selection"]["analysisModelIds"]
+        self.config["selection"]["update"] = dict(
+            decisionVersion="fictional-floor",
+            previousSelectionSha256=self.baseline_selection_sha256,
+            admittedModelIds=[],
+            removedModelIds=[],
+            reason="Owner historical fleet floor",
+        )
+        run_refresh(self.config)
+        index, artifacts = load_generation(self.config["outputDirectory"])
+        descriptor = json.loads(artifacts[index["snapshots"][-1]["descriptor"]["path"]])
+        self.assertEqual(descriptor["context"]["versions"]["selection"], "2.1.0")
+        self.assertEqual(descriptor["context"]["selection"]["analysisModelIds"], [self.mid])
+
+    def test_unsupported_semantic_version_requires_consumer_migration(self):
+        self.config["selection"]["version"] = "2.2.0"
         with self.assertRaisesRegex(ValueError, "supported"):
             run_refresh(self.config)
         self.assertFalse(Path(self.config["outputDirectory"]).exists())

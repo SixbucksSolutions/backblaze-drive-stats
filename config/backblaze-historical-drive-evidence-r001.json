@@ -1,0 +1,1248 @@
+{
+  "version": "backblaze-historical-fleet-media-0104-r001",
+  "models": [
+    {
+      "vendor": "Seagate",
+      "modelNumber": "SSD",
+      "aliases": [
+        "Seagate SSD"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "The reported raw model label explicitly says Seagate SSD; solid-state media is excluded from the HDD fleet. Exact SKU is unresolved. https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST10000NM001G",
+      "aliases": [
+        "ST10000NM001G"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/product-content/enterprise-hdd-fam/exos-x-16/en-us/docs/100845789f.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST10000NM0086",
+      "aliases": [
+        "ST10000NM0086"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/datasheets/pdfs/ent-cap-3-5-hdd-10tb-channelDS1863-5C-1608US-en_US.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST1500DL001",
+      "aliases": [
+        "ST1500DL001"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST1500DL003",
+      "aliases": [
+        "ST1500DL003"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/files/docs/pdf/whitepaper/qrg-lap-desk-ce-qr502.5-1104us.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST1500DM003",
+      "aliases": [
+        "ST1500DM003"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/support/internal-hard-drives/desktop-hard-drives/desktop-hdd/"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST2000DL001",
+      "aliases": [
+        "ST2000DL001"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST2000DL003",
+      "aliases": [
+        "ST2000DL003"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/disc/manuals/desktop/Barracuda%20Green/100649225b.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST2000DM001",
+      "aliases": [
+        "ST2000DM001"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/files/www-content/product-content/barracuda-fam/desktop-hdd/barracuda-7200-14/en-us/docs/100686584m.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST2000VN000",
+      "aliases": [
+        "ST2000VN000"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/product-content/nas-fam/nas-hdd/en-us/docs/100724684c.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST250LT007",
+      "aliases": [
+        "ST250LT007"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/docs/manual/notebook/momentus/Thin%20%28.2%29/100625253g.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST3000DM001",
+      "aliases": [
+        "ST3000DM001"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/files/www-content/product-content/barracuda-fam/desktop-hdd/barracuda-7200-14/en-us/docs/100686584m.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST31500341AS",
+      "aliases": [
+        "ST31500341AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/support/internal-hard-drives/desktop-hard-drives/desktop-hdd/"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST31500541AS",
+      "aliases": [
+        "ST31500541AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/disc/manuals/desktop/Barracuda%20LP/100564361e.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST3160316AS",
+      "aliases": [
+        "ST3160316AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/docs/100636864b.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST3160318AS",
+      "aliases": [
+        "ST3160318AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/disc/manuals/desktop/Barracuda%207200.12/100529369e.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST32000542AS",
+      "aliases": [
+        "ST32000542AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/disc/manuals/desktop/Barracuda%20LP/100564361e.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST320005XXXX",
+      "aliases": [
+        "ST320005XXXX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST320LT007",
+      "aliases": [
+        "ST320LT007"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/docs/manual/notebook/momentus/Thin%20%28.2%29/100625253g.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST33000651AS",
+      "aliases": [
+        "ST33000651AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/docs/manual/desktop/Barracuda%20XT/100586689d.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST3500320AS",
+      "aliases": [
+        "ST3500320AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/staticfiles/support/disc/manuals/desktop/Barracuda%207200.11/100452348g.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST4000DM000",
+      "aliases": [
+        "ST4000DM000"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/files/www-content/product-content/desktop-hdd-fam/en-us/docs/100799391e.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST4000DM001",
+      "aliases": [
+        "ST4000DM001"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/product-content/desktop-hdd-fam/en-us/docs/100743772a.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST4000DM004",
+      "aliases": [
+        "ST4000DM004"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/datasheets/pdfs/3-5-barracudaDS1900-14-2007US-en_US.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST4000DM005",
+      "aliases": [
+        "ST4000DM005"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/files/www-content/partners/my%20spp%20dashboard/_shared/docs/client-product-list-nov-2016.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST4000DX000",
+      "aliases": [
+        "ST4000DX000"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/support/kb/lacie/lacie-big-products-drive-compatibility-list-007780en/"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST4000DX002",
+      "aliases": [
+        "ST4000DX002"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/support/kb/lacie/lacie-big-products-drive-compatibility-list-007780en/"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST500LM021",
+      "aliases": [
+        "ST500LM021"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/product-content/momentus-fam/momentus-thin/en-us/docs/100737930e.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST500LM030",
+      "aliases": [
+        "ST500LM030"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.seagate.com/files/www-content/partners/my%20spp%20dashboard/_shared/docs/client-product-list-nov-2016.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST6000DM001",
+      "aliases": [
+        "ST6000DM001"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/product-content/desktop-hdd-fam/en-us/docs/100782401d.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST6000DM004",
+      "aliases": [
+        "ST6000DM004"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/product-content/barracuda-fam/barracuda-new/en-us/docs/100811076e.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST6000DX000",
+      "aliases": [
+        "ST6000DX000"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/support/kb/lacie/lacie-big-products-drive-compatibility-list-007780en/"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST8000DM002",
+      "aliases": [
+        "ST8000DM002"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Backblaze's 2026 Q2 hard-drive table identifies ST8000DM002 as an 8 TB data HDD: https://www.backblaze.com/blog/backblaze-drive-stats-for-q2-2026/"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST8000DM004",
+      "aliases": [
+        "ST8000DM004"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/datasheets/pdfs/3-5-barracudaDS1900-14-2007US-en_US.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST8000DM005",
+      "aliases": [
+        "ST8000DM005"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/product-content/barracuda-fam/barracuda-new/en-us/docs/100811076e.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST8000NM000A",
+      "aliases": [
+        "ST8000NM000A"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/files/www-content/product-content/enterprise-hdd-fam/enterprise-capacity-3-5-hdd-10tb/_shared/docs/100840703k.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST8000NM0055",
+      "aliases": [
+        "ST8000NM0055"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Backblaze's 2026 Q2 hard-drive table identifies ST8000NM0055 as an 8 TB data HDD: https://www.backblaze.com/blog/backblaze-drive-stats-for-q2-2026/"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST9250315AS",
+      "aliases": [
+        "ST9250315AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/files/staticfiles/support/disc/manuals/notebook/momentus/5400.6/100528359f.pdf"
+    },
+    {
+      "vendor": "Seagate",
+      "modelNumber": "ST9320325AS",
+      "aliases": [
+        "ST9320325AS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/support-content/documentation/product%20manuals/en-us/notebook/5400/Momentus%205400.6%20%28Wyatt%29/100528359g.pdf"
+    },
+    {
+      "vendor": "Toshiba",
+      "modelNumber": "DT01ACA300",
+      "aliases": [
+        "TOSHIBA DT01ACA300"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://storage.toshiba.com/docs/internal-specialty-documents/chdd-dt01acaxxx-product-overview.pdf"
+    },
+    {
+      "vendor": "Toshiba",
+      "modelNumber": "HDWE160",
+      "aliases": [
+        "TOSHIBA HDWE160"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.toshiba-storage.com/wp-content/uploads/2019/05/TOSH_Catalogue_Storage_2019.pdf"
+    },
+    {
+      "vendor": "Toshiba",
+      "modelNumber": "HDWF180",
+      "aliases": [
+        "TOSHIBA HDWF180"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.toshiba-storage.com/wp-content/uploads/2019/05/TOSH_Catalogue_Storage_2019.pdf"
+    },
+    {
+      "vendor": "Toshiba",
+      "modelNumber": "MD04ABA400V",
+      "aliases": [
+        "TOSHIBA MD04ABA400V"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://storage.toshiba.com/internal-specialty-hdd/surveillance/md04-v-series"
+    },
+    {
+      "vendor": "Toshiba",
+      "modelNumber": "MD04ABA500V",
+      "aliases": [
+        "TOSHIBA MD04ABA500V"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://storage.toshiba.com/internal-specialty-hdd/surveillance/md04-v-series"
+    },
+    {
+      "vendor": "Toshiba",
+      "modelNumber": "MQ01ABF050",
+      "aliases": [
+        "TOSHIBA MQ01ABF050"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://toshiba.semicon-storage.com/content/dam/toshiba-ss-v3/master/en/storage/product/internal-specialty/cHDD-MQ01ABFxxx-Product-Overview.pdf"
+    },
+    {
+      "vendor": "Toshiba",
+      "modelNumber": "MQ01ABF050M",
+      "aliases": [
+        "TOSHIBA MQ01ABF050M"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Reported MQ01ABF050M is classified as an MQ01ABF-series HDD by bounded model-family inference from Toshiba's 5400 RPM HDD specification. The trailing M meaning is unverified; reported identity is unchanged. https://toshiba.semicon-storage.com/us/storage/product/internal-specialty/pc/articles/mq01abf-series.html"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "CT250MX500SSD1",
+      "aliases": [
+        "CT250MX500SSD1"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://assets.micron.com/adobe/assets/urn%3Aaaid%3Aaem%3A3c743a1f-9319-4b34-9b20-15cdad1ee2ce/renditions/original/as/crucial-mx500-ssd-productflyer-en.pdf.html"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "DELLBOSS VD",
+      "aliases": [
+        "DELLBOSS VD"
+      ],
+      "mediaClass": "unclassified",
+      "evidence": "Reported identity retained unclassified; no exact physical-media claim is established. https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "HP SSD S700 250GB",
+      "aliases": [
+        "HP SSD S700 250GB"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://support.hp.com/us-en/product/product-specs/hp-s700-250gb-solid-state-drive/model/17470946"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDS5C3030ALA630",
+      "aliases": [
+        "Hitachi HDS5C3030ALA630"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDS5C3030BLE630",
+      "aliases": [
+        "Hitachi HDS5C3030BLE630"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDS5C4040ALE630",
+      "aliases": [
+        "Hitachi HDS5C4040ALE630"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/hgst/deskstar-5k-series/data-sheet-deskstar-5k4000.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDS722020ALA330",
+      "aliases": [
+        "Hitachi HDS722020ALA330"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDS723020BLA642",
+      "aliases": [
+        "Hitachi HDS723020BLA642"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDS723030ALA640",
+      "aliases": [
+        "Hitachi HDS723030ALA640"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDS723030BLE640",
+      "aliases": [
+        "Hitachi HDS723030BLE640"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDS724040ALE640",
+      "aliases": [
+        "Hitachi HDS724040ALE640"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/hgst/deskstar-7k-series/compatibility-deskstar-7k4000-5k4000.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDT721010SLA360",
+      "aliases": [
+        "Hitachi HDT721010SLA360"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Hitachi HDT725025VLA380",
+      "aliases": [
+        "Hitachi HDT725025VLA380"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/hgst/deskstar-7k-series/data-sheet-deskstar-t7k500.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "MTFDDAV240TCB",
+      "aliases": [
+        "MTFDDAV240TCB"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://assets.micron.com/adobe/assets/urn%3Aaaid%3Aaem%3Ade8315b8-cb6e-4b25-8426-09ca14bbd8a0/original/as/csn04.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "MTFDDAV240TDU",
+      "aliases": [
+        "MTFDDAV240TDU"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://assets.micron.com/adobe/assets/urn%3Aaaid%3Aaem%3Ade8315b8-cb6e-4b25-8426-09ca14bbd8a0/original/as/csn04.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "MTFDDAV480TCB",
+      "aliases": [
+        "MTFDDAV480TCB"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://assets.micron.com/adobe/assets/urn%3Aaaid%3Aaem%3Ade8315b8-cb6e-4b25-8426-09ca14bbd8a0/original/as/csn04.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "MTFDDAV480TDS",
+      "aliases": [
+        "MTFDDAV480TDS"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://assets.micron.com/adobe/assets/urn%3Aaaid%3Aaem%3Ade8315b8-cb6e-4b25-8426-09ca14bbd8a0/original/as/csn04.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Micron 5300 MTFDDAK480TDS",
+      "aliases": [
+        "Micron 5300 MTFDDAK480TDS"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://assets.micron.com/adobe/assets/urn%3Aaaid%3Aaem%3Ade8315b8-cb6e-4b25-8426-09ca14bbd8a0/original/as/csn04.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Micron 5400 MTFDDAK480TGA",
+      "aliases": [
+        "Micron 5400 MTFDDAK480TGA"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://my.micron.com/content/dam/micron/global/public/products/storage/ssds/data-center/5400/firmware/micron-5400-d4mu04804-firmware-update-instructions.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "SAMSUNG HD103UJ",
+      "aliases": [
+        "SAMSUNG HD103UJ"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "SAMSUNG HD154UI",
+      "aliases": [
+        "SAMSUNG HD154UI"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "SSDSCKKB240GZR",
+      "aliases": [
+        "SSDSCKKB240GZR"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://manuals.plus/m/9b7e4e1bb74523dfc0957b0047492f0fb65ae9d2fd34f70edb563f9f8296319b.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "SSDSCKKB480G8R",
+      "aliases": [
+        "SSDSCKKB480G8R"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://community.solidigm.com/t5/solid-state-drives-nand/are-the-ssdsckkb480g801-and-ssdsckkb480g8r-the-same/m-p/16004/highlight/true"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "ST1000LM024 HN",
+      "aliases": [
+        "ST1000LM024 HN"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.seagate.com/files/www-content/support-content/internal-products/spinpoint-m-series/en-us/100698122d.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "ST250LM004 HN",
+      "aliases": [
+        "ST250LM004 HN"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.seagate.com/files/www-content/support-content/internal-products/spinpoint-m-series/en-us/100698122d.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "ST500LM012 HN",
+      "aliases": [
+        "ST500LM012 HN"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.seagate.com/files/www-content/support-content/internal-products/spinpoint-m-series/en-us/100698122d.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Samsung SSD 850 EVO 1TB",
+      "aliases": [
+        "Samsung SSD 850 EVO 1TB"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://image.semiconductor.samsung.com/resources/data-sheet/Samsung_SSD_850_EVO_Data_Sheet_Rev_3_1.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Samsung SSD 850 PRO 1TB",
+      "aliases": [
+        "Samsung SSD 850 PRO 1TB"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://semiconductor.samsung.com/consumer-storage/magician/"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Samsung SSD 860 PRO 2TB",
+      "aliases": [
+        "Samsung SSD 860 PRO 2TB"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://download.semiconductor.samsung.com/resources/data-sheet/Samsung_SSD_860_PRO_Data_Sheet_Rev1_1_10129597010733.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Samsung SSD 870 EVO 2TB",
+      "aliases": [
+        "Samsung SSD 870 EVO 2TB"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://download.semiconductor.samsung.com/resources/data-sheet/Samsung_SSD_870_EVO_Data_Sheet_Rev1.1_230509_10129500053000.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Seagate BarraCuda 120 SSD ZA250CM10003",
+      "aliases": [
+        "Seagate BarraCuda 120 SSD ZA250CM10003"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/support-content/internal-products/barracuda/barracuda-ssd/_shared/masters/100858062_A.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Seagate BarraCuda 120 SSD ZA500CM10003",
+      "aliases": [
+        "Seagate BarraCuda 120 SSD ZA500CM10003"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://www.seagate.com/content/dam/seagate/migrated-assets/www-content/datasheets/pdfs/barracuda-120-sata-DS2022-2-2104US-en_US.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Seagate BarraCuda SSD ZA2000CM10002",
+      "aliases": [
+        "Seagate BarraCuda SSD ZA2000CM10002"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://www.seagate.com/content/dam/seagate/migrated-assets/www-content/support-content/internal-products/barracuda/barracuda-ssd/_shared/masters/product-manual-barracuda-ssd-100835666a.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Seagate BarraCuda SSD ZA250CM10002",
+      "aliases": [
+        "Seagate BarraCuda SSD ZA250CM10002"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://www.seagate.com/www-content/datasheets/pdfs/barracuda-ssd-DS1984-3-1806-WW-en_US.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Seagate BarraCuda SSD ZA500CM10002",
+      "aliases": [
+        "Seagate BarraCuda SSD ZA500CM10002"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://www.seagate.com/content/dam/seagate/migrated-assets/www-content/support-content/internal-products/barracuda/barracuda-ssd/_shared/masters/product-manual-barracuda-ssd-100835666a.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Seagate FireCuda 120 SSD ZA500GM10001",
+      "aliases": [
+        "Seagate FireCuda 120 SSD ZA500GM10001"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://www.seagate.com/support/internal-hard-drives/ssd/firecuda-120-ssd/"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "Seagate IronWolf ZA250NM10002",
+      "aliases": [
+        "Seagate IronWolf ZA250NM10002"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://www.seagate.com/files/www-content/support-content/internal-products/nas-drives/ironwolf-125-ssd/_shared/files/IronWolf_125_SSD_Product_Manual_100866980_C.pdf"
+    },
+    {
+      "vendor": "Unknown",
+      "modelNumber": "WD Blue SA510 2.5 250GB",
+      "aliases": [
+        "WD Blue SA510 2.5 250GB"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://www.sandisk.com/en-in/products/ssd/internal-ssd/wd-blue-sa510-sata-2-5-ssd"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HDS5C4040ALE630",
+      "aliases": [
+        "HGST HDS5C4040ALE630"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/hgst/deskstar-5k-series/data-sheet-deskstar-5k4000.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HDS724040ALE640",
+      "aliases": [
+        "HGST HDS724040ALE640"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HMS5C4040ALE640",
+      "aliases": [
+        "HGST HMS5C4040ALE640"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HMS5C4040BLE640",
+      "aliases": [
+        "HGST HMS5C4040BLE640"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/hgst/megascale-4000-series/product-manual-megascale-dc-4000-b.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HMS5C4040BLE641",
+      "aliases": [
+        "HGST HMS5C4040BLE641"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/hgst/megascale-4000-series/product-manual-megascale-dc-4000-b.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HUH728080ALE600",
+      "aliases": [
+        "HGST HUH728080ALE600"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/data-center-drives/ultrastar-sata-series/product-manual-ultrastar-he8-sata.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HUH728080ALE604",
+      "aliases": [
+        "HGST HUH728080ALE604"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/data-center-drives/ultrastar-sata-series/product-manual-ultrastar-he8-sata.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HUS726040ALE610",
+      "aliases": [
+        "HGST HUS726040ALE610"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.intel.com/content/dam/support/us/en/documents/server-products/s1200v3rp.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HUS726040ALN610",
+      "aliases": [
+        "HGST HUS726040ALN610"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/data-center-drives/ultrastar-sata-series/product-manual-ultrastar-7k6000-sata-oem-spec.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "HUS728T8TALE6L4",
+      "aliases": [
+        "HGST HUS728T8TALE6L4"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/data-center-drives/ultrastar-dc-hc300-series/product-manual-ultrastar-dc-hc320-sata-oem-spec.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD1000FYPS",
+      "aliases": [
+        "WDC WD1000FYPS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://content.ekatalog.biz/katalog/2042005027/2879-701236.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD1001FALS",
+      "aliases": [
+        "WDC WD1001FALS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD10EACS",
+      "aliases": [
+        "WDC WD10EACS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD10EADS",
+      "aliases": [
+        "WDC WD10EADS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD10EADX",
+      "aliases": [
+        "WDC WD10EADX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD10EALS",
+      "aliases": [
+        "WDC WD10EALS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD10EARS",
+      "aliases": [
+        "WDC WD10EARS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD10EARX",
+      "aliases": [
+        "WDC WD10EARX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD15EADS",
+      "aliases": [
+        "WDC WD15EADS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://cdn.inet.se/pdf/4303581_0.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD15EARS",
+      "aliases": [
+        "WDC WD15EARS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD1600AAJB",
+      "aliases": [
+        "WDC WD1600AAJB"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/2365021.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD1600AAJS",
+      "aliases": [
+        "WDC WD1600AAJS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD1600BPVT",
+      "aliases": [
+        "WDC WD1600BPVT"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://cdn.inet.se/pdf/4304371_0.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD20EFRX",
+      "aliases": [
+        "WDC WD20EFRX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD2500AAJB",
+      "aliases": [
+        "WDC WD2500AAJB"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/2365021.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD2500AAJS",
+      "aliases": [
+        "WDC WD2500AAJS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.farnell.com/datasheets/447660.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD2500BEVT",
+      "aliases": [
+        "WDC WD2500BEVT"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://cdn.inet.se/pdf/4304371_0.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD2500BPVT",
+      "aliases": [
+        "WDC WD2500BPVT"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://cdn.inet.se/pdf/4304371_0.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD2500JB",
+      "aliases": [
+        "WDC WD2500JB"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://docs.rs-online.com/2e19/0900766b803ccd11.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD30EFRX",
+      "aliases": [
+        "WDC WD30EFRX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD30EZRS",
+      "aliases": [
+        "WDC WD30EZRS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD30EZRX",
+      "aliases": [
+        "WDC WD30EZRX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD3200AAJB",
+      "aliases": [
+        "WDC WD3200AAJB"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/2365021.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD3200AAJS",
+      "aliases": [
+        "WDC WD3200AAJS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.farnell.com/datasheets/447660.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD3200AAKS",
+      "aliases": [
+        "WDC WD3200AAKS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/447660.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD3200BEKT",
+      "aliases": [
+        "WDC WD3200BEKT"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.farnell.com/datasheets/1728822.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD3200BEKX",
+      "aliases": [
+        "WDC WD3200BEKX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/1728822.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD3200LPVX",
+      "aliases": [
+        "WDC WD3200LPVX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_ie/assets/public/western-digital/product/internal-drives/wd-blue-hdd/specification-sheet-wd-blue-mobile-sata-hdd.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD40EFRX",
+      "aliases": [
+        "WDC WD40EFRX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD5000AAJS",
+      "aliases": [
+        "WDC WD5000AAJS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.farnell.com/datasheets/447660.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD5000BPKT",
+      "aliases": [
+        "WDC WD5000BPKT"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/1728822.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD5000LPCX",
+      "aliases": [
+        "WDC WD5000LPCX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_ie/assets/public/western-digital/product/internal-drives/wd-blue-hdd/specification-sheet-wd-blue-mobile-sata-hdd.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD5000LPVX",
+      "aliases": [
+        "WDC WD5000LPVX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_ie/assets/public/western-digital/product/internal-drives/wd-blue-hdd/specification-sheet-wd-blue-mobile-sata-hdd.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD5002ABYS",
+      "aliases": [
+        "WDC WD5002ABYS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://ftp.hydata.com/Downloads/scsitools/scsitools.DRT/Resources/LOD_FactoryMadeLOD-Files/WD/WD-RE3/WD-RE3-Family.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD5003ABYX",
+      "aliases": [
+        "WDC WD5003ABYX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/wd/product/internal-storage/wd-re4/product-overview-wd-re4.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD60EFRX",
+      "aliases": [
+        "WDC WD60EFRX"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.backblaze.com/docs/cloud-storage-hard-drive-smart-stats-and-failure-rates"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD800AAJB",
+      "aliases": [
+        "WDC WD800AAJB"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/2365021.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD800AAJS",
+      "aliases": [
+        "WDC WD800AAJS"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://ftp.hydata.com/Downloads/scsitools/scsitools.Lite/Resources/LOD_FactoryMadeLOD-Files/WD/3.5-inch/Sequoia/WD-Sequoia.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD800BB",
+      "aliases": [
+        "WDC WD800BB"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/447660.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD800JB",
+      "aliases": [
+        "WDC WD800JB"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. Bounded model-family association or source-access qualification is recorded in the historical classification review. https://www.farnell.com/datasheets/447660.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD800JD",
+      "aliases": [
+        "WDC WD800JD"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://www.farnell.com/datasheets/447660.pdf"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WD800LB",
+      "aliases": [
+        "WDC WD800LB"
+      ],
+      "mediaClass": "unclassified",
+      "evidence": "Reported identity retained unclassified; no exact physical-media claim is established. https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WDS250G2B0A",
+      "aliases": [
+        "WDC  WDS250G2B0A",
+        "WDC WDS250G2B0A"
+      ],
+      "mediaClass": "ssd",
+      "evidence": "Exact reported identity classified as SSD from reviewed publisher or manufacturer evidence. https://support-en.sandisk.com/app/answers/detailweb/a_id/30797"
+    },
+    {
+      "vendor": "WDC/HGST",
+      "modelNumber": "WUH722016CLE6L4",
+      "aliases": [
+        "WDC WUH722016CLE6L4"
+      ],
+      "mediaClass": "hdd",
+      "evidence": "Exact reported identity classified as HDD from reviewed publisher or manufacturer evidence. https://documents.westerndigital.com/content/dam/doc-library/en_us/assets/public/western-digital/product/data-center-drives/ultrastar-dc-hc500-series/product-manual-ultrastar-dc-hc555-sata.pdf"
+    }
+  ]
+}

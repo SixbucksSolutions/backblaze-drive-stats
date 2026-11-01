@@ -185,7 +185,9 @@ def _context(context):
         versions["normalization"] in {"1.0.0", "2.0.0"}
         and versions["classification"] in {"1.0.0", "2.0.0"}
         and versions["rate"] in {"2.0.0", "2.1.0"}
-        and all(versions[key] == "2.0.0" for key in ("selection", "cohort", "capacity")),
+        and versions["selection"] in {"2.0.0", "2.1.0"}
+        and versions["cohort"] == versions["selection"]
+        and versions["capacity"] == "2.0.0",
         "unsupported semantic version",
     )
     coverage = context["coverage"]
@@ -252,6 +254,29 @@ def _context(context):
     aliases = [(model["vendor"], alias) for model in models for alias in model["rawAliases"]]
     _require(len(aliases) == len(set(aliases)), "ambiguous alias")
     selection = context["selection"]
+    historical_fleet = versions["selection"] == "2.1.0"
+    _require(
+        ("excludedModelIds" in selection) == historical_fleet,
+        "explicit exclusions require selection 2.1.0",
+    )
+    minimum_capacity = selection.get("minimumCapacityTB")
+    _require(
+        ("minimumCapacityTB" in selection) == historical_fleet,
+        "minimum capacity requires selection 2.1.0",
+    )
+    if historical_fleet:
+        _require(
+            not isinstance(minimum_capacity, bool)
+            and isinstance(minimum_capacity, (int, float))
+            and math.isfinite(minimum_capacity)
+            and minimum_capacity > 0,
+            "positive finite minimum capacity required",
+        )
+    excluded = selection.get("excludedModelIds", [])
+    _require(
+        len(excluded) == len(set(excluded)) and set(excluded) <= set(ids),
+        "exclusions must be unique observed model IDs",
+    )
     seed = set(selection["positiveSeed"]["modelIds"])
     _require(seed <= set(ids), "seed missing inventory")
     expected_context = set()
@@ -331,10 +356,17 @@ def _context(context):
             == all(row["status"] == "complete" for row in coverage),
             "recorded completeness mismatch",
         )
-        if model["mediaClass"] == "hdd":
+        if (
+            model["mediaClass"] == "hdd"
+            and label not in excluded
+            and (
+                not historical_fleet
+                or (model["capacityTB"] is not None and model["capacityTB"] >= minimum_capacity)
+            )
+        ):
             if proven_first:
                 qualified.add(label)
-            if model["seedMatch"] or proven_first:
+            if versions["selection"] == "2.1.0" or model["seedMatch"] or proven_first:
                 expected_context.add(label)
     for row_index, source in enumerate(coverage):
         if source["knownObservationRows"] is not None:
@@ -353,6 +385,10 @@ def _context(context):
         context_ids == expected_context,
         "context must retain all seed HDD and qualifying HDD models",
     )
+    if versions["selection"] == "2.1.0":
+        _require(
+            analysis == qualified, "historical analysis must include every qualified HDD model"
+        )
     _require(analysis <= context_ids & qualified, "analysis lacks HDD threshold proof")
     purchase, historical = (
         set(selection["purchaseDefaultModelIds"]),

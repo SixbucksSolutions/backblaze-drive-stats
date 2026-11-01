@@ -387,3 +387,127 @@ void test('reference verification uses exact bytes, length and embedded filename
     /path/,
   );
 });
+void test('selection 2.1 requires all historical qualified HDDs and all observed HDD context', () => {
+  const descriptor = structuredClone(descriptors[0]!);
+  descriptor.context.versions.selection = '2.1.0';
+  descriptor.context.selection.minimumCapacityTB = 1.0;
+  descriptor.context.selection.excludedModelIds = [];
+  descriptor.context.versions.cohort = '2.1.0';
+  const selection = descriptor.context.selection;
+  selection.analysisModelIds = descriptor.context.inventory
+    .filter((model) => model.mediaClass === 'hdd' && model.reportingAnchorQuarter !== null)
+    .map((model) => model.modelId);
+  selection.contextModelIds = descriptor.context.inventory
+    .filter((model) => model.mediaClass === 'hdd')
+    .map((model) => model.modelId);
+  selection.purchaseDefaultModelIds = [];
+  selection.historicalReferenceModelIds = [];
+  assert.doesNotThrow(() => parseSnapshotDescriptor(encode(descriptor), index.snapshots[0]!));
+  const missing = structuredClone(descriptor);
+  missing.context.selection.analysisModelIds.pop();
+  assert.throws(
+    () => parseSnapshotDescriptor(encode(missing), index.snapshots[0]!),
+    /historical analysis membership/,
+  );
+  const dropped = structuredClone(descriptor);
+  dropped.context.selection.contextModelIds.pop();
+  assert.throws(
+    () => parseSnapshotDescriptor(encode(dropped), index.snapshots[0]!),
+    /context membership/,
+  );
+  const mismatched = structuredClone(descriptor);
+  mismatched.context.versions.cohort = '2.0.0';
+  assert.throws(
+    () => parseSnapshotDescriptor(encode(mismatched), index.snapshots[0]!),
+    /semantic version/,
+  );
+});
+void test('historical owner exclusions preserve inventory and reject unknown or implicit decisions', () => {
+  const descriptor = structuredClone(descriptors[0]!);
+  const context = descriptor.context;
+  context.versions.selection = '2.1.0';
+  context.selection.minimumCapacityTB = 1.0;
+  context.versions.cohort = '2.1.0';
+  const excluded = context.inventory.find(
+    (model) => model.mediaClass === 'hdd' && model.reportingAnchorQuarter,
+  )!;
+  const selection = context.selection;
+  selection.excludedModelIds = [excluded.modelId];
+  selection.contextModelIds = context.inventory
+    .filter((model) => model.mediaClass === 'hdd' && model.modelId !== excluded.modelId)
+    .map((model) => model.modelId);
+  selection.analysisModelIds = context.inventory
+    .filter(
+      (model) =>
+        model.mediaClass === 'hdd' &&
+        model.reportingAnchorQuarter &&
+        model.modelId !== excluded.modelId,
+    )
+    .map((model) => model.modelId);
+  selection.purchaseDefaultModelIds = [];
+  selection.historicalReferenceModelIds = [];
+  assert.doesNotThrow(() => parseSnapshotDescriptor(encode(descriptor), index.snapshots[0]!));
+  assert.equal(excluded.mediaClass, 'hdd');
+  for (const ids of [['unknown'], [excluded.modelId, excluded.modelId]]) {
+    const changed = structuredClone(descriptor);
+    changed.context.selection.excludedModelIds = ids;
+    assert.throws(() => parseSnapshotDescriptor(encode(changed), index.snapshots[0]!));
+  }
+  const missing = structuredClone(descriptor);
+  delete missing.context.selection.excludedModelIds;
+  assert.throws(() => parseSnapshotDescriptor(encode(missing), index.snapshots[0]!), /exclusions/);
+  for (const field of ['purchaseDefaultModelIds', 'historicalReferenceModelIds'] as const) {
+    const changed = structuredClone(descriptor);
+    changed.context.selection[field] = [excluded.modelId];
+    assert.throws(
+      () => parseSnapshotDescriptor(encode(changed), index.snapshots[0]!),
+      /default\/reference membership/,
+    );
+  }
+});
+void test('historical capacity floor includes the boundary and excludes small or unknown nominal capacity', () => {
+  const descriptor = structuredClone(descriptors[0]!);
+  const context = descriptor.context;
+  context.versions.selection = '2.1.0';
+  context.versions.cohort = '2.1.0';
+  context.versions.rate = '2.1.0';
+  context.selection.minimumCapacityTB = 1.0;
+  context.selection.excludedModelIds = [];
+  context.selection.purchaseDefaultModelIds = [];
+  context.selection.historicalReferenceModelIds = [];
+  const hdds = context.inventory
+    .filter((model) => model.mediaClass === 'hdd')
+    .sort(
+      (a, b) =>
+        Number(b.reportingAnchorQuarter !== null) - Number(a.reportingAnchorQuarter !== null),
+    );
+  for (const model of hdds) {
+    model.capacityTB = null;
+  }
+  hdds[1]!.capacityTB = 0.5;
+  hdds[0]!.capacityTB = 1.0;
+  context.selection.contextModelIds = [hdds[0]!.modelId];
+  context.selection.analysisModelIds = [hdds[0]!.modelId];
+  assert.doesNotThrow(() => parseSnapshotDescriptor(encode(descriptor), index.snapshots[0]!));
+  const frozen = structuredClone(descriptor);
+  frozen.context.selection.analysisModelIds.push(hdds[1]!.modelId);
+  assert.throws(
+    () => parseSnapshotDescriptor(encode(frozen), index.snapshots[0]!),
+    /historical analysis membership/,
+  );
+  hdds[0]!.capacityTB = null;
+  context.selection.contextModelIds = [];
+  context.selection.analysisModelIds = [];
+  assert.doesNotThrow(() => parseSnapshotDescriptor(encode(descriptor), index.snapshots[0]!));
+  const missing = structuredClone(descriptor);
+  delete missing.context.selection.minimumCapacityTB;
+  assert.throws(
+    () => parseSnapshotDescriptor(encode(missing), index.snapshots[0]!),
+    /minimum capacity/,
+  );
+  for (const floor of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+    const changed = structuredClone(descriptor);
+    changed.context.selection.minimumCapacityTB = floor;
+    assert.throws(() => parseSnapshotDescriptor(encode(changed), index.snapshots[0]!));
+  }
+});
