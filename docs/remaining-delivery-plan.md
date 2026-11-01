@@ -32,7 +32,9 @@ explicit [reconciliation limits](production-workbook-reconciliation.md). Terry
 asked to record approval without moving #0086's RFR lane; that explicit approval
 satisfies the dependent acceptance gate. Terry also approved #0087, #0089 and
 #0090 while reserving their later lane moves. #0091, #0092 and #0093 now implement
-the remaining capacity, manufacturer and datacenter views for owner review. See the
+the remaining capacity, manufacturer and datacenter views; those cards are now
+owner-Completed. #0095's [maintained refresh workflow](quarterly-refresh.md) is
+implemented for owner review. See the
 [producer documentation](historical-generator.md) and
 [shared reader handoff](snapshot-reader.md).
 
@@ -70,15 +72,15 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Current rolling author/reviewer assignments are in private plan **r035**. The
+Current rolling author/reviewer assignments are in private plan **r036**. The
 roster covers the next three remaining turns, preserves earlier revisions and
 does not start workers or approve prerequisites. Normal implementation is at
 most three cards per turn, with six direct subagents and depth one; past
 ten-quarter source-batch exceptions do not expand this implementation limit.
 
-The remaining three-turn roster starts with #0095's refresh workflow and a fresh
-Sol / High recovery/provenance review. Next is #0094 integrated validation only
-after every view and workflow handoff is accepted. #0007 hosting preparation is
-planned third, conditional on owner acceptance of the integrated #0017 release;
-it does not authorize deployment or waive access decisions. The roster starts no
-future workers and does not treat RFR alone as approval.
+Next is #0094 integrated validation after #0095 acceptance; every view is already
+owner-Completed. #0007 hosting preparation follows only after owner acceptance of
+the integrated #0017 release, without deployment authority or waived access
+decisions. The owner-added #0097 is intended last; its scope and dependencies are
+preserved for later eligibility review. The roster starts no future workers and
+does not treat RFR alone as approval.

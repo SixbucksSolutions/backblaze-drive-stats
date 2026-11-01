@@ -39,7 +39,7 @@ function sorted(value) {
   }
   return value;
 }
-async function publication(t) {
+async function publication(t, { revision = false } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'public-production-check-'));
   t.after(async () => {
     assert.ok(
@@ -76,6 +76,34 @@ async function publication(t) {
     }
     index.snapshots[number].descriptor = await artifact(`${stem}-descriptor`, descriptor);
   }
+  if (revision) {
+    const previous = index.snapshots.at(-1);
+    const descriptor = JSON.parse(
+      await readFile(join(directory, previous.descriptor.path), 'utf8'),
+    );
+    const id = `${descriptor.context.snapshotId}-revision`;
+    descriptor.context.snapshotId = id;
+    descriptor.context.generatedAt = '2026-11-01T00:00:00Z';
+    descriptor.contextSha256 = sha(JSON.stringify(sorted(descriptor.context)));
+    const matrix = JSON.parse(await readFile(join(directory, descriptor.matrix.path), 'utf8'));
+    matrix.snapshotId = id;
+    matrix.contextSha256 = descriptor.contextSha256;
+    descriptor.matrix = await artifact(`${id}-matrix`, matrix);
+    for (const row of descriptor.quarters) {
+      if (row.payload) {
+        const payload = JSON.parse(await readFile(join(directory, row.payload.path), 'utf8'));
+        payload.snapshotId = id;
+        payload.contextSha256 = descriptor.contextSha256;
+        row.payload = await artifact(`${id}-${row.quarter}`, payload);
+      }
+    }
+    index.snapshots.push({
+      ...previous,
+      snapshotId: id,
+      descriptor: await artifact(`${id}-descriptor`, descriptor),
+    });
+    index.latestSnapshotId = id;
+  }
   await writeFile(join(directory, 'index.json'), JSON.stringify(index));
   return { directory, index };
 }
@@ -88,6 +116,18 @@ void test('release checker consumes every advertised matrix and supporting byte-
   assert.ok(result.supporting > 2);
   assert.ok(result.unavailable > 0);
   assert.equal(result.files, (await readdir(directory)).length);
+});
+
+void test('same-quarter immutable revisions keep every snapshot while release quarter inventory stays unique', async (t) => {
+  const { directory } = await publication(t, { revision: true });
+  const result = await checkProductionData(directory, options);
+  assert.equal(result.snapshots, 3);
+  assert.equal(result.matrices, 3);
+  assert.equal(result.files, (await readdir(directory)).length);
+  await assert.rejects(
+    checkProductionData(directory, { latestQuarter: '2023-Q4', quarters: ['2023-Q4'] }),
+    /release selection/,
+  );
 });
 
 void test('release checker rejects extra files, missing bytes, and hash corruption', async (t) => {

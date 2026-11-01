@@ -203,6 +203,10 @@ No historical source downloads are used by those tests.
 
 Production v2 producer (#0085)
 
+For routine operator use, the [maintained quarterly refresh workflow](quarterly-refresh.md)
+wraps this producer with plan/run/verify, source pins, discovery/admission gates,
+private receipts, recovery and baseline-preserving publication.
+
 `production_history.py` adopts the accepted 2.0.0 family without changing the v1
 `historical_generator.generate` API, its fixtures, or retained summary semantics.
 It performs no downloads or cloud operations. The real production generation and

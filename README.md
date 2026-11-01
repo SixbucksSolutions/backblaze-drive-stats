@@ -72,9 +72,15 @@ Explore [capacity history](docs/explore-capacity.md) at `?view=capacity`,
 [manufacturer shares](docs/explore-manufacturers.md) at `?view=manufacturers`, and
 [datacenters](docs/explore-datacenters.md) at `?view=datacenters`. Capacity history
 and datacenters use all supplied observations; model and manufacturer reports
-use the separate selected-HDD context. The private rolling plan is r035.
+use the separate selected-HDD context. The private rolling plan is r036.
 The original quarterly reliability view remains at `?view=reliability`;
 explicit `legacy=1` preserves the original report routes for comparison.
+
+The maintained [quarterly refresh workflow](docs/quarterly-refresh.md) provides
+offline plan/run/verify commands, pinned local source projection, retained-summary
+reuse, explicit model-discovery gates and recoverable immutable publication.
+An unchanged refresh reuses the approved generation without public payload/index
+writes. Private B2 retention and site deployment remain separate operations.
 
 The software and original project analysis are [MIT licensed](LICENSE). Backblaze's
 source data, name, branding and other third-party material retain their own rights

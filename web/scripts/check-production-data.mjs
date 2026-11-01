@@ -118,7 +118,7 @@ export async function checkProductionData(
   });
   const index = await loader.loadIndex();
   assert.deepEqual(
-    index.snapshots.map((entry) => entry.asOfQuarter).sort(),
+    [...new Set(index.snapshots.map((entry) => entry.asOfQuarter))].sort(),
     [...quarters].sort(),
     'Advertised production snapshot quarters differ from release selection',
   );
