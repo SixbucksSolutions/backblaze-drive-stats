@@ -26,7 +26,7 @@ The qualified final distribution contains 3,114 files / 289,058,590 bytes, with 
 
 Private evidence remains under ignored `data/staging/0113/measurement/`: `final-findings.txt`, `functional-final-v1/summary.json`, the `comparison-final-v1/` paired summaries, and the unadopted `comparison-v1-findings.txt`. Publication, CI, manifest/ledger pins, full hosted verification and the archived release are recorded under `data/staging/0113-publication/` and `data/staging/0113/publication/`. These operational files are outside the served bundle and Git.
 
-See the [static loading design](static-page-loading-0108.md) and [hosting procedure](cloudflare-hosting.md). Rolling plan r056 queues #0114 and #0115 for the next turn; both remain unstarted.
+See the [static loading design](static-page-loading-0108.md) and [hosting procedure](cloudflare-hosting.md). Rolling plan r057 queues #0115 for the next turn. #0114 is now Backlog/P5; both remain unstarted.
 
 ## Review follow-up: larger indicator
 
@@ -43,8 +43,43 @@ is made for the enlargement. Startup scheduling and the complete-view reveal
 remain unchanged.
 
 Source `bfbec3be151224bdffedaec2deeda29b5ca61e5e` passed both operating-system jobs
-in CI run `41367562141` and is live as deployment
+in CI run `41367562141` and was published as deployment
 `28006713-1a0e-466b-987f-f76768879599`. All 3,226 served files and the navigation,
 missing/private-path and redirect checks passed. The upload preserves all 3,220
 previous immutable assets; its verified archive and rollback predecessor
 `7838a3f5` are retained under ignored `data/staging/0113-size-publication/`.
+
+## Review follow-up: sequential fade
+
+Terry requested that the spinner disappear fully before the complete view enters.
+The loader now fades out over 150 ms, followed by a 200 ms fade-in of the entire
+prepared view. There is no intentional extra pause or overlapping fade. Reduced
+motion removes both transitions. The view remains hidden and cannot receive
+keyboard focus during the loader fade-out. Loader geometry stays fixed throughout.
+
+This adds a nominal 350 ms presentation transition after data, DOM and fonts are
+ready. The earlier load measurements describe the initial hard reveal, not this
+transition. JavaScript scheduling and data loading are unchanged; all 3,113 other
+pristine assets are byte-identical to the larger-indicator release.
+
+A controlled CSS fixture checked the transition boundaries. A focused native
+Chrome pass at desktop and narrow widths, plus reduced motion, verified no sampled
+opacity overlap, all 11,130 cells already present, stable fonts and geometry, and
+blocked focus during loader-out. The final desktop screenshot matches the prior
+complete-view screenshot exactly. The instrumented capture skipped the earliest
+low-opacity table frames: the first visible frames were around 54–59% opacity,
+following a brief blank interval. This verifies whole-view sequencing, but does
+not establish uniformly smooth visible 200 ms pacing. Independent visual review
+found no demonstrated layout or partial-table defect requiring another change.
+
+Source `069a245d819a627b93361b2c3ee0f94e9a75d4e4` passed both operating-system jobs
+in CI run `41369946676` and is live as deployment
+`c5d1535d-6d69-4e95-811f-c845b27ecc02`. The full hosted probe passed 3,226 assets,
+four navigation cases, eighteen missing/private-path cases and nine redirects.
+The retained upload preserves all 3,220 prior immutable assets. Its ZIP was read
+back and all file hashes verified; predecessor `28006713` remains retained.
+
+Private evidence is under `data/staging/0113/fade/` (fixture and full-table checks)
+and `data/staging/0113-fade-publication/` (source CI, release pins, guarded deploy,
+hosted proof and archived continuation). These remain outside Git and the served
+bundle. Fresh visual and release reviews passed before handoff.

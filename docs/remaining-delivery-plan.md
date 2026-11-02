@@ -77,11 +77,12 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r056** records #0113's six-worker turn and the next planned work,
+Private plan **r057** records #0113's six-worker turn and the next planned work,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. The next turn plans #0115's collapsible
-six-view navigation and #0114's Seagate capacity-first ordering, with fresh
-independent reviews; both cards remain Ready for Work and unstarted. Planned
+six-view navigation with fresh independent review. #0115 remains Ready for Work;
+#0114's Seagate ordering is now Backlog/P5 and removed from that roster. Both are
+unstarted. Planned
 assignments do not start workers, approve prerequisites or expand current limits.
 
 Terry has moved #0017 and #0097–#0100 to Completed.
@@ -161,7 +162,11 @@ Completed lanes remain owner-controlled.
 Terry selected #0113 after the closeout. Its [startup-feedback record](matrix-startup-0113.md)
 documents a prompt, accessible loading indicator followed by the complete stable
 view. The original renderer is retained because the measured cleanup did not
-establish a reliable speedup. After Terry requested a larger indicator, source `bfbec3b` is live as production
-deployment `28006713-1a0e-466b-987f-f76768879599`; the full hosted union is verified
-and `7838a3f5` remains its rollback predecessor. #0113 awaits Terry's review; #0101
+establish a reliable speedup. The larger indicator now fades out over 150 ms,
+then the complete view fades in over 200 ms; reduced motion switches immediately.
+Source `069a245` is live as production deployment
+`c5d1535d-6d69-4e95-811f-c845b27ecc02`; the full hosted union is verified
+and `28006713` remains its rollback predecessor. The focused capture verifies
+sequencing and stable geometry, while skipped early fade frames limit claims
+about smoothness. #0113 awaits Terry's review; #0101
 and #0112 remain owner-Completed.
