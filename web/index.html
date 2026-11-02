@@ -37,15 +37,23 @@
         --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
         --font-table: ui-monospace, 'Cascadia Mono', Consolas, monospace;
       }
+      /* The complete view enters only after the loading status has faded away. */
+      #app {
+        opacity: 1;
+        visibility: visible;
+        transition:
+          opacity 200ms ease-out 150ms,
+          visibility 0s linear 150ms;
+      }
       .app-pending #app {
         visibility: hidden;
+        opacity: 0;
+        transition: none;
       }
       #startup-status {
-        display: none;
-      }
-      .app-pending #startup-status {
         position: fixed;
         inset: 0;
+        z-index: 10;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -60,6 +68,17 @@
           -apple-system,
           'Segoe UI',
           sans-serif;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: auto;
+        transition:
+          opacity 150ms ease-in,
+          visibility 0s linear 150ms;
+      }
+      .app-pending #startup-status {
+        opacity: 1;
+        visibility: visible;
+        transition: none;
       }
       .startup-spinner {
         width: 64px;
@@ -75,6 +94,10 @@
         }
       }
       @media (prefers-reduced-motion: reduce) {
+        #app,
+        #startup-status {
+          transition: none;
+        }
         .startup-spinner {
           animation: none;
         }
