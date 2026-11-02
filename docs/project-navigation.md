@@ -30,7 +30,9 @@ not a permanent limit on future refreshes.
 
 Use the shared navigation to switch between AFR comparison, Deployments, Drive
 mix, Total capacity, By manufacturer and By datacenter. Collapse it for more
-table room; expand it to choose another view. The choice carries through shared
+table room; the six icon links remain usable, with labels on hover or keyboard
+focus. Collapse and expand use a 200 ms ease-in-out animation; reduced-motion
+mode switches immediately. Expand it to show the words again. The choice carries through shared
 navigation links and reloads. Narrow screens use a compact expandable menu above the report.
 Selected historical snapshot and reporting quarter carry between published views
 where that evidence is available. **More context & references** contains the

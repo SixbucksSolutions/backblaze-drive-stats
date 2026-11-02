@@ -42,3 +42,35 @@ under ignored `data/staging/0115/` and `data/staging/0115-publication/`, outside
 and the served bundle. Early harness attempts required sandbox-launch and URL,
 hover and implicit-favicon expectation corrections; no app defect was established
 by those attempts. The final frozen-bundle pass had no browser errors or alerts.
+
+## Review follow-up: animated icon rail
+
+On 2026-11-02, Terry requested animation and usable collapsed navigation. Both
+directions now use 200 ms ease-in-out motion, accelerating then decelerating.
+Desktop width and narrow-screen menu height animate; initial loads stay static
+and reduced-motion mode switches immediately. All six collapsed icon links remain
+visible and named. Hover or keyboard focus shows an unclipped label; Escape
+dismisses it. Existing route context, table selection and startup fades remain.
+
+Fresh independent source review, all 227 web tests and 23 focused Chrome checks
+passed. The browser checks include intermediate geometry in both directions,
+all six collapsed destinations, hover/focus/Escape behavior, retained report state,
+narrow layout, reduced motion and the startup gate. Independent desktop/narrow
+screenshot review passed; still images are not evidence of animation pacing.
+
+Both operating-system CI jobs passed run `41422927726` for source
+`8ec5dac44999c06c9f809878c24d4dce810efe6c`. It is live as deployment
+`1cb7726c-2694-48c1-a750-2aea57b792d5`. The qualified browser inventory matches
+the published build; all 3,097 public JSON files remain unchanged. The upload
+retains 121 predecessor files and preserves all 3,224 prior immutable assets.
+Full hosted verification passed 3,234 assets, four navigation cases, eighteen
+missing/private paths and nine redirects. The archive passed every file hash on
+readback; predecessor `8e871449` remains retained for rollback.
+
+A separate public-origin smoke passed all sixteen checks for collapsed destinations,
+active names, hover/focus/Escape, expansion, narrow layout and reduced motion.
+No application asset failures or page errors occurred. One implicit favicon
+`404` is recorded separately as an ancillary exception. Owned Chrome was closed.
+
+Private follow-up evidence is in `data/staging/0115/rail-verification/`,
+`data/staging/0115/rail/` and `data/staging/0115-rail-publication/`.

@@ -79,13 +79,14 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r059** records #0115's navigation handoff and #0113's accepted closeout,
+Private plan **r060** records #0115's animated-rail follow-up and #0113's accepted closeout,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. #0115's shared collapsible navigation
-is implemented and independently reviewed; it awaits Terry's review. No Ready for
-Work cards remain, so no future execution workers are assigned. #0114's Seagate
-ordering remains Backlog/P5 and unstarted. Planning never starts workers, approves
-prerequisites or expands current limits.
+is implemented and independently reviewed; it awaits Terry's review. Newly added
+#0119 (Hitachi HDS brand/model labels) and #0120 (descending date dropdowns) remain
+Ready for Work/P4 and unstarted, with next-turn author/review assignments recorded
+in r060. #0114's Seagate ordering remains Backlog/P5 and unstarted. Planning never
+starts workers, approves prerequisites or expands current limits.
 
 Terry has moved #0017 and #0097–#0100 to Completed.
 For #0007 he supplied the account, token file and
@@ -176,7 +177,10 @@ about smoothness. Terry approved #0113 and moved it to Completed on 2026-11-01;
 #0115 replaces the separate navigation layouts with one shared collapsible menu
 for all six published views. The [navigation handoff](navigation-0115.md) records
 route/context retention, responsive and keyboard behavior, independent review,
-227 web tests, 59 browser checks and exact-source CI. Source `9660065` is live as
-deployment `8e871449-c5d1-42c9-888f-4157b15406d0`; all 3,230 hosted assets passed
-verification, and predecessor `c5d1535d` remains retained for rollback. #0115 is
-ready for Terry's review; #0113 remains owner-Completed.
+227 web tests, the initial 59 browser checks and exact-source CI. The review
+follow-up adds 200 ms ease-in-out motion and retains all six icon links while
+collapsed, with hover/focus labels and reduced-motion support. Fresh source/visual
+review and 23 focused browser checks passed. Source `8ec5dac` is live as deployment
+`1cb7726c-2694-48c1-a750-2aea57b792d5`; all 3,234 hosted assets passed verification,
+and predecessor `8e871449` remains retained for rollback. #0115 awaits Terry's
+review; #0113 remains owner-Completed.
