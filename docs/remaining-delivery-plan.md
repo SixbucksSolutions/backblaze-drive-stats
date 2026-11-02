@@ -79,7 +79,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r064** records #0122's clarified selector/font handoff and earlier review/acceptance states,
+Private plan **r065** records #0122's confirmed capacity-column handoff and earlier review/acceptance states,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. #0115's shared collapsible navigation
 is owner-approved Completed. #0119 (Hitachi HDS brand/model labels), #0120
@@ -197,9 +197,11 @@ All three cards remain ready for Terry's review.
 Terry clarified #0122: full model-selector labels must fit without wrapping or
 horizontal scrolling, while retaining vertical scrolling. Its
 [fit-and-alignment revision](selector-labels-0122.md) uses the bundled mono font
-and aligns known Seagate capacity digit ends without changing model codes.
-Source `7b8177c` is live as deployment `46d05fc2-2fa6-4529-9873-8f35ec9f149b`.
-Quality, 240 web tests, 24 local browser checks, both CI jobs, full 4,783-file hosted
-verification and ten public smoke checks passed. All public JSON is unchanged;
-predecessor `5a338eab` remains retained. #0122 awaits Terry's review; no other card
-was started this turn. The earlier horizontal-scrolling design is superseded.
+and keeps known Seagate capacity digit ends aligned without changing model codes.
+The final confirmed capacity format aligns both parentheses and `TB`, with two
+integer and two optional decimal positions. Source `a352680` is live as deployment
+`88b2a359-466f-4418-90e3-fd05dc2e33dd`. Quality, 243 web tests, 32 final local browser
+checks, both CI jobs, full 4,787-file hosted verification and twelve public smoke
+checks passed. All public JSON is unchanged; predecessor `46d05fc2` remains
+retained. #0122 awaits Terry's review; no other card was started this turn. The
+earlier horizontal-scrolling design is superseded.
