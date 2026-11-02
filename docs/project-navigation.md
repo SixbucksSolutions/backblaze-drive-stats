@@ -28,6 +28,14 @@ not a permanent limit on future refreshes.
 
 ## Explorer and data definitions
 
+Use the shared navigation to switch between AFR comparison, Deployments, Drive
+mix, Total capacity, By manufacturer and By datacenter. Collapse it for more
+table room; expand it to choose another view. The choice carries through links
+and reloads. Narrow screens use a compact expandable menu above the report.
+Selected historical snapshot and reporting quarter carry between published views
+where that evidence is available. **More context & references** contains the
+model context, original quarterly explorer and workbook/synthetic references.
+
 - [Matrix interface and reading guide](flagship-ui.md)
 - Explore: [deployments](explore-deployments.md), [drive mix](explore-distribution.md), [capacity history](explore-capacity.md), [manufacturer shares](explore-manufacturers.md), [datacenters](explore-datacenters.md)
 - [Shared production v2 contracts](production-data-v2.md) and [snapshot reader](snapshot-reader.md)

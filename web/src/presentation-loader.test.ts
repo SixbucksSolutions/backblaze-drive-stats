@@ -317,7 +317,7 @@ async function explorerStartupHarness(delayed: Promise<unknown>) {
     defaultFilter: () => ({ search: '', vendor: '', preset: 'context' }),
     snapshotReport: () => 'overview',
     selectionTotals: () => ({}),
-    matrixHref: () => '?view=matrix',
+    updatePublishedNavigation: () => {},
     patchContent: (_app: unknown, text: string) => {
       writes.push(text);
       app.innerHTML = text;

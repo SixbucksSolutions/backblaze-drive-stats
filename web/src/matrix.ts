@@ -1,3 +1,4 @@
+import { updatePublishedNavigation } from './published-navigation.ts';
 import './matrix.css';
 import './matrix-selection.css';
 import { PresentationLoader, presentationCatalogue } from './presentation-loader.ts';
@@ -72,7 +73,7 @@ let selected = new Set<string>();
 let selection: { model: MatrixModel; cell: MatrixCell; metric: Metric } | undefined;
 let activeRow = 0;
 let disconnectScrolling: (() => void) | undefined;
-const app = document.querySelector<HTMLDivElement>('#app')!;
+const app = document.querySelector<HTMLDivElement>('#route-content')!;
 const empty = (value: unknown) =>
   value === null || value === undefined ? 'Unavailable' : esc(value);
 
@@ -285,7 +286,7 @@ function render() {
   const models = visibleModels(snapshot, selected);
   patchContent(
     app,
-    `<div class="matrix-page"><header class="matrix-top"><a class="matrix-brand" href="?">▰ DriveStats <span>BY SIXBUCKS SOLUTIONS</span></a><a href="${snapshot.rateLabel ? `?view=explore&snapshot=${esc(snapshot.id)}` : '?view=explore'}">Explore calendar-quarter reports ↗</a></header>
+    `<main id="main" class="matrix-page">
   <section class="matrix-heading"><div><p class="eyebrow">THE FULL TRAJECTORY</p><h1>Reliability through deployment history.</h1><p>${snapshot.rateLabel ? 'Compare Observed-history AFR, population and turnover. Seven adjacent metrics retain the evidence behind each value.' : 'Compare cumulative AFR, population and turnover together. Each model keeps its seven workbook columns.'}</p></div><label class="snapshot-control">AS-OF EVIDENCE<select id="matrix-snapshot">${(referenceMode ? snapshots : productionChoices.map((entry) => ({ id: entry.snapshotId, label: `${entry.asOfQuarter.replace('-Q', ' Q')} · ${snapshotAvailable(entry.asOfQuarter, 'matrix') ? 'observed history' : 'unavailable for AFR comparison'}` }))).map((s) => `<option value="${esc(s.id)}" ${!referenceMode && productionChoices.some((entry) => entry.snapshotId === s.id && !snapshotAvailable(entry.asOfQuarter, 'matrix')) ? 'disabled' : ''} ${s.id === (pendingSnapshot || snapshot.id) ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select></label></section>
   <aside class="matrix-notice ${snapshot.kind}"><strong>${snapshot.kind === 'production' ? 'BACKBLAZE OBSERVED HISTORY · V2' : snapshot.kind === 'reference' ? 'WORKBOOK REFERENCE · NOT A PRODUCTION SNAPSHOT' : 'SYNTHETIC SAMPLE · INVENTED FIGURES'}</strong><span>${esc(snapshot.notice)}</span></aside>
   ${pendingSnapshot ? '<p role="status">Validating selected snapshot… The previous validated matrix remains visible.</p>' : ''}${snapshotError ? `<p role="alert">${esc(snapshotError)}</p>` : ''}
@@ -302,8 +303,12 @@ function render() {
   <div class="matrix-table-footer"><div class="matrix-states">${(snapshot.rateLabel ? ['below_threshold', 'source_missing', 'source_incomplete', 'unpublished', 'snapshot_end'] : ['below_threshold', 'source_missing', 'source_incomplete', 'snapshot_end', 'trailing_blank_unknown']).map((s) => `<span class="state-key state-${s}" title="${esc(stateInfo(s).description)}">${stateInfo(s).label}</span>`).join('')}<span>— on an eligible row = metric unavailable; inspect for the reason</span></div>${tableDisplayOptions()}</div></section>
   <aside class="matrix-inspector" id="matrix-inspector" aria-label="Cell details">${selection ? inspector() : '<p class="eyebrow">CELL INSPECTOR</p><h2>Read a value in context.</h2><p>Focus, click or hover a matrix cell for its exact value, calendar context, exposure and baseline.</p>'}</aside>
   ${legend()}${exampleComparisons()}<details class="matrix-method"><summary>How to read this comparison & source context</summary>${snapshot.rateLabel ? productionMethod() : `<p>AFR is cumulative through the displayed quarter, in percent; AFR delta is in percentage points. Count means distinct drives observed anywhere in a quarter, not the installed population at quarter end. New means first seen in supplied history. Failed sums daily failure flags.</p><p>Retired is inferred from last observations and may include failures. A newest-quarter Failed proxy, when identified by production metadata, is provisional. Neither is proof of voluntary retirement or its cause. Large population and continuing additions provide deployment context, not a spending measurement.</p><p>All seven scales use the full eligible snapshot population. Model selection and neutral colors never recalculate them. The malformed New source color is normalized to intended white. No composite ranking is calculated.</p><p>${snapshot.kind === 'reference' ? 'Workbook first-row deltas subtract zero; subsequent rows subtract the prior retained row. Calendar, pre-eligibility exposure and cutoff are unknown. Nonzero cumulative AFR with zero current Failed can reflect earlier contributions, but those components cannot be reconstructed here.' : 'Production examples retain real calendar offsets and the original anchor after reentry. Delta subtracts the prior eligible row and states its elapsed span. Pre-eligibility contributions remain in cumulative AFR; coverage gaps can make cumulative rates unavailable while Count remains known.'}</p><p>The guide marks the end of the selected relative year (four quarters per year). It is a deployment-history reference and does not predict an individual drive’s lifetime or recommend a replacement date.</p>`}<p>Snapshot: ${esc(snapshot.id)} · ${esc(snapshot.versions)}.</p><p class="matrix-hash">Source SHA-256 / manifest: ${esc(snapshot.sourceHash)}</p>${snapshot.sourceUrl ? `<a href="${esc(snapshot.sourceUrl)}">${snapshot.rateLabel ? 'Backblaze public dataset ↗' : 'Original owner-supplied workbook ↗'}</a>` : '<p>Invented aggregate contract example; no observed Backblaze performance is represented.</p>'}</details>
-  <footer>${snapshot.rateLabel ? 'Recorded Backblaze history · Independent Sixbucks Solutions analysis. <a href="?view=matrix&reference=1">Workbook & synthetic references</a>' : 'Historical and synthetic comparison references. <a href="?view=matrix">Production matrix</a>'}<a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a><a href="${snapshot.rateLabel ? `?view=explore&snapshot=${esc(snapshot.id)}` : '?view=explore'}">Back to Explore ↗</a></footer></div>`,
+  <footer>${snapshot.rateLabel ? 'Recorded Backblaze history · Independent Sixbucks Solutions analysis. <a href="?view=matrix&reference=1">Workbook & synthetic references</a>' : 'Historical and synthetic comparison references. <a href="?view=matrix">Production matrix</a>'}<a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a></footer></main>`,
   );
+  updatePublishedNavigation({
+    snapshotId: snapshot.id,
+    kind: referenceMode ? 'sample' : 'backblaze',
+  });
   bind();
   const nextScroll = app.querySelector('.matrix-scroll');
   if (nextScroll) {

@@ -1,3 +1,4 @@
+import { updatePublishedNavigation } from './published-navigation.ts';
 import { PresentationLoader, presentationCatalogue } from './presentation-loader.ts';
 import type { DisplayDescriptor, PresentationCatalogue } from './presentation-data.ts';
 import type { ProductionIndex, SupportingQuarter } from './production-data.ts';
@@ -22,7 +23,7 @@ import { renderScopeMetrics } from './snapshot-summary.ts';
 import './snapshot-explorer.css';
 import { renderDeployments } from './deployment-report.ts';
 import { renderDistribution } from './distribution-report.ts';
-import { matrixHref, snapshotReport } from './app-route.ts';
+import { snapshotReport } from './app-route.ts';
 import type { SnapshotReport } from './app-route.ts';
 import { exampleUrls, exampleIndexName } from 'virtual:minimized-example-json';
 import {
@@ -31,14 +32,6 @@ import {
   snapshotUnavailableReason,
 } from './snapshot-availability.ts';
 
-const reportNames = {
-  reliability: 'Reliability',
-  deployments: 'Deployments',
-  distribution: 'Drive mix',
-  capacity: 'Total capacity',
-  manufacturers: 'By manufacturer',
-  datacenters: 'By datacenter',
-};
 const snapshotReports: Record<
   SnapshotReport,
   { label: string; title: string; description: string }
@@ -113,7 +106,7 @@ async function exampleTransport() {
 
 export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
   startupSignal?.throwIfAborted();
-  const app = document.querySelector<HTMLDivElement>('#app')!;
+  const app = document.querySelector<HTMLDivElement>('#route-content')!;
   const params = new URLSearchParams(location.search);
   const example = params.get('example') === '1';
   const loader = example ? await exampleTransport() : undefined;
@@ -132,7 +125,7 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
   let manufacturerSort: ManufacturerSort = { key: 'capacityTB', descending: true };
   let snapshotId = params.get('snapshot') ?? '';
   let quarter = params.get('quarter') ?? '';
-  let report = snapshotReport(params);
+  const report = snapshotReport(params);
   let filter: ModelFilter = defaultFilter();
   let sort: ModelSort = report === 'deployments' ? 'new' : 'count';
   let descending = true;
@@ -218,23 +211,7 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
     ].sort();
     patchContent(
       app,
-      `<div class="layout snapshot-layout"><aside class="sidebar"><a class="brand" href="${esc(import.meta.env.BASE_URL)}">DriveStats<small>EXPLORE THE DATA</small></a><a class="nav-item" href="${esc(matrixHref(context?.snapshotId, context?.kind))}">AFR comparison</a><nav aria-label="Snapshot Explore reports">${Object.entries(
-        snapshotReports,
-      )
-        .map(
-          ([id, entry]) =>
-            `<button id="report-${id}" class="nav-item ${id === report ? 'active' : ''}" data-report="${id}" ${id === report ? 'aria-current="page"' : ''}>${entry.label}</button>`,
-        )
-        .join(
-          '',
-        )}</nav><p class="nav-label">OTHER QUARTERLY REPORTS</p><nav aria-label="Other quarterly reports">${Object.entries(
-        reportNames,
-      )
-        .filter(([id]) => id === 'reliability')
-        .map(([id, label]) => `<a class="nav-item" href="?view=${id}">${label}</a>`)
-        .join(
-          '',
-        )}</nav><div class="sidebar-foot"><a href="?view=reliability">Original quarterly explorer</a><br><a href="?view=matrix&reference=1">AFR comparison references</a></div></aside><main id="main"><div class="page">
+      `<div class="layout snapshot-layout"><main id="main"><div class="page">
       <section class="page-heading"><div><p class="eyebrow">BACKBLAZE DRIVE STATS</p><h1>${currentReport.title}</h1><p class="subtitle">${currentReport.description}</p></div></section>
       <aside class="source-credit"><span>Source dataset: <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a> · <a href="https://www.backblaze.com/blog/category/hard-drive-stats/">Official reports</a></span><span>Independent analysis by <a href="https://github.com/SixbucksSolutions/backblaze-drive-stats">Sixbucks Solutions</a></span></aside>
       ${example || context?.kind === 'sample' ? '<div class="sample-banner"><strong>SAMPLE DATA</strong> Fictional examples for exploring coverage and selection. These are not Backblaze results.</div>' : ''}
@@ -314,6 +291,9 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
       }</div>
       <footer><a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a><span>Independent Sixbucks Solutions analysis</span><a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a></footer></div></main></div>`,
     );
+    updatePublishedNavigation(
+      context ? { snapshotId: context.snapshotId, kind: context.kind } : undefined,
+    );
     bind();
     if (focusId) {
       const restored = document.getElementById(focusId);
@@ -325,18 +305,6 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
   }
 
   function bind() {
-    app.querySelectorAll<HTMLButtonElement>('[data-report]').forEach((button) => {
-      button.onclick = () => {
-        report = button.dataset.report as SnapshotReport;
-        if (report !== 'overview') {
-          filter.preset = 'context';
-        }
-        sort = report === 'deployments' ? 'new' : 'count';
-        descending = true;
-        syncUrl();
-        void load(snapshotId, quarter);
-      };
-    });
     app.querySelectorAll<HTMLButtonElement>('[data-manufacturer-sort]').forEach((button) => {
       button.onclick = () => {
         const key = button.dataset.manufacturerSort as ManufacturerSort['key'];

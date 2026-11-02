@@ -1,0 +1,151 @@
+.published-shell {
+  --navigation-width: 220px;
+  display: grid;
+  grid-template-columns: var(--navigation-width) minmax(0, 1fr);
+  min-height: 100vh;
+}
+.published-shell.navigation-collapsed {
+  --navigation-width: 56px;
+}
+.published-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100dvh;
+  overflow-y: auto;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  padding: 22px 12px;
+}
+.published-nav-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 30px;
+}
+.published-brand {
+  color: #214a3b;
+  font-size: 23px;
+  font-weight: 750;
+}
+#navigation-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 36px;
+  border: 1px solid #aab9aa;
+  border-radius: 6px;
+  background: #f3f6f1;
+  font-size: 24px;
+}
+.published-nav-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #526c5e;
+  margin: 0 8px 12px;
+}
+.published-sidebar nav {
+  display: grid;
+  gap: 5px;
+  overflow: visible;
+  padding: 0;
+}
+.published-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px;
+  border-radius: 6px;
+  color: #415c3a;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.published-nav-item > :first-child {
+  width: 20px;
+  text-align: center;
+  font-size: 20px;
+}
+.published-nav-item:hover,
+.published-nav-item[aria-current='page'] {
+  background: #eaf2e9;
+  color: #245e45;
+}
+.published-nav-item[aria-current='page'] {
+  font-weight: 700;
+  box-shadow: inset 3px 0 #187d72;
+}
+.published-secondary {
+  margin: 28px 8px 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.published-secondary summary {
+  cursor: pointer;
+}
+.published-secondary a {
+  display: block;
+  margin-top: 12px;
+}
+.published-content {
+  min-width: 0;
+}
+.published-content main {
+  margin-left: 0;
+  width: 100%;
+  min-width: 0;
+}
+.published-content .matrix-page {
+  max-width: none;
+}
+.navigation-collapsed .published-sidebar {
+  padding: 16px 10px;
+}
+.navigation-collapsed .published-nav-heading {
+  margin: 0;
+}
+.navigation-collapsed .published-brand,
+.navigation-collapsed #published-navigation {
+  display: none;
+}
+@media (max-width: 800px) {
+  .published-shell {
+    --navigation-width: 180px;
+  }
+  .published-sidebar {
+    padding: 16px 8px;
+  }
+  .published-brand {
+    font-size: 19px;
+  }
+  .published-nav-item {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+  .published-content .matrix-page {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+@media (max-width: 560px) {
+  .published-shell {
+    display: block;
+  }
+  .published-sidebar {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .published-nav-heading {
+    margin-bottom: 12px;
+  }
+  .published-sidebar nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .published-secondary {
+    margin-top: 12px;
+  }
+  .navigation-collapsed .published-nav-heading {
+    justify-content: flex-end;
+  }
+}

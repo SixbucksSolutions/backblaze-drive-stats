@@ -1,4 +1,5 @@
 import './style.css';
+import { mountPublishedNavigation, updatePublishedNavigation } from './published-navigation.ts';
 import { appRoute } from './app-route.ts';
 import { abortInitialPresentation } from './presentation-loader.ts';
 import {
@@ -58,7 +59,7 @@ const views: { id: View; label: string; icon: string; title: string; description
   },
 ];
 const params = new URLSearchParams(location.search);
-let view: View = views.find((item) => item.id === params.get('view'))?.id ?? 'reliability';
+const view: View = views.find((item) => item.id === params.get('view'))?.id ?? 'reliability';
 let manifest: Manifest;
 let bundle: Bundle | undefined;
 let selectedQuarter = '';
@@ -73,7 +74,7 @@ let loadError = '';
 let controller: AbortController | undefined;
 let requestId = 0;
 const cache = new Map<Quarter, Bundle>();
-const app = document.querySelector<HTMLDivElement>('#app')!;
+const app = mountPublishedNavigation();
 const integer = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const decimal = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const pct = (value: number) => `${value.toFixed(2)}%`;
@@ -106,9 +107,6 @@ function syncUrl() {
   url.searchParams.set('view', view);
   history.replaceState(null, '', url);
 }
-function nav() {
-  return `<aside class="sidebar"><a class="brand" href="${escape(import.meta.env.BASE_URL)}"><span class="brand-mark" aria-hidden="true">▰</span><span>Drive<span class="brand-light">Stats</span><small>THE QUARTERLY EXPLORER</small></span></a><p class="nav-label">EXPLORE THE DATA</p><nav aria-label="Report views">${views.map((item) => `<button class="nav-item ${item.id === view ? 'active' : ''}" data-view="${item.id}" ${item.id === view ? 'aria-current="page"' : ''}><span aria-hidden="true">${item.icon}</span>${item.label}</button>`).join('')}</nav><div class="sidebar-foot"><span class="status-dot"></span>Static by design<p>Built on open data.<br>Made for a closer look.</p><a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze source data ↗</a></div></aside>`;
-}
 function render() {
   const active = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
   const focusSelector = active?.id
@@ -133,11 +131,12 @@ function render() {
   )
     ? 'Selected drive models.'
     : 'All source models.';
-  app.innerHTML = `<div class="layout">${nav()}<main id="main"><header class="topbar"><span>BACKBLAZE DRIVE STATS <span class="slash">/</span> ${escape(currentView.label)}</span><span class="local-label"><span class="status-dot"></span> QUARTERLY DATA EXPLORER</span></header><div class="page"><section class="page-heading"><div><p class="eyebrow">THE BIG PICTURE, DOWN TO THE DRIVE</p><h1>${currentView.title}</h1><p class="subtitle">${currentView.description}</p></div><div class="quarter-control"><label for="quarter">REPORTING QUARTER</label><select id="quarter" ${!manifest ? 'disabled' : ''}>${manifest ? manifest.quarters.map((item) => `<option value="${item.quarter}" ${item.quarter === selectedQuarter ? 'selected' : ''}>${escape(item.label)}${item.kind === 'sample' ? ' · sample' : ''}</option>`).join('') : '<option>Loading quarters…</option>'}</select></div></section>
+  app.innerHTML = `<div class="layout"><main id="main"><header class="topbar"><span>BACKBLAZE DRIVE STATS <span class="slash">/</span> ${escape(currentView.label)}</span><span class="local-label"><span class="status-dot"></span> QUARTERLY DATA EXPLORER</span></header><div class="page"><section class="page-heading"><div><p class="eyebrow">THE BIG PICTURE, DOWN TO THE DRIVE</p><h1>${currentView.title}</h1><p class="subtitle">${currentView.description}</p></div><div class="quarter-control"><label for="quarter">REPORTING QUARTER</label><select id="quarter" ${!manifest ? 'disabled' : ''}>${manifest ? manifest.quarters.map((item) => `<option value="${item.quarter}" ${item.quarter === selectedQuarter ? 'selected' : ''}>${escape(item.label)}${item.kind === 'sample' ? ' · sample' : ''}</option>`).join('') : '<option>Loading quarters…</option>'}</select></div></section>
     <aside class="source-credit" aria-label="Data attribution"><span><strong>Source dataset published by <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze</a>.</strong> Explore their <a href="https://www.backblaze.com/blog/category/hard-drive-stats/" target="_blank" rel="noreferrer">official Drive Stats reports</a>.</span><span>Independent analysis by <a href="https://github.com/SixbucksSolutions" target="_blank" rel="noreferrer">Sixbucks Solutions</a>. <a href="https://github.com/SixbucksSolutions/backblaze-drive-stats/blob/main/DATA_SOURCES.md" target="_blank" rel="noreferrer">Sources and ownership ↗</a></span></aside>
     ${sample ? '<div class="sample-banner"><span class="sample-tag">SAMPLE DATA</span><span>Development preview using illustrative numbers. These are not Backblaze results.</span></div>' : bundle && !loading && !loadError ? `<div class="coverage-banner"><span class="sample-tag">SOURCE COVERAGE</span><span><strong>${populationLabel}</strong> History begins ${escape(bundle.provenance.coverageStart)}. Cumulative AFR and first-observed counts use this available window; the initial fleet is included.</span></div>` : ''}
     <div id="report" aria-busy="${loading}">${loading ? '<div class="state-panel" role="status"><span class="spinner"></span>Loading quarter data…</div>' : loadError ? `<div class="state-panel error" role="alert"><h2>We couldn’t load this quarter.</h2><p>${escape(loadError)}</p><button id="retry" class="button">Try again</button></div>` : report()}</div>
     <footer>Data source: <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze Drive Stats ↗</a><span>Independent explorer · ${bundle && !loading && !loadError ? escape(bundle.period.start + ' → ' + bundle.period.end) : 'Quarterly observations'}</span><a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a></footer></div></main></div>`;
+  updatePublishedNavigation();
   bindEvents();
   const methodology = document.querySelector<HTMLDetailsElement>('#methodology');
   if (methodology) {
@@ -352,20 +351,6 @@ function datacenterTable() {
   return `<section class="panel table-panel"><div class="panel-header"><div><p class="eyebrow">BEHIND THE CHART</p><h2>The datacenter breakdown</h2></div><button id="download" class="button">↓ Download CSV</button></div>${rows.length ? `<div class="table-scroll"><table><caption class="sr-only">Raw capacity by datacenter</caption><thead><tr><th>Datacenter</th><th>Drives observed</th><th>Raw capacity</th><th>Capacity share</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${escape(row.datacenter)}</td><td>${integer.format(row.driveCount)}</td><td>${capacity(row.capacityTb)}</td><td>${pct(total ? (row.capacityTb / total) * 100 : 0)}</td></tr>`).join('')}</tbody></table></div>` : empty()}<div class="table-foot">One location per drive per quarter · full exported population</div></section>`;
 }
 function bindEvents() {
-  document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((button) =>
-    button.addEventListener('click', () => {
-      const next = button.dataset.view as View;
-      if (params.get('legacy') !== '1' && next !== 'reliability') {
-        const url = new URL(location.href);
-        url.searchParams.set('view', next);
-        location.assign(url);
-        return;
-      }
-      view = next;
-      syncUrl();
-      render();
-    }),
-  );
   document.querySelector<HTMLSelectElement>('#quarter')?.addEventListener('change', (event) => {
     void loadQuarter((event.target as HTMLSelectElement).value as Quarter);
   });

@@ -150,6 +150,8 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
       return firstPaint;
     },
     appRoute,
+    mountPublishedNavigation: () => ({}),
+    updatePublishedNavigation: () => {},
     abortInitialPresentation: () => {
       events.push('abort early request');
     },
