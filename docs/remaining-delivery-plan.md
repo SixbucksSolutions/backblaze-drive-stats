@@ -77,7 +77,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r057** records #0113's six-worker turn and the next planned work,
+Private plan **r058** records #0113's owner-accepted closeout and the next planned work,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. The next turn plans #0115's collapsible
 six-view navigation with fresh independent review. #0115 remains Ready for Work;
@@ -168,5 +168,5 @@ Source `069a245` is live as production deployment
 `c5d1535d-6d69-4e95-811f-c845b27ecc02`; the full hosted union is verified
 and `28006713` remains its rollback predecessor. The focused capture verifies
 sequencing and stable geometry, while skipped early fade frames limit claims
-about smoothness. #0113 awaits Terry's review; #0101
-and #0112 remain owner-Completed.
+about smoothness. Terry approved #0113 and moved it to Completed on 2026-11-01;
+#0101 and #0112 remain owner-Completed.
