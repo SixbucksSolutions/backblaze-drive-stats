@@ -13,7 +13,7 @@
   flex: 0 0 230px;
   min-width: 0;
   max-height: 538px;
-  overflow-y: auto;
+  overflow: auto;
   padding: 14px 12px;
   border-right: 1px solid #aab9a7;
   border-block: 1px solid #cdd8c7;
@@ -73,6 +73,7 @@
 }
 .matrix-brand-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 .matrix-brand-group {
@@ -123,8 +124,10 @@
   line-height: 1.35;
 }
 .matrix-model-choice .model-id {
+  flex: none;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  white-space: nowrap;
   font-family: var(--font-ui);
 }
 .matrix-model-nav input[type='checkbox'] {
