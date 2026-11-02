@@ -79,7 +79,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r062** records #0119–#0121's handoff and #0115's accepted closeout,
+Private plan **r063** records #0122's selector handoff and the earlier review/acceptance states,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. #0115's shared collapsible navigation
 is owner-approved Completed. #0119 (Hitachi HDS brand/model labels), #0120
@@ -186,10 +186,18 @@ review and 23 focused browser checks passed. Source `8ec5dac` was published as d
 and predecessor `8e871449` was retained for rollback. Terry approved #0115 and
 moved it to Completed on 2026-11-02; #0113 remains owner-Completed.
 
-The [#0119–#0121 presentation batch](model-presentation-0119-0121.md) is live from
+The [#0119–#0121 presentation batch](model-presentation-0119-0121.md) was published from
 source `7b279aa` as deployment `9e3ac7f0-60ec-4a89-86b7-8f1349057015`. Quality,
 237 web tests, 45 final local browser checks, both CI jobs, full 4,775-file hosted
 verification and 24 public-origin smoke checks passed. Canonical data and cache
 lineage are unchanged; derived presentation capsules carry the corrected labels
 and per-drive capacity metadata. Predecessor `1cb7726c` remains retained for rollback.
-All three cards are ready for Terry's review; no further cards were started.
+All three cards remain ready for Terry's review.
+
+Terry requested #0122 to keep model-selector labels on one line. Its
+[scoped CSS fix](selector-labels-0122.md) preserves selector width, complete text
+through pane scrolling, counts and selection. Source `5527e5b` is live as
+deployment `5a338eab-0ff0-4ed0-91e6-f663641c8ecc`. Quality, 237 web tests, 27 local
+browser checks, both CI jobs, full 4,779-file hosted verification and ten public
+smoke checks passed. All public JSON is unchanged; predecessor `9e3ac7f0` remains
+retained. #0122 awaits Terry's review; no other card was started this turn.
