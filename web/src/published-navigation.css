@@ -7,6 +7,12 @@
 .published-shell.navigation-collapsed {
   --navigation-width: 56px;
 }
+.published-shell.navigation-animated {
+  transition: grid-template-columns 200ms ease-in-out;
+}
+.navigation-animated .published-sidebar {
+  transition: padding 200ms ease-in-out;
+}
 .published-sidebar {
   position: sticky;
   top: 0;
@@ -25,6 +31,7 @@
   margin-bottom: 30px;
 }
 .published-brand {
+  overflow: hidden;
   color: #214a3b;
   font-size: 23px;
   font-weight: 750;
@@ -61,9 +68,30 @@
   white-space: nowrap;
 }
 .published-nav-item > :first-child {
+  flex-shrink: 0;
   width: 20px;
   text-align: center;
   font-size: 20px;
+}
+.published-nav-text {
+  overflow: hidden;
+}
+.published-nav-item:focus-visible {
+  outline: 2px solid #187d72;
+  outline-offset: -2px;
+}
+#published-nav-tooltip {
+  position: fixed;
+  z-index: 100;
+  max-width: calc(100vw - 8px);
+  padding: 10px 12px;
+  border: 1px solid #526c5e;
+  border-radius: 6px;
+  background: #214a3b;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px #0003;
 }
 .published-nav-item:hover,
 .published-nav-item[aria-current='page'] {
@@ -98,14 +126,26 @@
   max-width: none;
 }
 .navigation-collapsed .published-sidebar {
-  padding: 16px 10px;
+  padding: 22px 6px;
 }
 .navigation-collapsed .published-nav-heading {
-  margin: 0;
+  justify-content: center;
+  gap: 0;
 }
 .navigation-collapsed .published-brand,
-.navigation-collapsed #published-navigation {
+.navigation-collapsed .published-nav-text,
+.navigation-collapsed .published-secondary {
   display: none;
+}
+.navigation-collapsed .published-nav-label {
+  visibility: hidden;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.navigation-collapsed .published-nav-item {
+  justify-content: center;
+  gap: 0;
+  padding: 12px 0;
 }
 @media (max-width: 800px) {
   .published-shell {
@@ -120,6 +160,9 @@
   .published-nav-item {
     padding: 10px 8px;
     font-size: 12px;
+  }
+  .navigation-collapsed .published-sidebar {
+    padding: 16px 6px;
   }
   .published-content .matrix-page {
     padding-left: 12px;
@@ -147,5 +190,17 @@
   }
   .navigation-collapsed .published-nav-heading {
     justify-content: flex-end;
+  }
+  .navigation-collapsed .published-nav-label {
+    display: none;
+  }
+  .navigation-collapsed .published-sidebar nav {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .published-shell.navigation-animated,
+  .navigation-animated .published-sidebar {
+    transition: none;
   }
 }
