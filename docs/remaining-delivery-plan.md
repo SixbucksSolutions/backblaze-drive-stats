@@ -79,7 +79,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r066** records #0123's AFR-precision handoff and earlier review/acceptance states,
+Private plan **r067** records #0124's responsive matrix handoff and earlier review/acceptance states,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. #0115's shared collapsible navigation
 is owner-approved Completed. #0119 (Hitachi HDS brand/model labels), #0120
@@ -212,3 +212,5 @@ web tests, 34 local browser checks, both CI jobs, full 4,790-file hosted proof a
 17 public smoke checks passed. All public JSON and export precision are unchanged;
 predecessor `88b2a359` remains retained. #0123 awaits Terry's review; the earlier
 #0119–#0122 review lanes and owner-controlled Completed cards remain preserved.
+
+#0124 is published at source `b84297bf998657723aa51d62a482e2fcef488f76` (deployment `8c9487c8-1e18-4780-9bf9-545d64c1d316`). Browser-height sizing shows 27 full rows instead of 14 at 1920 × 1300 and 48 instead of 14 at 1920 × 2000, without changing row size or data. All 246 tests, both CI jobs, independent browser checks and full hosted verification passed. See [responsive matrix height](matrix-viewport-height-0124.md). Review is the only remaining step; the final private rolling plan is r067.

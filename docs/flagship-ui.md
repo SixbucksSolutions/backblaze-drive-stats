@@ -364,3 +364,5 @@ clipped numeral caused by inheriting the taller field's 9 px padding. Desktop an
 390 px checks confirm the complete selected `6`; its size and footer spacing
 are unchanged. Evidence: `dropdown-six-unclipped-desktop.png` and
 `dropdown-six-unclipped-narrow.png` in the same directory.
+
+The [responsive matrix viewport](matrix-viewport-height-0124.md) uses browser height to show more rows in tall windows while preserving row text size and synchronized scrolling.
