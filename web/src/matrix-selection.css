@@ -10,10 +10,12 @@
 }
 .matrix-model-nav {
   box-sizing: border-box;
-  flex: 0 0 230px;
+  flex: 0 0 auto;
+  width: max-content;
   min-width: 0;
   max-height: 538px;
   overflow: auto;
+  scrollbar-gutter: stable;
   padding: 14px 12px;
   border-right: 1px solid #aab9a7;
   border-block: 1px solid #cdd8c7;
@@ -57,6 +59,11 @@
   font-size: 11px;
   line-height: 1.5;
 }
+.matrix-nav-help {
+  /* Wrap the explanation at the choices' natural width without widening the pane. */
+  width: 0;
+  min-width: 100%;
+}
 .matrix-nav-actions {
   display: flex;
   gap: 6px;
@@ -73,7 +80,7 @@
 }
 .matrix-brand-list {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(max-content, 1fr);
   gap: 10px;
 }
 .matrix-brand-group {
@@ -128,7 +135,7 @@
   min-width: 0;
   overflow-wrap: normal;
   white-space: nowrap;
-  font-family: var(--font-ui);
+  font-family: var(--font-table);
 }
 .matrix-model-nav input[type='checkbox'] {
   flex: none;
