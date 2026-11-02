@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { seagateModelIndents } from './model-alignment.ts';
+import { modelSelectorLayout, seagateModelIndents } from './model-alignment.ts';
 
 await test('aligns the known capacity end while preserving legacy prefixes and source models', () => {
   const models = [
@@ -46,4 +46,87 @@ await test('a search consumes indents from the complete group rather than re-ali
     matches.map((model) => indents.get(model.id)),
     [1],
   );
+});
+
+await test('snapshot-wide columns align brands with separate integer and decimal capacity fields', () => {
+  const models = [
+    { id: 'large', vendor: 'Seagate', name: 'ST24000NM002H', capacityTB: 24 },
+    { id: 'small', vendor: 'Seagate', name: 'ST8000NM0055', capacityTB: 8 },
+    { id: 'legacy', vendor: 'Seagate', name: 'ST31500541AS', capacityTB: 1.5 },
+    { id: 'other', vendor: 'Toshiba', name: 'LONGER-MODEL-CODE', capacityTB: 12 },
+  ];
+  const original = structuredClone(models);
+  const layout = modelSelectorLayout(models);
+  assert.deepEqual(
+    {
+      code: layout.codeWidth,
+      integer: layout.integerWidth,
+      fraction: layout.fractionWidth,
+      capacity: layout.capacityWidth,
+    },
+    { code: 17, integer: 2, fraction: 2, capacity: 7 },
+  );
+  assert.deepEqual(layout.labels.get('small'), {
+    code: 'ST8000NM0055',
+    indent: 1,
+    capacity: '8',
+    integer: '8',
+    fraction: '',
+  });
+  assert.deepEqual(layout.labels.get('legacy'), {
+    code: 'ST31500541AS',
+    indent: 0,
+    capacity: '1.5',
+    integer: '1',
+    fraction: '.5',
+  });
+  const matches = models.filter((model) => model.id === 'small');
+  assert.deepEqual(
+    matches.map((model) => layout.labels.get(model.id)?.indent),
+    [1],
+  );
+  assert.equal(layout.codeWidth, 'LONGER-MODEL-CODE'.length);
+  assert.deepEqual(models, original);
+});
+
+await test('unknown text and longer known values expand shared capacity fields without guesses', () => {
+  const layout = modelSelectorLayout([
+    { id: 'unknown', vendor: 'Toshiba', name: 'UNKNOWN' },
+    { id: 'long', vendor: 'Seagate', name: 'ST12340000', capacityTB: 1234 },
+  ]);
+  assert.equal(layout.integerWidth, 4);
+  assert.equal(layout.fractionWidth, 2);
+  assert.equal(layout.capacityWidth, 'capacity unknown'.length);
+  assert.equal(layout.labels.get('unknown')?.capacity, null);
+  assert.equal(layout.labels.get('long')?.capacity, '1234');
+  const known = modelSelectorLayout([
+    { id: 'long', vendor: 'Toshiba', name: 'LONG', capacityTB: 1234 },
+  ]);
+  assert.equal(known.capacityWidth, 9);
+  assert.deepEqual(modelSelectorLayout([]), {
+    labels: new Map(),
+    codeWidth: 0,
+    integerWidth: 2,
+    fractionWidth: 2,
+    capacityWidth: 7,
+  });
+});
+
+await test('integer and fractional slots preserve the requested spaces without showing decimal zeroes', () => {
+  const layout = modelSelectorLayout([
+    { id: 'large', vendor: 'Seagate', name: 'ST24000NM002H', capacityTB: 24 },
+    { id: 'small', vendor: 'Seagate', name: 'ST8000NM0055', capacityTB: 8 },
+    { id: 'legacy', vendor: 'Seagate', name: 'ST31500541AS', capacityTB: 1.5 },
+  ]);
+  const fields = [...layout.labels.values()].map(
+    (label) =>
+      `(${label.integer!.padStart(layout.integerWidth)}${label.fraction.padEnd(layout.fractionWidth)} TB)`,
+  );
+  assert.deepEqual(fields, ['(24   TB)', '( 8   TB)', '( 1.5 TB)']);
+  const widerFraction = modelSelectorLayout([
+    { id: 'fraction', vendor: 'Toshiba', name: 'SUB-TB', capacityTB: 0.125 },
+  ]);
+  assert.equal(widerFraction.fractionWidth, 4);
+  assert.equal(widerFraction.capacityWidth, 9);
+  assert.equal(widerFraction.labels.get('fraction')?.fraction, '.125');
 });

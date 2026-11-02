@@ -1,4 +1,5 @@
 import { nominalCapacityTB } from './model-capacity.ts';
+import { displayModelLabel } from './model-labels.ts';
 
 type AlignmentModel = {
   id: string;
@@ -32,4 +33,39 @@ export function seagateModelIndents(models: readonly AlignmentModel[]): Map<stri
       return [model.id, end === null || end === undefined ? 0 : lastColumn - end];
     }),
   );
+}
+
+/** Shared selector columns come from the complete snapshot, never the search matches. */
+export function modelSelectorLayout(models: readonly (AlignmentModel & { vendor: string })[]) {
+  const indents = seagateModelIndents(models.filter((model) => model.vendor === 'Seagate'));
+  const labels = new Map(
+    models.map((model) => {
+      const code = displayModelLabel({
+        vendor: model.vendor,
+        modelNumber: model.name,
+      }).modelNumber;
+      const capacity = nominalCapacityTB(model.capacityTB);
+      const capacityText = capacity === null ? null : String(capacity);
+      const decimalIndex = capacityText?.indexOf('.') ?? -1;
+      return [
+        model.id,
+        {
+          code,
+          indent: indents.get(model.id) ?? 0,
+          capacity: capacityText,
+          integer: decimalIndex < 0 ? capacityText : capacityText!.slice(0, decimalIndex),
+          fraction: decimalIndex < 0 ? '' : capacityText!.slice(decimalIndex),
+        },
+      ] as const;
+    }),
+  );
+  const values = [...labels.values()];
+  const codeWidth = Math.max(0, ...values.map((label) => label.indent + label.code.length));
+  const integerWidth = Math.max(2, ...values.map((label) => label.integer?.length ?? 0));
+  const fractionWidth = Math.max(2, ...values.map((label) => label.fraction.length));
+  const capacityWidth = Math.max(
+    integerWidth + fractionWidth + ' TB'.length,
+    values.some((label) => label.capacity === null) ? 'capacity unknown'.length : 0,
+  );
+  return { labels, codeWidth, integerWidth, fractionWidth, capacityWidth };
 }

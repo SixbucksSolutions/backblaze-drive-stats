@@ -137,6 +137,26 @@
   white-space: nowrap;
   font-family: var(--font-table);
 }
+.matrix-model-code,
+.matrix-model-capacity,
+.matrix-model-integer,
+.matrix-model-fraction {
+  display: inline-block;
+}
+.matrix-model-code {
+  box-sizing: border-box;
+  width: var(--matrix-model-code-width);
+}
+.matrix-model-capacity {
+  width: var(--matrix-model-capacity-width);
+}
+.matrix-model-integer {
+  width: var(--matrix-model-integer-width);
+  text-align: right;
+}
+.matrix-model-fraction {
+  width: var(--matrix-model-fraction-width);
+}
 .matrix-model-nav input[type='checkbox'] {
   flex: none;
   width: 14px;

@@ -43,7 +43,7 @@ import type {
 import { captureControlFocus, controlId, restoreControlFocus } from './matrix-focus.ts';
 import { connectMatrixScroll } from './matrix-scroll.ts';
 import { groupModels, setVendorSelected, vendorSelectionState } from './matrix-selection.ts';
-import { seagateModelIndents } from './model-alignment.ts';
+import { modelSelectorLayout } from './model-alignment.ts';
 
 const files = [q4, q3, later, earlier, correction, xyz];
 const esc = (value: unknown) =>
@@ -236,6 +236,7 @@ function productionMethod() {
 }
 function modelNavigation(models: MatrixModel[]) {
   const query = search.trim().toLowerCase();
+  const layout = modelSelectorLayout(snapshot.models);
   const groups = groupModels(snapshot.models)
     .map((group) => ({
       ...group,
@@ -244,7 +245,7 @@ function modelNavigation(models: MatrixModel[]) {
       ),
     }))
     .filter((group) => group.matches.length);
-  return `<aside class="matrix-model-nav" aria-label="Brands and drive models">
+  return `<aside class="matrix-model-nav" aria-label="Brands and drive models" style="--matrix-model-code-width:${layout.codeWidth}ch;--matrix-model-integer-width:${layout.integerWidth}ch;--matrix-model-fraction-width:${layout.fractionWidth}ch;--matrix-model-capacity-width:${layout.capacityWidth}ch">
     <h2 class="matrix-nav-heading">Brands & models</h2>
     <p class="matrix-nav-count" role="status">${models.length} of ${snapshot.models.length} models selected</p>
     <label class="matrix-nav-search">Find choices<input id="matrix-search" type="search" value="${esc(search)}" placeholder="Model or brand" aria-describedby="matrix-selection-help"></label>
@@ -254,11 +255,12 @@ function modelNavigation(models: MatrixModel[]) {
       groups
         .map((group) => {
           const state = vendorSelectionState(group.models, selected);
-          const indents =
-            group.vendor === 'Seagate'
-              ? seagateModelIndents(group.models)
-              : new Map<string, number>();
-          return `<div class="matrix-brand-group" data-render-key="choices-${esc(group.vendor)}" style="--brand-color:${vendorPaint(group.vendor).background}"><fieldset class="matrix-brand-options"><legend><label class="matrix-vendor-choice"><input type="checkbox" id="${controlId('vendor', group.vendor)}" data-vendor="${esc(group.vendor)}" aria-controls="matrix-data" ${state.checked ? 'checked' : ''}><span>${esc(group.vendor)}</span><small aria-hidden="true">${state.selectedCount}/${state.totalCount}</small></label></legend><div class="matrix-model-choices">${group.matches.map((model) => `<label class="matrix-model-choice" data-render-key="choice-${esc(model.id)}"><input type="checkbox" id="${controlId('model', model.id)}" data-model="${esc(model.id)}" aria-controls="matrix-data" ${selected.has(model.id) ? 'checked' : ''}><span class="model-id" style="padding-inline-start:${indents.get(model.id) ?? 0}ch">${esc(matrixModelLabel(model))}</span></label>`).join('')}</div></fieldset></div>`;
+          return `<div class="matrix-brand-group" data-render-key="choices-${esc(group.vendor)}" style="--brand-color:${vendorPaint(group.vendor).background}"><fieldset class="matrix-brand-options"><legend><label class="matrix-vendor-choice"><input type="checkbox" id="${controlId('vendor', group.vendor)}" data-vendor="${esc(group.vendor)}" aria-controls="matrix-data" ${state.checked ? 'checked' : ''}><span>${esc(group.vendor)}</span><small aria-hidden="true">${state.selectedCount}/${state.totalCount}</small></label></legend><div class="matrix-model-choices">${group.matches
+            .map((model) => {
+              const label = layout.labels.get(model.id)!;
+              return `<label class="matrix-model-choice" data-render-key="choice-${esc(model.id)}"><input type="checkbox" id="${controlId('model', model.id)}" data-model="${esc(model.id)}" aria-controls="matrix-data" ${selected.has(model.id) ? 'checked' : ''}><span class="model-id"><span class="matrix-model-code" style="padding-inline-start:${label.indent}ch">${esc(label.code)}</span> (<span class="matrix-model-capacity">${label.capacity === null ? 'capacity unknown' : `<span class="matrix-model-integer">${esc(label.integer)}</span><span class="matrix-model-fraction">${esc(label.fraction)}</span> TB`}</span>)</span></label>`;
+            })
+            .join('')}</div></fieldset></div>`;
         })
         .join('') || '<p class="matrix-nav-empty">No matching brands or models.</p>'
     }</div>
