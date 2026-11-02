@@ -20,10 +20,31 @@ Chrome updated during investigation; final matched comparisons use the same full
 
 ## Verification and release
 
-Ten focused startup tests and all 222 web tests passed, as did types, lint, formatting, and build checks. Both operating-system CI jobs succeeded in run `41359054014`. Production deployment `7838a3f5-3bfc-405f-b0df-81bc9f359200` succeeded from source `0b803eba2b7d0a674aad580745a837503bbf814f`; the deploy guard completed in 19.57 seconds.
+Ten focused startup tests and all 222 web tests passed, as did types, lint, formatting, and build checks. Both operating-system CI jobs succeeded in run `41359054014`. The initial production deployment `7838a3f5-3bfc-405f-b0df-81bc9f359200` succeeded from source `0b803eba2b7d0a674aad580745a837503bbf814f`; the deploy guard completed in 19.57 seconds.
 
 The qualified final distribution contains 3,114 files / 289,058,590 bytes, with manifest SHA-256 `a93343a2fefa6d811b366f124d06a0965e2fab303585c7213936ed65fce3d717`. The release union contains 3,227 files / 302,873,823 bytes, retains 113 predecessor files, and preserves all 3,217 prior immutable files compatibly. Rollback publication `f290ba5d`, source `d402829`, is retained. The public full-union probe passed all 3,226 served files (302,872,657 decoded bytes), four navigation cases, eighteen missing/private-path cases and nine redirects. The retained release ZIP was read back and every file matched its expected SHA-256.
 
 Private evidence remains under ignored `data/staging/0113/measurement/`: `final-findings.txt`, `functional-final-v1/summary.json`, the `comparison-final-v1/` paired summaries, and the unadopted `comparison-v1-findings.txt`. Publication, CI, manifest/ledger pins, full hosted verification and the archived release are recorded under `data/staging/0113-publication/` and `data/staging/0113/publication/`. These operational files are outside the served bundle and Git.
 
-See the [static loading design](static-page-loading-0108.md) and [hosting procedure](cloudflare-hosting.md). Rolling plan r055 queues #0114 and #0115 for the next turn; both remain unstarted.
+See the [static loading design](static-page-loading-0108.md) and [hosting procedure](cloudflare-hosting.md). Rolling plan r056 queues #0114 and #0115 for the next turn; both remain unstarted.
+
+## Review follow-up: larger indicator
+
+On 2026-11-01, Terry requested a more noticeable indicator. The spinner is now
+64 × 64 CSS pixels with a 4-pixel border; the text is 24 pixels at weight 600,
+stacked below it with a 20-pixel gap. The fixed overlay has 24-pixel padding and
+centered text. Forced-pending previews at 1350 × 940 and 390 × 844 confirmed
+legibility, no horizontal overflow and preserved reduced-motion behavior.
+
+This size-only revision changes only the delivered HTML; all 3,113 other pristine
+assets, including JavaScript, CSS, data and fonts, are byte-identical. The timing
+measurements above describe the initial smaller indicator; no new latency claim
+is made for the enlargement. Startup scheduling and the complete-view reveal
+remain unchanged.
+
+Source `bfbec3be151224bdffedaec2deeda29b5ca61e5e` passed both operating-system jobs
+in CI run `41367562141` and is live as deployment
+`28006713-1a0e-466b-987f-f76768879599`. All 3,226 served files and the navigation,
+missing/private-path and redirect checks passed. The upload preserves all 3,220
+previous immutable assets; its verified archive and rollback predecessor
+`7838a3f5` are retained under ignored `data/staging/0113-size-publication/`.

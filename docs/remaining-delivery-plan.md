@@ -77,7 +77,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r055** records #0113's six-worker turn and the next planned work,
+Private plan **r056** records #0113's six-worker turn and the next planned work,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. The next turn plans #0115's collapsible
 six-view navigation and #0114's Seagate capacity-first ordering, with fresh
@@ -161,7 +161,7 @@ Completed lanes remain owner-controlled.
 Terry selected #0113 after the closeout. Its [startup-feedback record](matrix-startup-0113.md)
 documents a prompt, accessible loading indicator followed by the complete stable
 view. The original renderer is retained because the measured cleanup did not
-establish a reliable speedup. Source `0b803eb` is live as production deployment
-`7838a3f5-3bfc-405f-b0df-81bc9f359200`; the full hosted union is verified and
-`f290ba5d` remains its rollback predecessor. #0113 awaits Terry's review; #0101
+establish a reliable speedup. After Terry requested a larger indicator, source `bfbec3b` is live as production
+deployment `28006713-1a0e-466b-987f-f76768879599`; the full hosted union is verified
+and `7838a3f5` remains its rollback predecessor. #0113 awaits Terry's review; #0101
 and #0112 remain owner-Completed.
