@@ -79,13 +79,14 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r060** records #0115's animated-rail follow-up and #0113's accepted closeout,
+Private plan **r061** records #0115's animated-rail follow-up and #0113's accepted closeout,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. #0115's shared collapsible navigation
 is implemented and independently reviewed; it awaits Terry's review. Newly added
-#0119 (Hitachi HDS brand/model labels) and #0120 (descending date dropdowns) remain
-Ready for Work/P4 and unstarted, with next-turn author/review assignments recorded
-in r060. #0114's Seagate ordering remains Backlog/P5 and unstarted. Planning never
+#0119 (Hitachi HDS brand/model labels), #0120 (descending date dropdowns) and #0121
+(matrix capacity labels and capacity-first ordering) remain Ready for Work/P4 and
+unstarted, with next-turn author/review assignments recorded in r061. #0114's
+Seagate ordering remains Backlog/P5 and unstarted. Planning never
 starts workers, approves prerequisites or expands current limits.
 
 Terry has moved #0017 and #0097–#0100 to Completed.
