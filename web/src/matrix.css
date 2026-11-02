@@ -196,6 +196,8 @@
   color: #53684d;
 }
 .matrix-workspace {
+  /* Leave room for headings and controls while giving tall windows more rows. */
+  --matrix-viewport-height: max(320px, calc(100dvh - 20rem));
   background: #fff;
   border: 1px solid #cdd8c7;
   border-radius: 8px;
@@ -228,7 +230,7 @@
 }
 .matrix-scroll {
   overflow: auto;
-  max-height: 520px;
+  max-height: var(--matrix-viewport-height);
   isolation: isolate;
   scroll-padding: 135px 130px 20px;
   border-block: 1px solid #cdd8c7;
@@ -552,11 +554,6 @@
   outline: 3px solid #173e62;
   outline-offset: 2px;
 }
-@media (min-width: 1700px) {
-  .matrix-scroll {
-    max-height: 600px;
-  }
-}
 @media (max-width: 1000px) {
   .matrix-heading {
     align-items: flex-start;
@@ -639,9 +636,6 @@
   }
   .matrix-tools details {
     padding-inline: 14px;
-  }
-  .matrix-scroll {
-    max-height: 470px;
   }
   .matrix-inspector {
     padding: 16px;

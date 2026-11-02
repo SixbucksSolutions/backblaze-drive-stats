@@ -13,7 +13,7 @@
   flex: 0 0 auto;
   width: max-content;
   min-width: 0;
-  max-height: 538px;
+  max-height: calc(var(--matrix-viewport-height) + 18px);
   overflow: auto;
   scrollbar-gutter: stable;
   padding: 14px 12px;
@@ -170,11 +170,6 @@
 .matrix-model-nav :focus-visible {
   outline: 3px solid #173e62;
   outline-offset: 2px;
-}
-@media (min-width: 1700px) {
-  .matrix-model-nav {
-    max-height: 618px;
-  }
 }
 @media (max-width: 850px) {
   .matrix-comparison-layout {
