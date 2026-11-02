@@ -5,6 +5,7 @@ export const VENDOR_COLORS: Readonly<Record<string, string>> = Object.freeze({
   Seagate: '#6EBE49',
   Toshiba: '#CC0000',
   'WDC/HGST': '#005195',
+  'HGST/WD': '#005195',
 });
 export function vendorPaint(vendor: string) {
   const background = Object.hasOwn(VENDOR_COLORS, vendor) ? VENDOR_COLORS[vendor]! : '#485963';

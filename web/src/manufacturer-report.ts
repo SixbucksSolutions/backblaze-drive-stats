@@ -1,4 +1,5 @@
 import { vendorPaint } from './matrix-brand.ts';
+import { displayModelLabel } from './model-labels.ts';
 import type { Aggregate, Manufacturer } from './production-data.ts';
 import type { DisplayRow } from './snapshot-selection.ts';
 
@@ -12,7 +13,8 @@ export function manufacturerRows(
   complete: boolean,
 ): Manufacturer[] {
   const grouped = new Map<string, DisplayRow[]>();
-  for (const row of rows) {
+  for (const source of rows) {
+    const row = displayModelLabel(source);
     const group = grouped.get(row.vendor) ?? [];
     group.push(row);
     grouped.set(row.vendor, group);

@@ -218,6 +218,7 @@ const matrix = {
       id: s,
       name: s,
       vendor: s,
+      'capacityTB?': nn,
       cells: [cell],
       anchor: 'quarter|null',
       'preEligibility?': components,

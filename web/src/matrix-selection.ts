@@ -1,6 +1,8 @@
 import type { MatrixModel } from './matrix-data.ts';
+import { displayModelLabel, displayVendor } from './model-labels.ts';
+import { nominalCapacityTB } from './model-capacity.ts';
 
-const vendorOrder = ['Seagate', 'Toshiba', 'WDC/HGST'];
+const vendorOrder = ['Seagate', 'Toshiba', 'HGST/WD'];
 const vendorRank = (vendor: string) => {
   const index = vendorOrder.indexOf(vendor);
   return index === -1 ? vendorOrder.length : index;
@@ -12,15 +14,23 @@ export function groupModels(
 ): { vendor: string; models: MatrixModel[] }[] {
   const groups = new Map<string, MatrixModel[]>();
   for (const model of models) {
-    const group = groups.get(model.vendor) ?? [];
+    const vendor = displayModelLabel({ vendor: model.vendor, modelNumber: model.name }).vendor;
+    const group = groups.get(vendor) ?? [];
     group.push(model);
-    groups.set(model.vendor, group);
+    groups.set(vendor, group);
   }
   return [...groups]
     .sort(([a], [b]) => vendorRank(a) - vendorRank(b) || a.localeCompare(b))
     .map(([vendor, members]) => ({
       vendor,
-      models: members.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
+      models: members.sort(
+        (a, b) =>
+          (nominalCapacityTB(b.capacityTB) ?? 0) - (nominalCapacityTB(a.capacityTB) ?? 0) ||
+          displayModelLabel({ vendor: a.vendor, modelNumber: a.name }).modelNumber.localeCompare(
+            displayModelLabel({ vendor: b.vendor, modelNumber: b.name }).modelNumber,
+          ) ||
+          a.id.localeCompare(b.id),
+      ),
     }));
 }
 
@@ -47,7 +57,10 @@ export function setVendorSelected(
 ): Set<string> {
   const next = new Set(selected);
   for (const model of allModels) {
-    if (model.vendor !== vendor) {
+    if (
+      displayModelLabel({ vendor: model.vendor, modelNumber: model.name }).vendor !==
+      displayVendor(vendor)
+    ) {
       continue;
     }
     if (checked) {

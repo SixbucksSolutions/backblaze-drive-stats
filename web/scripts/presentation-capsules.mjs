@@ -7,6 +7,7 @@ import { SnapshotLoader } from '../src/snapshot-loader.ts';
 import { CapacityHistoryReader } from '../src/capacity-report.ts';
 import { adaptProductionV2 } from '../src/matrix-production.ts';
 import { parsePresentationCapsule, parsePresentationCatalogue } from '../src/presentation-data.ts';
+import { displayModelLabel } from '../src/model-labels.ts';
 
 export const presentationDigest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 export const safePresentationJson = (value) =>
@@ -20,11 +21,9 @@ export function displayDescriptor(descriptor) {
     ...rest,
     context: {
       ...context,
-      inventory: context.inventory.map(({ modelId, vendor, modelNumber }) => ({
-        modelId,
-        vendor,
-        modelNumber,
-      })),
+      inventory: context.inventory.map(({ modelId, vendor, modelNumber }) =>
+        displayModelLabel({ modelId, vendor, modelNumber }),
+      ),
     },
   };
 }
@@ -161,11 +160,14 @@ export async function auditPresentationAssets(productionRoot, files, catalogue) 
         ...noncontext,
         context: {
           ...context,
-          inventory: context.inventory.map((model) => ({
-            modelId: model.modelId,
-            vendor: model.vendor,
-            modelNumber: model.modelNumber,
-          })),
+          inventory: context.inventory.map((model) => {
+            const label = displayModelLabel(model);
+            return {
+              modelId: model.modelId,
+              vendor: label.vendor,
+              modelNumber: label.modelNumber,
+            };
+          }),
         },
       };
       compare(reference.ref, {

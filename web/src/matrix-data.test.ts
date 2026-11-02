@@ -8,12 +8,42 @@ import {
   cellAt,
   formatMetric,
   interpolate,
+  matrixModelLabel,
   metrics,
   stateInfo,
   visibleModels,
 } from './matrix-data.ts';
 import type { Domain, Workbook, Production } from './matrix-data.ts';
 import { captureControlFocus, controlId, restoreControlFocus } from './matrix-focus.ts';
+
+await test('model labels display nominal capacity, preserve fractional TB and explicitly identify unknown capacity', () => {
+  const model = { id: 'raw-id', name: 'ST12000NM0007', vendor: 'Seagate', cells: [], anchor: null };
+  assert.equal(matrixModelLabel({ ...model, capacityTB: 12 }), 'ST12000NM0007 (12 TB)');
+  assert.equal(
+    matrixModelLabel({ ...model, name: 'ST31500541AS', capacityTB: 1.5 }),
+    'ST31500541AS (1.5 TB)',
+  );
+  assert.equal(matrixModelLabel(model), 'ST12000NM0007 (capacity unknown)');
+  assert.equal(
+    matrixModelLabel({ ...model, capacityTB: null }),
+    'ST12000NM0007 (capacity unknown)',
+  );
+  const historical = { ...model, name: 'Hitachi HDS5C3030ALA630', capacityTB: 3 };
+  assert.equal(matrixModelLabel(historical), 'HDS5C3030ALA630 (3 TB)');
+  assert.equal(historical.name, 'Hitachi HDS5C3030ALA630');
+});
+
+await test('real byte-derived metadata displays advertised TB without mutating source capacity', () => {
+  for (const [name, capacityTB, expected] of [
+    ['ST12000NM0007', 12.000138625024, 'ST12000NM0007 (12 TB)'],
+    ['ST31500541AS', 1.500301910016, 'ST31500541AS (1.5 TB)'],
+  ] as const) {
+    const model = { id: name, name, vendor: 'Seagate', cells: [], anchor: null, capacityTB };
+    const original = structuredClone(model);
+    assert.equal(matrixModelLabel(model), expected);
+    assert.deepEqual(model, original);
+  }
+});
 // Repository fixtures are versioned alongside their adapter contracts.
 function fixture(path: 'workbooks/owner-stories.json'): { stories: { models: string[] }[] };
 function fixture(path: `workbooks/${string}`): Workbook;
@@ -71,6 +101,7 @@ await test('both real workbook snapshots retain every model, exact source values
     for (let mi = 0; mi < s.models.length; mi++) {
       const m = s.models[mi]!;
       assert.equal(m.anchor, null);
+      assert.equal(m.capacityTB, null);
       for (let ri = 0; ri < m.cells.length; ri++) {
         const cell = m.cells[ri]!,
           row = raw.models[mi]!.rows[ri]!;

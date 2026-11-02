@@ -191,9 +191,25 @@ void test('real immutable generations reconcile exact filtered model counts and 
     assert.equal(summary.count, ledgerCount);
     assert.equal(summary.count, scope.totals.count);
     assert.equal(summary.modelCount, descriptor.context.selection.contextModelIds.length);
+    const vendorCounts = new Map<string, number | null>();
+    for (const source of scope.models) {
+      const inventory = descriptor.context.inventory.find(
+        (model) => model.modelId === source.modelId,
+      );
+      assert.ok(inventory);
+      const vendor =
+        /^(?:(?:Hitachi|HGST)\s+)?HD[ST][A-Z0-9]+$/i.test(inventory.modelNumber) ||
+        ['WDC/HGST', 'HGST/WD', 'WD/HGST', 'HGST', 'WD', 'WDC'].includes(inventory.vendor)
+          ? 'HGST/WD'
+          : inventory.vendor;
+      const prior = vendorCounts.get(vendor) ?? 0;
+      vendorCounts.set(vendor, !complete || source.count === null ? null : prior + source.count);
+    }
     assert.deepEqual(
       summary.vendors,
-      scope.manufacturers.map(({ vendor, count }) => ({ vendor, count })),
+      [...vendorCounts]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([vendor, count]) => ({ vendor, count })),
     );
     assert.ok(
       descriptor.context.selection.analysisModelIds.every((id) =>

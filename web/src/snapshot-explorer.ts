@@ -1,4 +1,5 @@
 import { updatePublishedNavigation } from './published-navigation.ts';
+import { displayModelLabel } from './model-labels.ts';
 import { PresentationLoader, presentationCatalogue } from './presentation-loader.ts';
 import type { DisplayDescriptor, PresentationCatalogue } from './presentation-data.ts';
 import type { ProductionIndex, SupportingQuarter } from './production-data.ts';
@@ -206,7 +207,7 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
       ...new Set(
         context?.inventory
           .filter((model) => context.selection.contextModelIds.includes(model.modelId))
-          .map((model) => model.vendor),
+          .map((model) => displayModelLabel(model).vendor),
       ),
     ].sort();
     patchContent(

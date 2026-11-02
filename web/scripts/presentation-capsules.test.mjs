@@ -12,10 +12,37 @@ import { initialPresentation } from '../src/presentation-bootstrap.ts';
 import {
   auditPresentationAssets,
   derivePresentationSnapshots,
+  displayDescriptor,
   presentationCatalogueFromHtml,
   presentationDigest,
   safePresentationJson,
 } from './presentation-capsules.mjs';
+
+test('report presentation descriptor corrects historical labels without mutating canonical metadata', () => {
+  const descriptor = {
+    matrix: { path: 'canonical.json' },
+    contextSha256: 'canonical-context-hash',
+    context: {
+      inventory: [
+        {
+          modelId: 'prefixed',
+          vendor: 'Unknown',
+          modelNumber: 'Hitachi HDS5C4040ALE630',
+          capacityTB: 4,
+        },
+        { modelId: 'bare', vendor: 'WDC/HGST', modelNumber: 'HDS5C4040ALE630', capacityTB: 4 },
+      ],
+    },
+  };
+  const before = structuredClone(descriptor);
+  const display = displayDescriptor(descriptor);
+  assert.deepEqual(display.context.inventory, [
+    { modelId: 'prefixed', vendor: 'HGST/WD', modelNumber: 'HDS5C4040ALE630' },
+    { modelId: 'bare', vendor: 'HGST/WD', modelNumber: 'HDS5C4040ALE630' },
+  ]);
+  assert.equal(display.contextSha256, descriptor.contextSha256);
+  assert.deepEqual(descriptor, before);
+});
 
 async function fixture() {
   const source = fileURLToPath(new URL('../public/data/production/', import.meta.url));

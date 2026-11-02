@@ -3,6 +3,7 @@ import type { Domain, Knot, MatrixCell, MatrixSnapshot, Metric } from './matrix-
 import { metrics } from './matrix-data.ts';
 import { SnapshotLoader } from './snapshot-loader.ts';
 import { customerHddScopeDescription } from './snapshot-selection.ts';
+import { displayModelLabel } from './model-labels.ts';
 
 const green = '#00FF00',
   yellow = '#FFFF00',
@@ -113,7 +114,8 @@ export function adaptProductionV2(
     return {
       id: model.modelId,
       name: entry.modelNumber,
-      vendor: entry.vendor,
+      vendor: displayModelLabel(entry).vendor,
+      capacityTB: entry.capacityTB,
       anchor: model.reportingAnchorQuarter,
       ...(model.cells.some((cell) => cell.status === 'eligible')
         ? { finalEligible: model.cells.findLast((cell) => cell.status === 'eligible')!.quarter }

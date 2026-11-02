@@ -1,4 +1,5 @@
 import { csv } from './data.ts';
+import { displayModelLabel, displayVendor } from './model-labels.ts';
 
 /** Plain text shared by report and matrix explanations; callers escape for HTML. */
 export function customerHddScopeDescription(
@@ -61,7 +62,7 @@ export function selectRows(
   sort: ModelSort = 'count',
   descending = true,
 ): DisplayRow[] {
-  const labels = new Map(inventory.map((model) => [model.modelId, model]));
+  const labels = new Map(inventory.map((model) => [model.modelId, displayModelLabel(model)]));
   const preset = new Set(
     filter.preset === 'purchase'
       ? selection.purchaseDefaultModelIds
@@ -77,7 +78,7 @@ export function selectRows(
         throw new Error('A supporting model has no inventory label.');
       }
       return preset.has(row.modelId) &&
-        (!filter.vendor || filter.vendor === model.vendor) &&
+        (!filter.vendor || displayVendor(filter.vendor) === model.vendor) &&
         (!filter.modelIds || filter.modelIds.has(row.modelId)) &&
         `${model.vendor} ${model.modelNumber}`.toLocaleLowerCase('en-US').includes(search)
         ? [{ ...row, vendor: model.vendor, modelNumber: model.modelNumber }]

@@ -26,7 +26,7 @@ await test('groups and visible columns share established vendor order, alphabeti
   const groups = groupModels(models);
   assert.deepEqual(
     groups.map((group) => group.vendor),
-    ['Seagate', 'Toshiba', 'WDC/HGST', 'Acme', 'Zeta'],
+    ['Seagate', 'Toshiba', 'HGST/WD', 'Acme', 'Zeta'],
   );
   assert.deepEqual(
     groups[0]!.models.map((model) => model.id),
@@ -51,6 +51,103 @@ await test('groups and visible columns share established vendor order, alphabeti
     ),
     ['a', 'b'],
   );
+});
+
+await test('nominal capacity descends within each vendor with displayed model and ID ties ascending and unknowns last', () => {
+  const members = [
+    { ...model('small', 'Seagate', 'ST31500541AS'), capacityTB: 1.5 },
+    { ...model('tie-z', 'Seagate', 'ST12000NM0007'), capacityTB: 12 },
+    { ...model('tie-a', 'Seagate', 'ST12000NM0007'), capacityTB: 12 },
+    { ...model('first-name', 'Seagate', 'ST12000NM0006'), capacityTB: 12 },
+    { ...model('unknown-z', 'Seagate', 'Z unknown'), capacityTB: null },
+    model('unknown-a', 'Seagate', 'A unknown'),
+    { ...model('other-vendor', 'Toshiba', 'large'), capacityTB: 20 },
+  ];
+  const original = [...members];
+  const expected = [
+    'first-name',
+    'tie-a',
+    'tie-z',
+    'small',
+    'unknown-a',
+    'unknown-z',
+    'other-vendor',
+  ];
+  assert.deepEqual(
+    groupModels(members).flatMap((group) => group.models.map((m) => m.id)),
+    expected,
+  );
+  const snapshot = { models: members } as MatrixSnapshot;
+  assert.deepEqual(
+    visibleModels(snapshot, new Set(members.map((m) => m.id))).map((m) => m.id),
+    expected,
+  );
+  assert.deepEqual(members, original);
+});
+
+await test('equal nominal capacities use model ties despite different source precision and retain unknowns last', () => {
+  const members = [
+    { ...model('twelve-z', 'Seagate', 'ST12000NM0008'), capacityTB: 12.001 },
+    { ...model('twelve-a', 'Seagate', 'ST12000NM0007'), capacityTB: 12.000138625024 },
+    { ...model('one-half-z', 'Seagate', 'ST31500541AS'), capacityTB: 1.500301910016 },
+    { ...model('one-half-a', 'Seagate', 'ST31500341AS'), capacityTB: 1.5001 },
+    { ...model('unknown-z', 'Seagate', 'Z unknown'), capacityTB: null },
+    model('unknown-a', 'Seagate', 'A unknown'),
+  ];
+  const original = structuredClone(members);
+  const expected = ['twelve-a', 'twelve-z', 'one-half-a', 'one-half-z', 'unknown-a', 'unknown-z'];
+  assert.deepEqual(
+    groupModels(members)[0]!.models.map((m) => m.id),
+    expected,
+  );
+  assert.deepEqual(
+    visibleModels({ models: members } as MatrixSnapshot, new Set(members.map((m) => m.id))).map(
+      (m) => m.id,
+    ),
+    expected,
+  );
+  assert.deepEqual(members, original);
+});
+
+await test('canonical HGST/WD groups and toggles include historical Deskstar and legacy WDC aliases', () => {
+  const members = [
+    model('legacy', 'WDC/HGST', 'WUH721816ALE6L4'),
+    model('deskstar', 'Hitachi', 'Hitachi HDS5C3030ALA630'),
+    model('bare', 'Hitachi', 'HDT721010SLA360'),
+    model('other', 'Seagate', 'ST12000NM0007'),
+  ];
+  const family = groupModels(members).find((group) => group.vendor === 'HGST/WD')!;
+  assert.deepEqual(
+    family.models.map((m) => m.id),
+    ['deskstar', 'bare', 'legacy'],
+  );
+  const selected = setVendorSelected(members, 'HGST/WD', new Set(['other']), true);
+  assert.equal(vendorSelectionState(family.models, selected).checked, true);
+  assert.deepEqual([...selected].sort(), ['bare', 'deskstar', 'legacy', 'other']);
+  assert.deepEqual([...setVendorSelected(members, 'WDC/HGST', selected, false)], ['other']);
+  assert.equal(members[1]!.name, 'Hitachi HDS5C3030ALA630');
+});
+
+await test('equal-capacity prefixed and bare models sort by displayed code then distinct ID without changing source names', () => {
+  const members = [
+    { ...model('z-prefixed', 'Hitachi', 'Hitachi HDS5C3030ALA630'), capacityTB: 3 },
+    { ...model('first-display', 'Hitachi', 'Hitachi HDS5C3020ALA632'), capacityTB: 3 },
+    { ...model('a-bare', 'HGST/WD', 'HDS5C3030ALA630'), capacityTB: 3 },
+    { ...model('last-display', 'Hitachi', 'HDT721010SLA360'), capacityTB: 3 },
+  ];
+  const original = structuredClone(members);
+  const expected = ['first-display', 'a-bare', 'z-prefixed', 'last-display'];
+  assert.deepEqual(
+    groupModels(members)[0]!.models.map((m) => m.id),
+    expected,
+  );
+  assert.deepEqual(
+    visibleModels({ models: members } as MatrixSnapshot, new Set(members.map((m) => m.id))).map(
+      (m) => m.id,
+    ),
+    expected,
+  );
+  assert.deepEqual(members, original);
 });
 
 await test('brand selection state distinguishes none, partial, all and an empty brand', () => {

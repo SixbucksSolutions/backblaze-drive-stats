@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { csv } from './data.ts';
+import { displayModelLabel, displayVendor } from './model-labels.ts';
+import { manufacturerRows } from './manufacturer-report.ts';
 import {
   snapshotAvailable,
   snapshotChoices,
@@ -16,6 +18,89 @@ import {
   selectionTotals,
   customerHddScopeDescription,
 } from './snapshot-selection.ts';
+
+void test('historical Hitachi model labels join one HGST/WD family without changing source identities', () => {
+  for (const modelNumber of [
+    'Hitachi HDS5C4040ALE630',
+    'Hitachi HDT721010SLA360',
+    'HDS724040ALE640',
+  ]) {
+    const source = { modelId: modelNumber, vendor: 'Unknown', modelNumber, capacityTB: 4 };
+    const before = structuredClone(source);
+    const label = displayModelLabel(source);
+    assert.equal(label.vendor, 'HGST/WD');
+    assert.equal(label.modelNumber, modelNumber.replace(/^Hitachi /, ''));
+    assert.equal(label.modelId, source.modelId);
+    assert.equal(label.capacityTB, 4);
+    assert.deepEqual(source, before);
+    assert.deepEqual(displayModelLabel(label), label);
+  }
+  for (const vendor of ['WDC/HGST', 'WD/HGST', 'HGST/WD', 'HGST', 'WD', 'WDC']) {
+    assert.equal(displayVendor(vendor), 'HGST/WD');
+  }
+  for (const source of [
+    { vendor: 'Unknown', modelNumber: 'Hitachi UNRECOGNIZED' },
+    { vendor: 'Seagate', modelNumber: 'ST12000NM0007' },
+  ]) {
+    assert.deepEqual(displayModelLabel(source), source);
+  }
+});
+
+void test('normalized report filters and CSV preserve every identity and metric while merging family buckets', () => {
+  const inventory = [
+    { modelId: 'prefixed', vendor: 'Unknown', modelNumber: 'Hitachi HDS5C4040ALE630' },
+    { modelId: 'bare', vendor: 'WDC/HGST', modelNumber: 'HDS5C4040ALE630' },
+    { modelId: 'wd', vendor: 'WD', modelNumber: 'WUH722222ALE6L4' },
+    { modelId: 'other', vendor: 'Unknown', modelNumber: 'UNRECOGNIZED' },
+  ];
+  const rows = inventory.map(({ modelId }, index) => ({
+    modelId,
+    count: index + 1,
+    new: index,
+    capacityTB: (index + 1) * 4,
+  }));
+  const before = structuredClone({ inventory, rows });
+  const selection = {
+    contextModelIds: inventory.map((row) => row.modelId),
+    purchaseDefaultModelIds: [],
+    historicalReferenceModelIds: [],
+  };
+  const all = selectRows(rows, inventory, selection, defaultFilter());
+  assert.deepEqual(selectionTotals(all, true), selectionTotals(rows, true));
+  const family = selectRows(rows, inventory, selection, { ...defaultFilter(), vendor: 'HGST/WD' });
+  assert.equal(family.length, 3);
+  assert.equal(new Set(family.map((row) => row.modelId)).size, 3);
+  const legacyFilter = selectRows(rows, inventory, selection, {
+    ...defaultFilter(),
+    vendor: 'WDC/HGST',
+  });
+  assert.deepEqual(legacyFilter, family);
+  assert.equal(
+    selectRows(rows, inventory, selection, { ...defaultFilter(), search: 'HDS5C4040ALE630' })
+      .length,
+    2,
+  );
+  assert.equal(
+    selectRows(rows, inventory, selection, { ...defaultFilter(), vendor: 'Unknown' }).length,
+    1,
+  );
+  const grouped = manufacturerRows(all, selectionTotals(all, true), true);
+  assert.equal(grouped.length, 2);
+  assert.equal(grouped.find((row) => row.vendor === 'HGST/WD')?.count, 6);
+  const exported = selectionCsv(family, {
+    snapshotId: 'test',
+    asOfQuarter: '2026-Q2',
+    quarter: '2026-Q2',
+    status: 'complete',
+    kind: 'sample',
+    sourceUrl: 'https://example.com',
+    scope: 'selected_hdd',
+    contextCount: 10,
+  });
+  assert.match(exported, /"HGST\/WD","HDS5C4040ALE630"/);
+  assert.doesNotMatch(exported, /Hitachi|WDC\/HGST/);
+  assert.deepEqual({ inventory, rows }, before);
+});
 
 void test('historical customer-fleet labels use descriptor capacity/exclusions and separate AFR qualification', () => {
   const description = customerHddScopeDescription(

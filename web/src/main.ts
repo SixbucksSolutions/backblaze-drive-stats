@@ -1,4 +1,5 @@
 import './style.css';
+import { displayModelLabel } from './model-labels.ts';
 import { mountPublishedNavigation, updatePublishedNavigation } from './published-navigation.ts';
 import { appRoute } from './app-route.ts';
 import { abortInitialPresentation } from './presentation-loader.ts';
@@ -504,13 +505,23 @@ async function loadQuarter(quarter: Quarter, startupSignal?: AbortSignal) {
     const signal = startupSignal
       ? AbortSignal.any([controller.signal, startupSignal])
       : controller.signal;
-    const loaded =
+    const source =
       cache.get(quarter) ??
       parseBundle(
         await getJson(`${import.meta.env.BASE_URL}data/${entry.url}`, signal),
         quarter,
         entry.kind,
       );
+    const loaded = {
+      ...source,
+      models: source.models.map((model) => {
+        const label = displayModelLabel({
+          vendor: model.manufacturer,
+          modelNumber: model.model,
+        });
+        return { ...model, manufacturer: label.vendor, model: label.modelNumber };
+      }),
+    };
     if (id !== requestId) {
       return;
     }

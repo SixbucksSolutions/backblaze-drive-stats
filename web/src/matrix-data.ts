@@ -1,4 +1,6 @@
 import { groupModels } from './matrix-selection.ts';
+import { displayModelLabel } from './model-labels.ts';
+import { nominalCapacityTB } from './model-capacity.ts';
 
 export const metrics = [
   'afr',
@@ -61,6 +63,7 @@ export type MatrixModel = {
   id: string;
   name: string;
   vendor: string;
+  capacityTB?: number | null;
   cells: MatrixCell[];
   anchor: string | null;
   preEligibility?: Components;
@@ -83,6 +86,13 @@ export type MatrixSnapshot = {
   versions: string;
   notice: string;
 };
+
+/** Display capacity is nominal per drive, never the changing fleet-capacity aggregate. */
+export function matrixModelLabel(model: MatrixModel): string {
+  const { modelNumber } = displayModelLabel({ vendor: model.vendor, modelNumber: model.name });
+  const capacity = nominalCapacityTB(model.capacityTB);
+  return `${modelNumber} (${capacity === null ? 'capacity unknown' : `${capacity} TB`})`;
+}
 export type Workbook = {
   snapshot: string;
   source: { url: string; sha256: string };
@@ -109,6 +119,7 @@ export type Production = {
     modelId: string;
     modelNumber: string;
     vendor: string;
+    capacityTB?: number | null;
     cells: MatrixCell[];
     anchorQuarter: string;
     preEligibilityComponents: Components;
@@ -146,7 +157,8 @@ export function adaptWorkbook(data: Workbook): MatrixSnapshot {
     models: data.models.map((model) => ({
       id: model.model,
       name: model.model,
-      vendor: model.vendor,
+      vendor: displayModelLabel({ vendor: model.vendor, modelNumber: model.model }).vendor,
+      capacityTB: null,
       anchor: null,
       cells: model.rows.map((row) => ({
         quarter: null,
@@ -172,7 +184,8 @@ export function adaptProduction(data: Production): MatrixSnapshot {
     models: data.models.map((m) => ({
       id: m.modelId,
       name: m.modelNumber,
-      vendor: m.vendor,
+      vendor: displayModelLabel(m).vendor,
+      capacityTB: m.capacityTB ?? null,
       cells: m.cells,
       anchor: m.anchorQuarter,
       preEligibility: m.preEligibilityComponents,

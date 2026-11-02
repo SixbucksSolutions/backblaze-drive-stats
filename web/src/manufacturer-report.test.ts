@@ -14,7 +14,7 @@ import {
   parseSupportingQuarter,
   verifyReference,
 } from './production-data.ts';
-import type { Aggregate } from './production-data.ts';
+import type { Aggregate, Manufacturer } from './production-data.ts';
 import { defaultFilter, selectRows } from './snapshot-selection.ts';
 import type { DisplayRow } from './snapshot-selection.ts';
 import { activeReleaseSelection } from '../scripts/active-release-selection.ts';
@@ -170,8 +170,45 @@ void test('all 53 historical public cutoffs reconcile every manufacturer metric 
     const actual = manufacturerRows(rows, scope.totals, payload.status === 'complete');
     const complete = payload.status === 'complete';
     assert.equal(rows.length, scope.models.length);
-    assert.equal(actual.length, scope.manufacturers.length);
-    for (const expected of scope.manufacturers) {
+    // Rebuild the presentation oracle directly from canonical model metadata and metrics.
+    // Canonical manufacturer aggregates intentionally retain their historical source labels.
+    const expectedGroups = new Map<string, Aggregate>();
+    for (const source of scope.models) {
+      const inventory = descriptor.context.inventory.find(
+        (model) => model.modelId === source.modelId,
+      );
+      assert.ok(inventory);
+      const vendor =
+        /^(?:(?:Hitachi|HGST)\s+)?HD[ST][A-Z0-9]+$/i.test(inventory.modelNumber) ||
+        ['WDC/HGST', 'HGST/WD', 'WD/HGST', 'HGST', 'WD', 'WDC'].includes(inventory.vendor)
+          ? 'HGST/WD'
+          : inventory.vendor;
+      const group = expectedGroups.get(vendor) ?? {
+        count: complete ? 0 : null,
+        new: complete ? 0 : null,
+        capacityTB: complete ? 0 : null,
+      };
+      for (const metric of ['count', 'new', 'capacityTB'] as const) {
+        group[metric] =
+          group[metric] === null || source[metric] === null ? null : group[metric] + source[metric];
+      }
+      expectedGroups.set(vendor, group);
+    }
+    const expectedManufacturers: Manufacturer[] = [...expectedGroups].map(([vendor, values]) => {
+      const share = (metric: keyof Aggregate) =>
+        values[metric] !== null && scope.totals[metric] !== null && scope.totals[metric] > 0
+          ? values[metric] / scope.totals[metric]
+          : null;
+      return {
+        vendor,
+        ...values,
+        populationShare: share('count'),
+        newShare: share('new'),
+        capacityShare: share('capacityTB'),
+      };
+    });
+    assert.equal(actual.length, expectedManufacturers.length);
+    for (const expected of expectedManufacturers) {
       const vendor = actual.find((candidate) => candidate.vendor === expected.vendor);
       assert.ok(vendor);
       assert.equal(vendor.count, expected.count);

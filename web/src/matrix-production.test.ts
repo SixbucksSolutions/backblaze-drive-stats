@@ -31,6 +31,26 @@ const production = new URL('../public/data/production/', import.meta.url);
 const samples = new URL('../../fixtures/production-v2/', import.meta.url);
 const sampleIndex = (await readdir(samples)).find((name) => name.startsWith('sample-index.'))!;
 
+void test('matrix carries nominal per-drive capacity from inventory without changing raw model identity or metrics', async () => {
+  const { loader } = localLoader(samples, sampleIndex);
+  const index = await loader.loadIndex();
+  const descriptor = structuredClone(await loader.loadSnapshot(index.latestSnapshotId));
+  const matrix = await loader.loadMatrix(descriptor);
+  const before = adaptProductionV2(descriptor, matrix);
+  const entry = descriptor.context.inventory.find(
+    (row) => row.modelId === matrix.models[0]!.modelId,
+  )!;
+  for (const capacityTB of [12, 1.5, null]) {
+    entry.capacityTB = capacityTB;
+    const after = adaptProductionV2(descriptor, matrix);
+    assert.equal(after.models[0]!.capacityTB, capacityTB);
+    assert.equal(after.models[0]!.name, entry.modelNumber);
+    assert.equal(after.models[0]!.id, entry.modelId);
+    assert.deepEqual(after.models[0]!.cells, before.models[0]!.cells);
+    assert.deepEqual(after.domains, before.domains);
+  }
+});
+
 void test('customer fleet metadata reaches the matrix without changing legacy presentations', async () => {
   const { loader } = localLoader(samples, sampleIndex);
   const index = await loader.loadIndex();
