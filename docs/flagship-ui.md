@@ -60,6 +60,8 @@ Run `npm run quality`, `npm test` and `npm run build` from `web` for integration
 
 ## Reading and interaction
 
+- Numeric AFR and AFR-delta displays use [exactly three decimal places](afr-precision-0123.md),
+  including `0.000`. This is display formatting; raw precision and calculations remain intact.
 - Current display updates are recorded in the [model presentation handoff](model-presentation-0119-0121.md).
   Snapshot choices descend from newest to oldest. Models show nominal per-drive
   capacity and sort within manufacturer by descending capacity, then model code;

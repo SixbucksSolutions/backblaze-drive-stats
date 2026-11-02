@@ -79,7 +79,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r065** records #0122's confirmed capacity-column handoff and earlier review/acceptance states,
+Private plan **r066** records #0123's AFR-precision handoff and earlier review/acceptance states,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. #0115's shared collapsible navigation
 is owner-approved Completed. #0119 (Hitachi HDS brand/model labels), #0120
@@ -199,9 +199,16 @@ horizontal scrolling, while retaining vertical scrolling. Its
 [fit-and-alignment revision](selector-labels-0122.md) uses the bundled mono font
 and keeps known Seagate capacity digit ends aligned without changing model codes.
 The final confirmed capacity format aligns both parentheses and `TB`, with two
-integer and two optional decimal positions. Source `a352680` is live as deployment
+integer and two optional decimal positions. Source `a352680` was published as deployment
 `88b2a359-466f-4418-90e3-fd05dc2e33dd`. Quality, 243 web tests, 32 final local browser
 checks, both CI jobs, full 4,787-file hosted verification and twelve public smoke
 checks passed. All public JSON is unchanged; predecessor `46d05fc2` remains
 retained. #0122 awaits Terry's review; no other card was started this turn. The
 earlier horizontal-scrolling design is superseded.
+
+Terry requested [#0123 exactly-three-decimal AFR displays](afr-precision-0123.md).
+Source `dacd0b9` is live as `3065acc3-1ee7-49b3-88b8-862b3edbab09`. Quality, 246
+web tests, 34 local browser checks, both CI jobs, full 4,790-file hosted proof and
+17 public smoke checks passed. All public JSON and export precision are unchanged;
+predecessor `88b2a359` remains retained. #0123 awaits Terry's review; the earlier
+#0119–#0122 review lanes and owner-controlled Completed cards remain preserved.
