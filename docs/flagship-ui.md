@@ -60,6 +60,11 @@ Run `npm run quality`, `npm test` and `npm run build` from `web` for integration
 
 ## Reading and interaction
 
+- Current display updates are recorded in the [model presentation handoff](model-presentation-0119-0121.md).
+  Snapshot choices descend from newest to oldest. Models show nominal per-drive
+  capacity and sort within manufacturer by descending capacity, then model code;
+  unknown capacity remains explicit. Historical Deskstar labels share HGST/WD,
+  without changing source IDs, metrics or stored color domains.
 - Relative Year/Quarter stays at the left. Vendor, exact model, AFR/Drives and
   metric headers stay visible while the matrix scrolls on both axes.
 - Every model retains AFR Value, AFR Delta, Count, Population Delta, New, Retired

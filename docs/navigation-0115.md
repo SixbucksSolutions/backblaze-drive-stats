@@ -59,7 +59,7 @@ narrow layout, reduced motion and the startup gate. Independent desktop/narrow
 screenshot review passed; still images are not evidence of animation pacing.
 
 Both operating-system CI jobs passed run `41422927726` for source
-`8ec5dac44999c06c9f809878c24d4dce810efe6c`. It is live as deployment
+`8ec5dac44999c06c9f809878c24d4dce810efe6c`. It was published as deployment
 `1cb7726c-2694-48c1-a750-2aea57b792d5`. The qualified browser inventory matches
 the published build; all 3,097 public JSON files remain unchanged. The upload
 retains 121 predecessor files and preserves all 3,224 prior immutable assets.
@@ -74,3 +74,6 @@ No application asset failures or page errors occurred. One implicit favicon
 
 Private follow-up evidence is in `data/staging/0115/rail-verification/`,
 `data/staging/0115/rail/` and `data/staging/0115-rail-publication/`.
+
+Terry approved #0115 and moved it to Completed on 2026-11-02. Later label,
+capacity and date changes are recorded in the [presentation batch handoff](model-presentation-0119-0121.md).

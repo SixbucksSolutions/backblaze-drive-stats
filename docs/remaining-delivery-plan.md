@@ -79,15 +79,15 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r061** records #0115's animated-rail follow-up and #0113's accepted closeout,
+Private plan **r062** records #0119–#0121's handoff and #0115's accepted closeout,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. #0115's shared collapsible navigation
-is implemented and independently reviewed; it awaits Terry's review. Newly added
-#0119 (Hitachi HDS brand/model labels), #0120 (descending date dropdowns) and #0121
-(matrix capacity labels and capacity-first ordering) remain Ready for Work/P4 and
-unstarted, with next-turn author/review assignments recorded in r061. #0114's
-Seagate ordering remains Backlog/P5 and unstarted. Planning never
-starts workers, approves prerequisites or expands current limits.
+is owner-approved Completed. #0119 (Hitachi HDS brand/model labels), #0120
+(descending date dropdowns) and #0121 (matrix capacity labels and capacity-first
+ordering) are implemented and independently reviewed; they await Terry's review.
+No other RFW cards remain at closeout, so no future execution workers are assigned.
+#0114's Seagate ordering remains Backlog/P5 and unstarted. Planning never starts
+workers, approves prerequisites or expands current limits.
 
 Terry has moved #0017 and #0097–#0100 to Completed.
 For #0007 he supplied the account, token file and
@@ -168,7 +168,7 @@ documents a prompt, accessible loading indicator followed by the complete stable
 view. The original renderer is retained because the measured cleanup did not
 establish a reliable speedup. The larger indicator now fades out over 150 ms,
 then the complete view fades in over 200 ms; reduced motion switches immediately.
-Source `069a245` is live as production deployment
+Source `069a245` was published as production deployment
 `c5d1535d-6d69-4e95-811f-c845b27ecc02`; the full hosted union is verified
 and `28006713` remains its rollback predecessor. The focused capture verifies
 sequencing and stable geometry, while skipped early fade frames limit claims
@@ -181,7 +181,15 @@ route/context retention, responsive and keyboard behavior, independent review,
 227 web tests, the initial 59 browser checks and exact-source CI. The review
 follow-up adds 200 ms ease-in-out motion and retains all six icon links while
 collapsed, with hover/focus labels and reduced-motion support. Fresh source/visual
-review and 23 focused browser checks passed. Source `8ec5dac` is live as deployment
+review and 23 focused browser checks passed. Source `8ec5dac` was published as deployment
 `1cb7726c-2694-48c1-a750-2aea57b792d5`; all 3,234 hosted assets passed verification,
-and predecessor `8e871449` remains retained for rollback. #0115 awaits Terry's
-review; #0113 remains owner-Completed.
+and predecessor `8e871449` was retained for rollback. Terry approved #0115 and
+moved it to Completed on 2026-11-02; #0113 remains owner-Completed.
+
+The [#0119–#0121 presentation batch](model-presentation-0119-0121.md) is live from
+source `7b279aa` as deployment `9e3ac7f0-60ec-4a89-86b7-8f1349057015`. Quality,
+237 web tests, 45 final local browser checks, both CI jobs, full 4,775-file hosted
+verification and 24 public-origin smoke checks passed. Canonical data and cache
+lineage are unchanged; derived presentation capsules carry the corrected labels
+and per-drive capacity metadata. Predecessor `1cb7726c` remains retained for rollback.
+All three cards are ready for Terry's review; no further cards were started.
