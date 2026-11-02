@@ -65,8 +65,9 @@ Run `npm run quality`, `npm test` and `npm run build` from `web` for integration
   capacity and sort within manufacturer by descending capacity, then model code;
   unknown capacity remains explicit. Historical Deskstar labels share HGST/WD,
   without changing source IDs, metrics or stored color domains.
-- Model selector labels [stay on one line](selector-labels-0122.md). Long text is
-  reachable through horizontal scrolling within the selector pane.
+- Model selector labels [fit on one line](selector-labels-0122.md) without
+  horizontal scrolling. They use a fixed-width font; known Seagate capacity digits
+  align while complete model codes remain unchanged. Vertical list scrolling stays.
 - Relative Year/Quarter stays at the left. Vendor, exact model, AFR/Drives and
   metric headers stay visible while the matrix scrolls on both axes.
 - Every model retains AFR Value, AFR Delta, Count, Population Delta, New, Retired

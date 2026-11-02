@@ -79,7 +79,7 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r063** records #0122's selector handoff and the earlier review/acceptance states,
+Private plan **r064** records #0122's clarified selector/font handoff and earlier review/acceptance states,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
 twelve-worker exception remains historical. #0115's shared collapsible navigation
 is owner-approved Completed. #0119 (Hitachi HDS brand/model labels), #0120
@@ -194,10 +194,12 @@ lineage are unchanged; derived presentation capsules carry the corrected labels
 and per-drive capacity metadata. Predecessor `1cb7726c` remains retained for rollback.
 All three cards remain ready for Terry's review.
 
-Terry requested #0122 to keep model-selector labels on one line. Its
-[scoped CSS fix](selector-labels-0122.md) preserves selector width, complete text
-through pane scrolling, counts and selection. Source `5527e5b` is live as
-deployment `5a338eab-0ff0-4ed0-91e6-f663641c8ecc`. Quality, 237 web tests, 27 local
-browser checks, both CI jobs, full 4,779-file hosted verification and ten public
-smoke checks passed. All public JSON is unchanged; predecessor `9e3ac7f0` remains
-retained. #0122 awaits Terry's review; no other card was started this turn.
+Terry clarified #0122: full model-selector labels must fit without wrapping or
+horizontal scrolling, while retaining vertical scrolling. Its
+[fit-and-alignment revision](selector-labels-0122.md) uses the bundled mono font
+and aligns known Seagate capacity digit ends without changing model codes.
+Source `7b8177c` is live as deployment `46d05fc2-2fa6-4529-9873-8f35ec9f149b`.
+Quality, 240 web tests, 24 local browser checks, both CI jobs, full 4,783-file hosted
+verification and ten public smoke checks passed. All public JSON is unchanged;
+predecessor `5a338eab` remains retained. #0122 awaits Terry's review; no other card
+was started this turn. The earlier horizontal-scrolling design is superseded.
