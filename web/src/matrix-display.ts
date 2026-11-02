@@ -1,6 +1,8 @@
+import { formatAfr } from './afr-format.ts';
+
 /** Reserve a real monospace sign column without announcing a positive sign. */
 export function deltaDisplay(value: number) {
-  const text = value.toFixed(3);
+  const text = formatAfr(value);
   return { text, reserveSign: !text.startsWith('-') };
 }
 import { formatMetric, metrics } from './matrix-data.ts';

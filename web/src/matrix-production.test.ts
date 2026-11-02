@@ -31,6 +31,36 @@ const production = new URL('../public/data/production/', import.meta.url);
 const samples = new URL('../../fixtures/production-v2/', import.meta.url);
 const sampleIndex = (await readdir(samples)).find((name) => name.startsWith('sample-index.'))!;
 
+void test('complete-history evidence rounds only its display string, preserving source rates and domains', async () => {
+  const { loader } = localLoader(samples, sampleIndex);
+  const index = await loader.loadIndex();
+  const descriptor = await loader.loadSnapshot(index.latestSnapshotId);
+  const matrix = structuredClone(await loader.loadMatrix(descriptor));
+  const cell = matrix.models[0]!.cells[0]!;
+  const domains = adaptProductionV2(descriptor, matrix).domains;
+  for (const [value, expected] of [
+    [3.473822144, '3.474%'],
+    [2, '2.000%'],
+    [0, '0.000%'],
+    [null, 'Unavailable'],
+  ] as const) {
+    cell.completeHistoryAfr = value;
+    const before = structuredClone(matrix);
+    const view = adaptProductionV2(descriptor, matrix);
+    const adapted = view.models[0]!.cells[0]!;
+    assert.equal(
+      adapted.productionEvidence!.find(
+        (detail) => detail.label === 'Complete-history AFR (detail only)',
+      )!.value,
+      expected,
+    );
+    assert.equal(adapted.metrics.afr, cell.metrics.observedRecordedAfr);
+    assert.equal(adapted.quarterAfr, cell.quarterAfr);
+    assert.deepEqual(matrix, before);
+    assert.deepEqual(view.domains, domains);
+  }
+});
+
 void test('matrix carries nominal per-drive capacity from inventory without changing raw model identity or metrics', async () => {
   const { loader } = localLoader(samples, sampleIndex);
   const index = await loader.loadIndex();

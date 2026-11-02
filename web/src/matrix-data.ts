@@ -1,3 +1,4 @@
+import { formatAfr } from './afr-format.ts';
 import { groupModels } from './matrix-selection.ts';
 import { displayModelLabel } from './model-labels.ts';
 import { nominalCapacityTB } from './model-capacity.ts';
@@ -305,7 +306,7 @@ export function formatMetric(value: number | null, metric: Metric) {
   return value === null
     ? '—'
     : metric === 'afr' || metric === 'afrDelta'
-      ? value.toFixed(3)
+      ? formatAfr(value)
       : value.toLocaleString('en-US');
 }
 export function axisExtent(snapshot: MatrixSnapshot, guideYear: number) {

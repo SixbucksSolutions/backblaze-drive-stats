@@ -1,4 +1,5 @@
 import './style.css';
+import { formatAfr } from './afr-format.ts';
 import { displayModelLabel } from './model-labels.ts';
 import { mountPublishedNavigation, updatePublishedNavigation } from './published-navigation.ts';
 import { appRoute } from './app-route.ts';
@@ -79,6 +80,7 @@ const app = mountPublishedNavigation();
 const integer = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const decimal = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const pct = (value: number) => `${value.toFixed(2)}%`;
+const afrPercent = (value: number) => `${formatAfr(value)}%`;
 const capacity = (tb: number) =>
   tb >= 1_000_000 ? `${decimal.format(tb / 1_000_000)} EB` : `${decimal.format(tb / 1000)} PB`;
 const escape = (value: unknown) =>
@@ -176,7 +178,7 @@ function report() {
     },
     {
       label: 'QUARTERLY AFR',
-      value: metrics.driveDays ? pct(metrics.quarterlyAfr) : '—',
+      value: metrics.driveDays ? afrPercent(metrics.quarterlyAfr) : '—',
       suffix: `${integer.format(metrics.failures)} recorded failures`,
       icon: '◴',
     },
@@ -253,7 +255,7 @@ function chart(models: Model[]) {
         label: row.model,
         value,
         manufacturer: row.manufacturer,
-        formatted: view === 'reliability' ? pct(value) : integer.format(value),
+        formatted: view === 'reliability' ? afrPercent(value) : integer.format(value),
       };
     });
   }
@@ -330,7 +332,7 @@ function table(models: Model[]) {
           {
             key: afrMode,
             label: afrMode === 'quarterlyAfr' ? 'QUARTERLY AFR' : 'CUMULATIVE AFR',
-            format: pct,
+            format: afrPercent,
           },
         ]
       : []),
@@ -344,7 +346,7 @@ function table(models: Model[]) {
         : Number(av) - Number(bv);
     return result * sortDirection || a.id.localeCompare(b.id);
   });
-  return `<div class="table-scroll"><table><caption class="sr-only">${escape(views.find((item) => item.id === view)!.label)} by model for ${bundle!.quarter}</caption><thead><tr>${columns.map((col) => `<th aria-sort="${sortKey === col.key ? (sortDirection === 1 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${col.key}">${col.label}<span aria-hidden="true">${sortKey === col.key ? (sortDirection === 1 ? ' ↑' : ' ↓') : ' ↕'}</span></button></th>`).join('')}</tr></thead><tbody>${sorted.map((row) => `<tr>${columns.map((col) => (col.key === 'model' ? `<td class="model-cell"><span class="manufacturer-dot" style="background:${color(row.manufacturer)}"></span><span><strong>${escape(row.model)}</strong><small>${escape(row.manufacturer)}</small></span></td>` : `<td>${col.key === afrMode && view === 'reliability' ? `<span class="afr-badge ${row[afrMode] > 2 ? 'elevated' : ''}">${pct(row[afrMode])}</span>` : escape(col.format ? col.format(Number(row[col.key])) : row[col.key])}</td>`)).join('')}</tr>`).join('')}</tbody></table></div><div class="table-foot">${models.length} models · ${integer.format(summarize(models).driveCount)} drives in current selection${view === 'deployments' ? '<span>*Inferred disappearance; includes failures. Latest observations are provisional.</span>' : ''}</div>`;
+  return `<div class="table-scroll"><table><caption class="sr-only">${escape(views.find((item) => item.id === view)!.label)} by model for ${bundle!.quarter}</caption><thead><tr>${columns.map((col) => `<th aria-sort="${sortKey === col.key ? (sortDirection === 1 ? 'ascending' : 'descending') : 'none'}"><button data-sort="${col.key}">${col.label}<span aria-hidden="true">${sortKey === col.key ? (sortDirection === 1 ? ' ↑' : ' ↓') : ' ↕'}</span></button></th>`).join('')}</tr></thead><tbody>${sorted.map((row) => `<tr>${columns.map((col) => (col.key === 'model' ? `<td class="model-cell"><span class="manufacturer-dot" style="background:${color(row.manufacturer)}"></span><span><strong>${escape(row.model)}</strong><small>${escape(row.manufacturer)}</small></span></td>` : `<td>${col.key === afrMode && view === 'reliability' ? `<span class="afr-badge ${row[afrMode] > 2 ? 'elevated' : ''}">${afrPercent(row[afrMode])}</span>` : escape(col.format ? col.format(Number(row[col.key])) : row[col.key])}</td>`)).join('')}</tr>`).join('')}</tbody></table></div><div class="table-foot">${models.length} models · ${integer.format(summarize(models).driveCount)} drives in current selection${view === 'deployments' ? '<span>*Inferred disappearance; includes failures. Latest observations are provisional.</span>' : ''}</div>`;
 }
 function datacenterTable() {
   const rows = [...bundle!.capacityByDatacenter].sort((a, b) => b.capacityTb - a.capacityTb);

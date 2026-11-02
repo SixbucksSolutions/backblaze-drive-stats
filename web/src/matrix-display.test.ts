@@ -5,6 +5,41 @@ import { deltaDisplay, metricFieldWidths, yearRowGroups } from './matrix-display
 import { readFileSync } from 'node:fs';
 import { adaptWorkbook, formatMetric, metrics, visibleModels } from './matrix-data.ts';
 import { captureControlFocus, controlId, restoreControlFocus } from './matrix-focus.ts';
+import { formatAfr, formatAfrProse } from './afr-format.ts';
+
+await test('AFR display always includes three decimals while retaining raw numeric precision', () => {
+  for (const [value, expected] of [
+    [3.473822144, '3.474'],
+    [2, '2.000'],
+    [0, '0.000'],
+    [0.0004, '0.000'],
+    [-0.0001, '-0.000'],
+    [-2.3456, '-2.346'],
+  ] as const) {
+    assert.equal(formatAfr(value), expected);
+    assert.equal(formatMetric(value, 'afr'), expected);
+    assert.equal(formatMetric(value, 'afrDelta'), expected);
+  }
+  assert.equal(formatMetric(null, 'afr'), '—');
+  assert.equal(formatMetric(null, 'afrDelta'), '—');
+  assert.equal(formatMetric(1234, 'count'), '1,234');
+  assert.equal(formatMetric(3.473822144, 'populationDelta'), '3.474');
+});
+
+await test('AFR reading-case percentages gain fixed precision without changing counts or prose', () => {
+  assert.equal(
+    formatAfrProse('Early high AFR settling near 1%; 2,000 drives; factor 36500.'),
+    'Early high AFR settling near 1.000%; 2,000 drives; factor 36500.',
+  );
+  assert.equal(
+    formatAfrProse('Quarter AFR 3.473822%; baseline 0%.'),
+    'Quarter AFR 3.474%; baseline 0.000%.',
+  );
+  assert.equal(
+    formatAfrProse('Unavailable rate; 123 failures.'),
+    'Unavailable rate; 123 failures.',
+  );
+});
 
 await test('percentage point values reserve an equal sign column, including rounded negative zero', () => {
   for (const value of [0, 0.5, -0.5, -0.0001, 9.999, -9.999]) {

@@ -4,6 +4,7 @@ import { metrics } from './matrix-data.ts';
 import { SnapshotLoader } from './snapshot-loader.ts';
 import { customerHddScopeDescription } from './snapshot-selection.ts';
 import { displayModelLabel } from './model-labels.ts';
+import { formatAfr } from './afr-format.ts';
 
 const green = '#00FF00',
   yellow = '#FFFF00',
@@ -211,7 +212,7 @@ export function adaptProductionV2(
             detail('Rate basis', matrix.rateBasis),
             detail(
               'Complete-history AFR (detail only)',
-              cell.completeHistoryAfr === null ? null : `${cell.completeHistoryAfr}%`,
+              cell.completeHistoryAfr === null ? null : `${formatAfr(cell.completeHistoryAfr)}%`,
             ),
             detail('Required source history complete through cell', cell.sourceHistoryComplete),
             detail('Lifetime exposure complete', false),
@@ -276,7 +277,7 @@ export function adaptProductionV2(
 /** V2 initializes the delta itself; it does not invent a prior measured value. */
 export function initializedBaselineLabel(baseline: MatrixCell['deltaBaseline']): string | null {
   return baseline?.kind === 'initial_subtract_zero'
-    ? 'First eligible deltas subtract synthetic zero: AFR 0%, Count 0. This is not a prior observed quarter; elapsed span is not applicable.'
+    ? `First eligible deltas subtract synthetic zero: AFR ${formatAfr(0)}%, Count 0. This is not a prior observed quarter; elapsed span is not applicable.`
     : baseline?.kind === 'initial_zero_delta'
       ? 'Deltas initialized to zero. Prior AFR/Count baseline and elapsed span: not applicable.'
       : null;
