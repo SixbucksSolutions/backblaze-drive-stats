@@ -30,8 +30,8 @@ not a permanent limit on future refreshes.
 
 Use the shared navigation to switch between AFR comparison, Deployments, Drive
 mix, Total capacity, By manufacturer and By datacenter. Collapse it for more
-table room; expand it to choose another view. The choice carries through links
-and reloads. Narrow screens use a compact expandable menu above the report.
+table room; expand it to choose another view. The choice carries through shared
+navigation links and reloads. Narrow screens use a compact expandable menu above the report.
 Selected historical snapshot and reporting quarter carry between published views
 where that evidence is available. **More context & references** contains the
 model context, original quarterly explorer and workbook/synthetic references.

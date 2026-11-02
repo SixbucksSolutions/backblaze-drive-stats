@@ -68,8 +68,10 @@ separate; the owner has now supplied its exact account/token/project target for
 the requested static deployment. Unrelated account, DNS and resource changes
 remain outside that deployment scope.
 
-Terry accepted #0096 for the **cool B2 us-west replication setup**. Initial copy
-completion and restore integrity remain unverified. The storage hierarchy
+Terry accepted #0096 for the **cool B2 us-west replication setup**. On 2026-11-01,
+he reported an automatic east-to-west replication run and supplied a screenshot
+showing 7.5 GB in the west bucket. This is an owner-observed run; Bot has not
+performed a restore-integrity test. The storage hierarchy
 is hot B2 us-east, cool B2 us-west and cold Glacier Deep Archive. #0096's runtime
 and owner-controlled Completed lane are separate from Bot's implementation work.
 
@@ -77,13 +79,13 @@ The optional Sol observations (#0020) and Glacier backup (#0019) retain their
 explicit deferred scope. The TypeScript compatibility follow-ups (#0024/#0025)
 retain their owner-Blocked lanes. None gates baseline delivery.
 
-Private plan **r058** records #0113's owner-accepted closeout and the next planned work,
+Private plan **r059** records #0115's navigation handoff and #0113's accepted closeout,
 preserving **r054**'s owner-accepted closeout and earlier assignments. #0101's
-twelve-worker exception remains historical. The next turn plans #0115's collapsible
-six-view navigation with fresh independent review. #0115 remains Ready for Work;
-#0114's Seagate ordering is now Backlog/P5 and removed from that roster. Both are
-unstarted. Planned
-assignments do not start workers, approve prerequisites or expand current limits.
+twelve-worker exception remains historical. #0115's shared collapsible navigation
+is implemented and independently reviewed; it awaits Terry's review. No Ready for
+Work cards remain, so no future execution workers are assigned. #0114's Seagate
+ordering remains Backlog/P5 and unstarted. Planning never starts workers, approves
+prerequisites or expands current limits.
 
 Terry has moved #0017 and #0097–#0100 to Completed.
 For #0007 he supplied the account, token file and
@@ -170,3 +172,11 @@ and `28006713` remains its rollback predecessor. The focused capture verifies
 sequencing and stable geometry, while skipped early fade frames limit claims
 about smoothness. Terry approved #0113 and moved it to Completed on 2026-11-01;
 #0101 and #0112 remain owner-Completed.
+
+#0115 replaces the separate navigation layouts with one shared collapsible menu
+for all six published views. The [navigation handoff](navigation-0115.md) records
+route/context retention, responsive and keyboard behavior, independent review,
+227 web tests, 59 browser checks and exact-source CI. Source `9660065` is live as
+deployment `8e871449-c5d1-42c9-888f-4157b15406d0`; all 3,230 hosted assets passed
+verification, and predecessor `c5d1535d` remains retained for rollback. #0115 is
+ready for Terry's review; #0113 remains owner-Completed.
