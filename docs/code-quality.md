@@ -7,7 +7,7 @@ maintainability findings. Neither linter enables an indiscriminate all-rules pre
 ## Tool ownership and current pins
 
 Python versions verified on 2026-11-03 (see the [Python freshness audit](buildchain-freshness-0126.md));
-frontend versions verified on 2026-11-01 (see the [full buildchain audit](buildchain-freshness-0102.md)):
+frontend versions verified on 2026-11-03 (see the [frontend freshness audit](buildchain-freshness-0127.md)):
 
 | Concern | Tool | Version / scope |
 | --- | --- | --- |

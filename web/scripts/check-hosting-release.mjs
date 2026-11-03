@@ -97,7 +97,7 @@ export function assertHostingPolicy(config, headers) {
     {
       $schema: './node_modules/wrangler/config-schema.json',
       name: 'backblaze-drive-stats-analysis',
-      compatibility_date: '2026-10-23',
+      compatibility_date: '2026-11-03',
       pages_build_output_dir: './dist',
     },
     'Hosting configuration must match the approved static Pages target without Functions',
