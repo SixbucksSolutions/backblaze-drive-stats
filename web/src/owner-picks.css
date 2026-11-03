@@ -18,6 +18,12 @@
   text-align: center;
   white-space: nowrap;
 }
+.pick-model {
+  padding: 0.06em 0.16em;
+  border-radius: 3px;
+  background: var(--pick-model-background);
+  color: var(--pick-model-foreground);
+}
 .pick-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
