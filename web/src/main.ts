@@ -584,13 +584,19 @@ async function start() {
             startup.signal.throwIfAborted();
             return module.initMatrix(startup.signal);
           })
-        : appRoute(params) === 'snapshot'
-          ? import('./snapshot-explorer.ts').then(async (module) => {
+        : appRoute(params) === 'picks'
+          ? import('./owner-picks.ts').then(async (module) => {
               await startupPaint;
               startup.signal.throwIfAborted();
-              return module.initSnapshotExplorer(startup.signal);
+              return module.initOwnerPicks(startup.signal);
             })
-          : startupPaint.then(() => init(startup.signal)),
+          : appRoute(params) === 'snapshot'
+            ? import('./snapshot-explorer.ts').then(async (module) => {
+                await startupPaint;
+                startup.signal.throwIfAborted();
+                return module.initSnapshotExplorer(startup.signal);
+              })
+            : startupPaint.then(() => init(startup.signal)),
     startup,
   );
   const readiness = await waitForPresentation(fonts, rendering);

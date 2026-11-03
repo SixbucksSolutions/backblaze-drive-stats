@@ -1,7 +1,10 @@
-/** Preserve explicit legacy views while the real flagship becomes the landing view. */
-export function appRoute(params: URLSearchParams): 'matrix' | 'snapshot' | 'legacy' {
+/** Editorial home, with all analytical and legacy views explicitly addressable. */
+export function appRoute(params: URLSearchParams): 'matrix' | 'snapshot' | 'picks' | 'legacy' {
   const view = params.get('view');
-  if (view === null || view === 'matrix') {
+  if (view === null || view === 'picks') {
+    return 'picks';
+  }
+  if (view === 'matrix') {
     return 'matrix';
   }
   if (
@@ -26,11 +29,16 @@ export const publishedViews = [
   { id: 'manufacturers', label: 'By manufacturer', icon: '▦' },
   { id: 'datacenters', label: 'By datacenter', icon: '◎' },
 ] as const;
-export type PublishedView = (typeof publishedViews)[number]['id'];
+export const editorialViews = [{ id: 'picks', label: 'What I’d Buy', icon: '🏆' }] as const;
+export const navigationViews = [...publishedViews, ...editorialViews];
+export type PublishedView = (typeof navigationViews)[number]['id'];
 export type NavigationContext = { snapshotId?: string; kind?: 'backblaze' | 'sample' };
 
 export function activePublishedView(params: URLSearchParams): PublishedView | undefined {
   const route = appRoute(params);
+  if (route === 'picks') {
+    return 'picks';
+  }
   if (route === 'matrix') {
     return params.get('reference') === '1' ? undefined : 'matrix';
   }

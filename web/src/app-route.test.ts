@@ -9,8 +9,10 @@ import {
   snapshotReport,
 } from './app-route.ts';
 
-await test('landing page and explicit matrix route to the flagship with reference selection preserved', () => {
-  assert.equal(appRoute(new URLSearchParams()), 'matrix');
+await test('landing page opens editorial picks and explicit matrix routes to the flagship with reference selection preserved', () => {
+  assert.equal(appRoute(new URLSearchParams()), 'picks');
+  assert.equal(appRoute(new URLSearchParams('view=picks')), 'picks');
+  assert.equal(activePublishedView(new URLSearchParams()), 'picks');
   assert.equal(appRoute(new URLSearchParams('view=matrix&reference=1')), 'matrix');
 });
 

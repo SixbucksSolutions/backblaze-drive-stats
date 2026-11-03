@@ -88,7 +88,7 @@ await test('initial routes preserve precedence, exceptions, unknown ID policy an
     'view=reliability',
     'view=capacity&legacy=1',
     'view=bogus',
-    'snapshot=unknown',
+    'view=matrix&snapshot=unknown',
   ]) {
     assert.equal(initialPresentation(new URLSearchParams(query), catalogue), null);
   }
@@ -112,7 +112,7 @@ await test('initial routes preserve precedence, exceptions, unknown ID policy an
     '2026-Q1',
   );
   assert.equal(
-    initialPresentation(new URLSearchParams('snapshot=old'), catalogue)?.snapshotId,
+    initialPresentation(new URLSearchParams('view=matrix&snapshot=old'), catalogue)?.snapshotId,
     'old',
   );
 });

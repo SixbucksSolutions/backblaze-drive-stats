@@ -25,16 +25,18 @@ npm ci
 npm run dev
 ```
 
-Open the localhost URL printed by Vite. The default view is the real-data AFR
-matrix. The latest committed snapshot is **2026 Q2**; 2025 Q3 and Q4 as-of
+Open the localhost URL printed by Vite. The default view is **What I’d Buy**, a concise editorial shortlist using the latest published data.
+The AFR comparison and five other data views remain separately accessible. The latest committed snapshot is **2026 Q2**; 2025 Q3 and Q4 as-of
 snapshots are also available. The site is static and needs no backend.
 
 ## What you can explore
 
 Use these query strings after the localhost URL, or follow the site's navigation.
+[Selection rules](docs/owners-picks.md) explain the shortlist and its review boundary.
 
 | View | Open | What it shows |
 | --- | --- | --- |
+| What I’d Buy | `?view=picks` (default) | Latest-data editorial replacement-drive shortlist, with observed reliability, population and history evidence. |
 | AFR comparison | `?view=matrix` | Model histories aligned by relative quarter, with AFR, population, additions, retirements and failures side by side. |
 | Deployments | `?view=deployments` | First recorded additions by model in the selected calendar quarter. |
 | Drive mix | `?view=distribution` | Distinct drives observed by model during the quarter. |

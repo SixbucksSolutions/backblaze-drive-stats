@@ -20,16 +20,16 @@ export function initialPresentation(
   ) {
     return null;
   }
-  const requested = params.get('snapshot');
+  const requested = route === 'picks' ? catalogue.latestSnapshotId : params.get('snapshot');
   const snapshot =
     catalogue.snapshots.find((s) => s.snapshotId === requested) ??
-    (route === 'matrix' && requested !== null
+    ((route === 'matrix' || route === 'picks') && requested !== null
       ? undefined
       : catalogue.snapshots.find((s) => s.snapshotId === catalogue.latestSnapshotId));
   if (!snapshot) {
     return null;
   }
-  if (route === 'matrix') {
+  if (route === 'matrix' || route === 'picks') {
     return { kind: 'matrix', snapshotId: snapshot.snapshotId, quarter: null, ref: snapshot.matrix };
   }
   const quarter =
