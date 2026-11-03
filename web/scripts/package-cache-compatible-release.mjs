@@ -4,6 +4,10 @@ import { createHash } from 'node:crypto';
 import { lstat, mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  presentationCatalogueFromHtml,
+  presentationCatalogueReferenceFromHtml,
+} from './presentation-capsules.mjs';
 import { checkCacheTransition } from './check-cache-transition.mjs';
 
 const immutable = 'public, max-age=31536000, immutable';
@@ -142,7 +146,7 @@ function predecessorKnownAssets(files, viteManifest) {
       assert.ok(files.has(path), 'Missing prior Vite output');
       if (path.startsWith('assets/presentation-')) {
         assert.ok(capsule.test(path), 'Invalid Vite presentation capsule path');
-      } else {
+      } else if (!path.startsWith('assets/analytics-catalogue-')) {
         known.add(path);
       }
     }
@@ -151,14 +155,11 @@ function predecessorKnownAssets(files, viteManifest) {
     }
   }
   const html = files.get('index.html').toString('utf8');
-  const catalogues = [
-    ...html.matchAll(
-      /<script\s+id="presentation-catalogue"\s+type="application\/json">([^<]*)<\/script>/g,
-    ),
-  ];
-  assert.equal(catalogues.length, 1, 'Expected one predecessor presentation catalogue');
-  const catalogue = JSON.parse(catalogues[0][1]);
-  assert.ok(Array.isArray(catalogue.snapshots), 'Invalid predecessor catalogue');
+  const catalogue = presentationCatalogueFromHtml(html, files);
+  const catalogueRef = presentationCatalogueReferenceFromHtml(html);
+  if (catalogueRef) {
+    known.add(catalogueRef.path.slice(1));
+  }
   for (const snapshot of catalogue.snapshots) {
     assert.match(
       snapshot.asOfQuarter ?? '',

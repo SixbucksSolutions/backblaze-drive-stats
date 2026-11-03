@@ -6,10 +6,13 @@ import {
 } from './presentation-capsules.mjs';
 import { parsePresentationCatalogue } from '../src/presentation-data.ts';
 import { presentationBootstrapSource } from '../src/presentation-bootstrap.ts';
+import { renderStaticPicks, staticPicksContext } from '../src/static-picks.ts';
 
 export function presentationCapsulesPlugin() {
   let root;
   let catalogue;
+  let latestCapsule;
+  let emitAsset;
   let building = false;
   let fileName;
   let devGeneration;
@@ -41,9 +44,13 @@ export function presentationCapsulesPlugin() {
           files.set(path, bytes);
           return { path, sha256, sizeBytes: bytes.length };
         };
+        let latest;
         for await (const item of derivePresentationSnapshots(
           resolve(root, 'public/data/production'),
         )) {
+          if (item.entry.snapshotId === item.index.latestSnapshotId) {
+            latest = item.matrixCapsule;
+          }
           derived.sourceIndexSha256 = item.sourceIndexSha256;
           derived.latestSnapshotId = item.index.latestSnapshotId;
           derived.snapshots.push({
@@ -67,7 +74,16 @@ export function presentationCapsulesPlugin() {
         }
         const validated = parsePresentationCatalogue(derived);
         devReady = true;
-        return { catalogue: validated, files };
+        const bytes = Buffer.from(JSON.stringify(validated));
+        const sha256 = presentationDigest(bytes);
+        const path = `/assets/analytics-catalogue-${sha256}.json`;
+        files.set(path, bytes);
+        return {
+          catalogue: validated,
+          files,
+          latest,
+          ref: { contractVersion: 1, path, sha256, sizeBytes: bytes.length },
+        };
       })().catch((error) => {
         // A failed or invalidated generation never poisons later requests.
         devGeneration = undefined;
@@ -76,11 +92,14 @@ export function presentationCapsulesPlugin() {
     }
     return devGeneration;
   };
-  const inject = (html, resolved) => {
-    // Preserve charset and early font/CSS/module discovery. This classic script
-    // still runs during parsing, before the previously discovered deferred modules.
-    const scripts = `<script id="presentation-catalogue" type="application/json">${safePresentationJson(resolved)}</script><script>${presentationBootstrapSource(resolved, '/')}</script>`;
-    return html.replace(/<\/head>/i, `${scripts}</head>`);
+  const inject = (html, resolved, latest, ref) => {
+    const scripts = `<script id="presentation-catalogue-ref" type="application/json">${safePresentationJson(ref)}</script><script id="static-picks-context" type="application/json">${safePresentationJson(staticPicksContext(resolved))}</script><script>${presentationBootstrapSource(resolved, '/')}</script>`;
+    return html
+      .replace(/<\/head>/i, `${scripts}</head>`)
+      .replace(
+        '<div id="app"></div>',
+        `<div id="app">${renderStaticPicks(resolved, latest)}</div>`,
+      );
   };
   return {
     name: 'immutable-presentation-capsules',
@@ -105,7 +124,10 @@ export function presentationCapsulesPlugin() {
       server.httpServer?.once('close', () => server.watcher.off('all', invalidate));
       server.middlewares.use(async (request, response, next) => {
         const url = new URL(request.url ?? '/', 'http://localhost');
-        if (!url.pathname.startsWith('/assets/presentation-')) {
+        if (
+          !url.pathname.startsWith('/assets/presentation-') &&
+          !url.pathname.startsWith('/assets/analytics-catalogue-')
+        ) {
           next();
           return;
         }
@@ -134,6 +156,7 @@ export function presentationCapsulesPlugin() {
       if (!building) {
         return;
       }
+      emitAsset = (asset) => this.emitFile(asset);
       fileName = (id) => this.getFileName(id);
       catalogue = {
         contractVersion: 1,
@@ -154,6 +177,9 @@ export function presentationCapsulesPlugin() {
       for await (const item of derivePresentationSnapshots(
         resolve(root, 'public/data/production'),
       )) {
+        if (item.entry.snapshotId === item.index.latestSnapshotId) {
+          latestCapsule = item.matrixCapsule;
+        }
         catalogue.sourceIndexSha256 = item.sourceIndexSha256;
         catalogue.latestSnapshotId = item.index.latestSnapshotId;
         catalogue.snapshots.push({
@@ -175,7 +201,8 @@ export function presentationCapsulesPlugin() {
       order: 'post',
       async handler(html) {
         if (!building) {
-          return inject(html, (await devAssets()).catalogue);
+          const dev = await devAssets();
+          return inject(html, dev.catalogue, dev.latest, dev.ref);
         }
         const reference = (ref) => ({
           path: `/${fileName(ref.id)}`,
@@ -190,7 +217,21 @@ export function presentationCapsulesPlugin() {
             reports: snapshot.reports.map((row) => ({ ...row, ref: reference(row.ref) })),
           })),
         });
-        return inject(html, resolved);
+        const bytes = Buffer.from(JSON.stringify(resolved));
+        const sha256 = presentationDigest(bytes);
+        const name = `assets/analytics-catalogue-${sha256}.json`;
+        emitAsset({
+          type: 'asset',
+          fileName: name,
+          originalFileName: 'analytics-catalogue.json',
+          source: bytes,
+        });
+        return inject(html, resolved, latestCapsule, {
+          contractVersion: 1,
+          path: `/${name}`,
+          sha256,
+          sizeBytes: bytes.length,
+        });
       },
     },
   };

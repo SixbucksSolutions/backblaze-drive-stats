@@ -135,7 +135,7 @@ export async function initMatrix(signal?: AbortSignal) {
 async function initProduction(signal?: AbortSignal) {
   app.innerHTML = '<div class="matrix-loading" role="status">Validating production snapshot…</div>';
   try {
-    const index = presentationCatalogue();
+    const index = await presentationCatalogue(signal);
     reader = new PresentationLoader(index);
     const params = new URLSearchParams(location.search);
     const id = params.get('snapshot') ?? index.latestSnapshotId;

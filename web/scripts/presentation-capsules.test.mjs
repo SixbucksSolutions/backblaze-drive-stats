@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { webcrypto } from 'node:crypto';
 import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -8,9 +9,13 @@ import { EventEmitter } from 'node:events';
 import vm from 'node:vm';
 import { presentationCapsulesPlugin } from './presentation-capsules-plugin.mjs';
 import { PresentationLoader } from '../src/presentation-loader.ts';
+import { renderStaticPicks, staticPicksContext } from '../src/static-picks.ts';
+import { minifyHtml } from './minimize-static-assets.mjs';
 import { initialPresentation } from '../src/presentation-bootstrap.ts';
 import {
   auditPresentationAssets,
+  auditStaticPicks,
+  presentationCatalogueReferenceFromHtml,
   derivePresentationSnapshots,
   displayDescriptor,
   presentationCatalogueFromHtml,
@@ -44,11 +49,13 @@ test('report presentation descriptor corrects historical labels without mutating
   assert.deepEqual(descriptor, before);
 });
 
-async function fixture() {
+async function fixture(latest = false) {
   const source = fileURLToPath(new URL('../public/data/production/', import.meta.url));
   const root = await mkdtemp(join(tmpdir(), 'presentation-audit-'));
   const index = JSON.parse(await readFile(join(source, 'index.json'), 'utf8'));
-  const entry = index.snapshots[0];
+  const entry = latest
+    ? index.snapshots.find((item) => item.snapshotId === index.latestSnapshotId)
+    : index.snapshots[0];
   const descriptor = JSON.parse(await readFile(join(source, entry.descriptor.path), 'utf8'));
   const refs = [
     entry.descriptor,
@@ -167,56 +174,12 @@ test('development serves canonical-derived capsules with catalogue parity, memoi
     await plugin.buildStart();
     // Mirrors Vite's post-transform order: module and CSS precede </head>.
     const html =
-      '<!doctype html><html><head><meta charset="UTF-8"><link rel="preload" as="font" href="/fonts/InterVariable-4.1.woff2"><script type="module" crossorigin src="/assets/index-abcdefgh.js"></script><link rel="stylesheet" href="/assets/index-abcdefgh.css"></head><body></body></html>';
+      '<!doctype html><html><head><meta charset="UTF-8"><link rel="preload" as="font" href="/fonts/InterVariable-4.1.woff2"><script type="module" crossorigin src="/assets/index-abcdefgh.js"></script><link rel="stylesheet" href="/assets/index-abcdefgh.css"></head><body><div id="app"></div></body></html>';
     const [first, concurrent] = await Promise.all([
       plugin.transformIndexHtml.handler(html),
       plugin.transformIndexHtml.handler(html),
     ]);
     assert.equal(first, concurrent);
-    const catalogue = presentationCatalogueFromHtml(first);
-    assert.equal(catalogue.snapshots.length, 1);
-    assert.match(first, /window\.__presentationInitial/);
-    const catalogueAt = first.indexOf('<script id="presentation-catalogue"');
-    assert.ok(first.indexOf('<meta charset="UTF-8">') < 1024);
-    for (const marker of ['<meta charset=', 'rel="preload"', 'type="module"', 'rel="stylesheet"']) {
-      assert.ok(
-        first.indexOf(marker) < catalogueAt,
-        `${marker} must be discovered before catalogue`,
-      );
-    }
-    assert.match(first, /<\/script><script>[\s\S]*<\/script><\/head>/);
-    // A discovered module is deferred by HTML semantics. Execute the emitted
-    // classic script first, then model that module adopting its request once.
-    const classic = first.match(/<\/script><script>([\s\S]*?)<\/script><\/head>/)[1];
-    const host = {};
-    let initialFetches = 0;
-    const fetcher = async (url) => {
-      initialFetches++;
-      return new Response(f.files.get(new URL(url).pathname.slice(1)));
-    };
-    // Development filenames differ from the fixture emitter; bind by expected
-    // SHA rather than creating an alternate presentation input.
-    const initialBytes = [...f.files.values()].find(
-      (bytes) => presentationDigest(bytes) === catalogue.snapshots[0].matrix.sha256,
-    );
-    const initialFetcher = async () => {
-      initialFetches++;
-      return new Response(initialBytes);
-    };
-    vm.runInNewContext(classic, {
-      window: host,
-      document: { getElementById: () => ({ textContent: JSON.stringify(catalogue) }) },
-      location: { search: '', href: 'https://example.test/' },
-      URL,
-      URLSearchParams,
-      AbortController,
-      fetch: initialFetcher,
-    });
-    assert.ok(host.__presentationInitial);
-    assert.equal(initialFetches, 1);
-    const loader = new PresentationLoader(catalogue, fetcher, host, 'https://example.test/');
-    await loader.load(initialPresentation(new URLSearchParams(), catalogue));
-    assert.equal(initialFetches, 1, 'deferred app must adopt the classic request without refetch');
     const request = async (path, method = 'GET') => {
       const response = {
         statusCode: 200,
@@ -237,6 +200,84 @@ test('development serves canonical-derived capsules with catalogue parity, memoi
       }
       return response;
     };
+    const readCatalogue = async (text) => {
+      const ref = presentationCatalogueReferenceFromHtml(text);
+      return presentationCatalogueFromHtml(
+        text,
+        new Map([[ref.path.slice(1), (await request(ref.path)).bytes]]),
+      );
+    };
+    const catalogue = await readCatalogue(first);
+    assert.equal(catalogue.snapshots.length, 1);
+    assert.match(first, /window\.__analyticsCatalogueInitial/);
+    const catalogueAt = first.indexOf('<script id="presentation-catalogue-ref"');
+    assert.ok(first.indexOf('<meta charset="UTF-8">') < 1024);
+    for (const marker of ['<meta charset=', 'rel="preload"', 'type="module"', 'rel="stylesheet"']) {
+      assert.ok(
+        first.indexOf(marker) < catalogueAt,
+        `${marker} must be discovered before catalogue`,
+      );
+    }
+    assert.match(first, /<\/script><script>[\s\S]*<\/script><\/head>/);
+    // A discovered module is deferred by HTML semantics. Execute the emitted
+    // classic script first, then model that module adopting its request once.
+    const classic = first.match(/<\/script><script>([\s\S]*?)<\/script><\/head>/)[1];
+    const host = {};
+    let initialFetches = 0;
+    const initialPaths = [];
+    const ref = presentationCatalogueReferenceFromHtml(first);
+    const bootstrap = (search) =>
+      vm.runInNewContext(classic, {
+        window: host,
+        document: { getElementById: () => ({ textContent: JSON.stringify(ref) }) },
+        location: { search, href: 'https://example.test/' },
+        URL,
+        URLSearchParams,
+        AbortController,
+        TextDecoder,
+        Uint8Array,
+        crypto: webcrypto,
+        fetch: async (url) => {
+          initialFetches++;
+          initialPaths.push(new URL(url).pathname);
+          return new Response((await request(new URL(url).pathname)).bytes);
+        },
+      });
+    for (const search of [
+      '',
+      '?view=picks',
+      '?view=matrix&reference=1',
+      '?view=capacity&example=1',
+      '?view=reliability',
+    ]) {
+      bootstrap(search);
+      assert.equal(initialFetches, 0, 'home and explicit fixtures must not fetch analytics');
+    }
+    bootstrap('?view=matrix');
+    assert.ok(host.__analyticsCatalogueInitial);
+    assert.equal(initialFetches, 1);
+    const early = Buffer.from(await host.__analyticsCatalogueInitial.promise);
+    assert.equal(presentationDigest(early), ref.sha256);
+    assert.equal(early.length, ref.sizeBytes);
+    assert.deepEqual(JSON.parse(early), catalogue);
+    const choice = initialPresentation(new URLSearchParams('view=matrix'), catalogue);
+    assert.deepEqual(initialPaths, [ref.path, choice.ref.path]);
+    assert.equal(initialFetches, 2, 'verified catalogue starts exactly its selected capsule');
+    assert.ok(host.__presentationInitial);
+    const loader = new PresentationLoader(
+      catalogue,
+      () => assert.fail('deferred application must adopt the early capsule without refetch'),
+      host,
+      'https://example.test/',
+    );
+    const loaded = await loader.load(choice);
+    assert.equal(loaded.kind, 'matrix');
+    assert.equal(loaded.snapshotId, catalogue.latestSnapshotId);
+    assert.equal(Object.hasOwn(host, '__presentationInitial'), false);
+    assert.equal(initialFetches, 2, 'capsule adoption must not add a request');
+    assert.strictEqual(await loader.load(choice), loaded, 'completed capsule remains cached');
+    assert.equal(initialFetches, 2);
+    await auditStaticPicks(production, first, catalogue);
     const reference = catalogue.snapshots[0].matrix;
     const response = await request(reference.path);
     assert.equal(response.statusCode, 200);
@@ -256,7 +297,7 @@ test('development serves canonical-derived capsules with catalogue parity, memoi
     await writeFile(indexPath, indexBytes);
     await writeFile(indexPath, Buffer.concat([indexBytes, Buffer.from('\n')]));
     watcher.emit('all', 'change', indexPath);
-    const second = presentationCatalogueFromHtml(await plugin.transformIndexHtml.handler(html));
+    const second = await readCatalogue(await plugin.transformIndexHtml.handler(html));
     assert.notEqual(second.sourceIndexSha256, catalogue.sourceIndexSha256);
     assert.equal(second.snapshots[0].matrix.path, reference.path);
     await writeFile(indexPath, '{}');
@@ -349,5 +390,110 @@ test('existing capsule bytes and hashes survive unrelated publication/latest/ind
     );
   } finally {
     await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+function externalCatalogue(catalogue) {
+  const bytes = Buffer.from(JSON.stringify(catalogue));
+  const sha256 = presentationDigest(bytes);
+  const path = `/assets/analytics-catalogue-${sha256}.json`;
+  const ref = { contractVersion: 1, path, sha256, sizeBytes: bytes.length };
+  return {
+    bytes,
+    ref,
+    html: `<script id="presentation-catalogue-ref" type="application/json">${JSON.stringify(ref)}</script>`,
+  };
+}
+
+test('catalogue reader validates external identity and rejects ambiguous, inert and malformed metadata', async () => {
+  const f = await fixture();
+  try {
+    const { html, ref, bytes } = externalCatalogue(f.catalogue);
+    const files = new Map([[ref.path.slice(1), bytes]]);
+    assert.deepEqual(presentationCatalogueFromHtml(await minifyHtml(html), files), f.catalogue);
+    const inline = `<script type="application/json" id="presentation-catalogue">${safePresentationJson(f.catalogue)}</script>`;
+    assert.deepEqual(presentationCatalogueFromHtml(inline), f.catalogue);
+    for (const malformed of [
+      html + html,
+      html + inline,
+      `<template>${html}</template>`,
+      html.replace('type=', 'type="application/json" type='),
+      html.replace('<script ', '<div '),
+      html.replace(' type=', ' src="/evil.js" type='),
+    ]) {
+      assert.throws(() => presentationCatalogueFromHtml(malformed, files));
+    }
+    assert.throws(() => presentationCatalogueFromHtml(html), /Missing external/);
+    assert.throws(
+      () =>
+        presentationCatalogueFromHtml(
+          html,
+          new Map([[ref.path.slice(1), Buffer.concat([bytes, Buffer.from(' ')])]]),
+        ),
+      /size drift/,
+    );
+    const corrupt = Buffer.from(bytes);
+    corrupt[0] = 32;
+    assert.throws(
+      () => presentationCatalogueFromHtml(html, new Map([[ref.path.slice(1), corrupt]])),
+      /digest drift/,
+    );
+    assert.throws(
+      () =>
+        presentationCatalogueFromHtml(
+          html.replace(ref.path, '/assets/analytics-catalogue-' + 'f'.repeat(64) + '.json'),
+          files,
+        ),
+      /Invalid catalogue reference/,
+    );
+    assert.throws(
+      () =>
+        presentationCatalogueFromHtml(
+          html.replace('"contractVersion":1', '"contractVersion":2'),
+          files,
+        ),
+      /Invalid catalogue reference/,
+    );
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test('static-home audit recomputes reviewed and unreviewed markup and rejects actual content/context corruption', async () => {
+  for (const latest of [false, true]) {
+    const f = await fixture(latest);
+    try {
+      const matrix = JSON.parse(f.files.get(f.catalogue.snapshots[0].matrix.path.slice(1)));
+      const context = `<script id="static-picks-context" type="application/json">${JSON.stringify(staticPicksContext(f.catalogue))}</script>`;
+      const markup = renderStaticPicks(f.catalogue, matrix);
+      if (latest) {
+        assert.match(markup, /pick-metrics/);
+      } else {
+        assert.match(markup, /Latest selection awaiting review/);
+      }
+      const html = `<html><head>${context}</head><body><div id="app">${markup}</div></body></html>`;
+      await auditStaticPicks(f.root, await minifyHtml(html), f.catalogue);
+      for (const changed of [
+        html.replace('BACKBLAZE DRIVE STATS', 'SOME OTHER CLAIM'),
+        html.replace('id="static-picks-context"', 'id="missing-context"'),
+        html.replace(context, context + context),
+        html.replace('"sourceIndexSha256":"', '"sourceIndexSha256":"f'),
+        html.replace('</body>', markup + '</body>'),
+        html.replace('</div></body>', '<p>Extra claim</p></div></body>'),
+        html.replace('https://www.backblaze.com/', 'https://example.invalid/'),
+        html.replace(markup, renderStaticPicks(f.catalogue, undefined)),
+      ]) {
+        assert.notEqual(changed, html, 'corruption probe must change the document');
+        await assert.rejects(auditStaticPicks(f.root, changed, f.catalogue));
+      }
+      if (latest) {
+        await assert.rejects(
+          auditStaticPicks(f.root, html.replace(/<dd>[^<]+<\/dd>/, '<dd>999999</dd>'), f.catalogue),
+          /markup differs/,
+        );
+      }
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
   }
 });

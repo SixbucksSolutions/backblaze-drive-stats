@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   lstat,
   mkdir,
@@ -402,4 +403,63 @@ await test('build manifest retention preserves exact bytes and refuses unexpecte
   await retainHostingManifest(root);
   assert.ok((await readFile(join(root, 'hosting-vite-manifest.json'))).equals(bytes));
   await assert.rejects(lstat(directory), { code: 'ENOENT' });
+});
+
+test('exact inventory qualifies the external catalogue from HTML and bytes without a late Vite record', () => {
+  const { publicFiles, distFiles, build } = release();
+  const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+  const capsule = {
+    path: '/assets/presentation-matrix-abcdefgh.json',
+    sha256: 'b'.repeat(64),
+    sizeBytes: 1,
+  };
+  const bytes = Buffer.from(
+    JSON.stringify({
+      contractVersion: 1,
+      sourceIndexSha256: 'a'.repeat(64),
+      latestSnapshotId: 'snapshot',
+      snapshots: [
+        {
+          snapshotId: 'snapshot',
+          asOfQuarter: '2026-Q2',
+          contextSha256: 'c'.repeat(64),
+          sourceManifestSha256: 'd'.repeat(64),
+          descriptor: {
+            path: `descriptor.${'e'.repeat(64)}.json`,
+            sha256: 'e'.repeat(64),
+            sizeBytes: 1,
+          },
+          matrix: capsule,
+          reports: [{ quarter: '2026-Q2', status: 'complete', ref: capsule }],
+        },
+      ],
+    }),
+  );
+  const path = `assets/analytics-catalogue-${hash(bytes)}.json`;
+  const ref = {
+    contractVersion: 1,
+    path: `/${path}`,
+    sha256: hash(bytes),
+    sizeBytes: bytes.length,
+  };
+  distFiles.set(path, bytes);
+  distFiles.set(
+    'index.html',
+    Buffer.from(
+      `${distFiles.get('index.html')}<script id="presentation-catalogue-ref" type="application/json">${JSON.stringify(ref)}</script>`,
+    ),
+  );
+  const manifest = auditHostingInventory(publicFiles, distFiles, build);
+  assert.equal(manifest.find((asset) => asset.path === path).sha256, hash(bytes));
+  const original = distFiles.get(path);
+  distFiles.set(path, Buffer.from('{}'));
+  assert.throws(() => auditHostingInventory(publicFiles, distFiles, build), /size drift/);
+  distFiles.set(path, original);
+  const extra = `assets/analytics-catalogue-${'f'.repeat(64)}.json`;
+  distFiles.set(extra, bytes);
+  build.extra = { file: extra };
+  assert.throws(
+    () => auditHostingInventory(publicFiles, distFiles, build),
+    /unadvertised analytical catalogue/,
+  );
 });

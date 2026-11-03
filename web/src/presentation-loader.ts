@@ -1,14 +1,65 @@
 import { parsePresentationCatalogue, parsePresentationCapsule } from './presentation-data.ts';
 import type { PresentationCatalogue, PresentationCapsule } from './presentation-data.ts';
-import { initialPresentation, presentationKey } from './presentation-bootstrap.ts';
-import type { InitialPresentation, PresentationHost } from './presentation-bootstrap.ts';
+import {
+  initialPresentation,
+  presentationKey,
+  parseAnalyticsCatalogueReference,
+} from './presentation-bootstrap.ts';
+import type {
+  InitialPresentation,
+  PresentationHost,
+  CatalogueHost,
+} from './presentation-bootstrap.ts';
 
-export function presentationCatalogue(): PresentationCatalogue {
-  const text = document.getElementById('presentation-catalogue')?.textContent;
-  if (!text) {
-    throw new Error('Presentation catalogue is unavailable.');
+export async function presentationCatalogue(signal?: AbortSignal): Promise<PresentationCatalogue> {
+  signal?.throwIfAborted();
+  const inline = document.querySelectorAll('#presentation-catalogue');
+  const external = document.querySelectorAll('#presentation-catalogue-ref');
+  if (inline.length + external.length !== 1) {
+    throw new Error('Presentation catalogue is unavailable or ambiguous.');
   }
-  return parsePresentationCatalogue(JSON.parse(text) as unknown);
+  if (inline.length === 1) {
+    return parsePresentationCatalogue(JSON.parse(inline[0]!.textContent ?? '') as unknown);
+  }
+  const ref = parseAnalyticsCatalogueReference(
+    JSON.parse(external[0]!.textContent ?? '') as unknown,
+  );
+  const host = window as CatalogueHost;
+  const slot = host.__analyticsCatalogueInitial;
+  delete host.__analyticsCatalogueInitial;
+  let bytes: ArrayBuffer;
+  if (slot && JSON.stringify(slot.ref) === JSON.stringify(ref) && !slot.controller.signal.aborted) {
+    const abort = () => slot.controller.abort();
+    signal?.addEventListener('abort', abort, { once: true });
+    try {
+      bytes = await slot.promise;
+    } finally {
+      signal?.removeEventListener('abort', abort);
+    }
+  } else {
+    slot?.controller.abort();
+    const response = await fetch(
+      new URL(ref.path, new URL(import.meta.env.BASE_URL, location.href)),
+      { signal: signal ?? null, credentials: 'omit', redirect: 'error' },
+    );
+    if (!response.ok) {
+      throw new Error('Catalogue request failed.');
+    }
+    bytes = await response.arrayBuffer();
+  }
+  signal?.throwIfAborted();
+  const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (value) =>
+    value.toString(16).padStart(2, '0'),
+  ).join('');
+  if (bytes.byteLength !== ref.sizeBytes || hash !== ref.sha256) {
+    throw new Error('Catalogue integrity mismatch.');
+  }
+  const catalogue = parsePresentationCatalogue(
+    JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as unknown,
+  );
+  signal?.throwIfAborted();
+  freeze(catalogue);
+  return catalogue;
 }
 function freeze(value: unknown): void {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -127,6 +178,9 @@ export class PresentationLoader {
 export function abortInitialPresentation(
   host: PresentationHost = window as PresentationHost,
 ): void {
+  const catalogueHost = host as CatalogueHost;
+  catalogueHost.__analyticsCatalogueInitial?.controller.abort();
+  delete catalogueHost.__analyticsCatalogueInitial;
   host.__presentationInitial?.controller.abort();
   delete host.__presentationInitial;
 }

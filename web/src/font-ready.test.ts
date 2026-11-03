@@ -1,3 +1,4 @@
+import { parseStaticPicksContext } from './static-picks-context.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -7,6 +8,7 @@ import { appRoute, viewUsesSpinner } from './app-route.ts';
 import type { FontMode } from './font-ready.ts';
 import {
   REQUIRED_FONTS,
+  UI_FONTS,
   waitForFonts,
   waitForPresentation,
   withStartupDeadline,
@@ -121,7 +123,8 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
       .replace("import('./snapshot-explorer.ts')", '__snapshotModule()')
       .replace("import('./owner-picks.ts')", '__picksModule()')
       .replaceAll('import.meta.env.BASE_URL', JSON.stringify('/'))
-      .replace('void start();', '') + '\nstart;';
+      .replace('export async function startAnalytics', 'async function startAnalytics') +
+    '\nstartAnalytics;';
   const fontChoice = deferred<FontMode>();
   const matrix = deferred<{ initMatrix: (signal: AbortSignal) => Promise<void> }>();
   const events: string[] = [];
@@ -179,8 +182,10 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
       callback();
     },
   };
-  const start = vm.runInNewContext(executable, context) as () => Promise<void>;
-  const rendering = start();
+  const start = vm.runInNewContext(executable, context) as (
+    controller: AbortController,
+  ) => Promise<void>;
+  const rendering = start(new AbortController());
   return {
     fontChoice,
     matrix,
@@ -227,7 +232,7 @@ await test('prepaint spinner policy matches routes and defaults off for every ot
 });
 
 await test('nonmatrix startup keeps font readiness without spinner paint waits or reveal frames', async () => {
-  for (const query of ['', '?view=picks', '?view=deployments', '?view=explore&example=1']) {
+  for (const query of ['?view=deployments', '?view=explore&example=1']) {
     const harness = await mainStartupHarness(query, new Promise<void>(() => {}));
     // Allow the route module and renderer to complete while the font choice is pending.
     for (let i = 0; i < 10; i++) {
@@ -352,4 +357,211 @@ await test('main retains reference route rendering without waiting for the font 
   await harness.rendering;
   assert.equal(harness.root.dataset.fontMode, 'fallback');
   assert.equal(harness.fontStarts(), 1);
+});
+
+await test('home requests only the UI face and retains permanent fallback', async () => {
+  const calls: string[] = [];
+  assert.equal(
+    await waitForFonts(
+      {
+        load: async (font) => {
+          calls.push(font);
+          return [{}];
+        },
+        ready: Promise.resolve(),
+      },
+      100,
+      UI_FONTS,
+    ),
+    'custom',
+  );
+  assert.deepEqual(calls, ['400 14px Inter']);
+  assert.equal(
+    await waitForFonts({ load: async () => [], ready: Promise.resolve() }, 100, UI_FONTS),
+    'fallback',
+  );
+});
+
+await test('home entry adopts delivered markup without fetching data or analytical modules', async () => {
+  const source = await readFile(new URL('./entry.ts', import.meta.url), 'utf8');
+  const executable = stripTypeScriptTypes(
+    source
+      .replace(/^import[\s\S]*?;\r?$/gm, '')
+      .replace("import('./main.ts')", '__analytics()')
+      .replace('void start();', 'start;'),
+  );
+  for (const invalid of [false, true]) {
+    let analytics = 0,
+      mounted = 0;
+    const root = { dataset: {} as Record<string, string>, classList: { remove: () => {} } };
+    const app = { innerHTML: 'delivered cards' };
+    const context = {
+      contractVersion: 1,
+      sourceIndexSha256: 'a'.repeat(64),
+      latestSnapshotId: 'latest',
+      asOfQuarter: '2026-Q2',
+    };
+    const run = vm.runInNewContext(executable, {
+      appRoute,
+      URLSearchParams,
+      URL,
+      parseStaticPicksContext,
+      UI_FONTS,
+      location: {
+        href: 'https://example.test/?view=picks&snapshot=stale&quarter=1999-Q1',
+        search: '?view=picks&snapshot=stale&quarter=1999-Q1',
+      },
+      history: {
+        replaceState: (_a: unknown, _b: unknown, url: URL) => {
+          assert.equal(url.searchParams.has('snapshot'), false);
+          assert.equal(url.searchParams.has('quarter'), false);
+        },
+      },
+      document: {
+        fonts: undefined,
+        documentElement: root,
+        querySelectorAll: () => (invalid ? [] : [{ textContent: JSON.stringify(context) }]),
+        querySelector: (id: string) => (id === '#app' ? app : {}),
+      },
+      waitForFonts: async () => 'fallback',
+      mountPublishedNavigation: () => {
+        mounted++;
+      },
+      updatePublishedNavigation: () => {},
+      fetch: () => assert.fail('home fetched data'),
+      __analytics: () => {
+        analytics++;
+      },
+    }) as () => Promise<void>;
+    await run();
+    assert.equal(analytics, 0);
+    assert.equal(mounted, invalid ? 0 : 1);
+    assert.equal(root.dataset.fontMode, 'fallback');
+    assert.equal(root.dataset.appReady, 'true');
+    if (invalid) {
+      assert.match(app.innerHTML, /unavailable/);
+    } else {
+      assert.equal(app.innerHTML, 'delivered cards');
+    }
+  }
+});
+
+async function analyticsEntryHarness(
+  analytics: () => Promise<{ startAnalytics: (controller: AbortController) => Promise<void> }>,
+) {
+  const source = await readFile(new URL('./entry.ts', import.meta.url), 'utf8');
+  const executable = stripTypeScriptTypes(source)
+    .replace(/^import[\s\S]*?;\r?$/gm, '')
+    .replace("import('./main.ts')", '__analytics()')
+    .replace('void start();', 'start;');
+  const app = { innerHTML: 'initial markup' };
+  const classes = new Set(['app-pending']);
+  const root = {
+    dataset: {} as Record<string, string>,
+    classList: { remove: (value: string) => classes.delete(value) },
+  };
+  const early = new AbortController();
+  const host = { __analyticsCatalogueInitial: { controller: early } };
+  const run = vm.runInNewContext(executable, {
+    appRoute,
+    URLSearchParams,
+    AbortController,
+    location: { search: '?view=matrix' },
+    document: { querySelector: () => app, documentElement: root },
+    window: host,
+    __analytics: analytics,
+    withStartupDeadline: (render: () => Promise<unknown>, controller: AbortController) =>
+      withStartupDeadline(render, controller, 5),
+  }) as () => Promise<void>;
+  return { run, app, root, classes, early };
+}
+
+async function inertMainModule(mount: () => object, extra: Record<string, unknown> = {}) {
+  const source = await readFile(new URL('./main.ts', import.meta.url), 'utf8');
+  const executable =
+    stripTypeScriptTypes(source)
+      .replace(/^import[\s\S]*?;\r?$/gm, '')
+      .replace('export async function startAnalytics', 'async function startAnalytics')
+      .replace("import('./matrix.ts')", '__matrixModule()')
+      .replaceAll('import.meta.env.BASE_URL', JSON.stringify('/')) + '\n({startAnalytics});';
+  return vm.runInNewContext(executable, {
+    URLSearchParams,
+    Intl,
+    location: { search: '?view=matrix' },
+    mountPublishedNavigation: mount,
+    ...extra,
+  }) as { startAnalytics: (controller: AbortController) => Promise<void> };
+}
+
+await test('analytics entry reveals a terminal fallback for rejected or stalled entry chunks', async () => {
+  for (const load of [
+    () => Promise.reject(new Error('chunk unavailable')),
+    () => new Promise<{ startAnalytics: (controller: AbortController) => Promise<void> }>(() => {}),
+  ]) {
+    const harness = await analyticsEntryHarness(load);
+    await harness.run();
+    assert.match(harness.app.innerHTML, /Unable to open the explorer/);
+    assert.equal(harness.root.dataset.fontMode, 'fallback');
+    assert.equal(harness.root.dataset.appReady, 'true');
+    assert.equal(harness.classes.has('app-pending'), false);
+    assert.equal(harness.early.signal.aborted, true);
+  }
+});
+
+await test('late main evaluation and aborted initialization cannot replace the entry deadline error', async () => {
+  const imported = deferred<{ startAnalytics: (controller: AbortController) => Promise<void> }>();
+  const harness = await analyticsEntryHarness(() => imported.promise);
+  await harness.run();
+  const terminal = harness.app.innerHTML;
+  let mounts = 0;
+  const module = await inertMainModule(() => {
+    mounts++;
+    harness.app.innerHTML = 'late mount';
+    return harness.app;
+  });
+  assert.equal(mounts, 0, 'module evaluation must not mount navigation');
+  imported.resolve(module);
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(mounts, 0, 'late import must not initialize');
+  const aborted = new AbortController();
+  aborted.abort();
+  await assert.rejects(module.startAnalytics(aborted), { name: 'AbortError' });
+  assert.equal(mounts, 0, 'initializer must check the signal before touching DOM');
+  assert.equal(harness.app.innerHTML, terminal);
+  assert.equal(harness.root.dataset.fontMode, 'fallback');
+});
+
+await test('an initialized analytics view cannot apply late fonts or render after entry timeout', async () => {
+  const fonts = deferred<FontMode>();
+  let renders = 0;
+  const imported = deferred<{ startAnalytics: (controller: AbortController) => Promise<void> }>();
+  const harness = await analyticsEntryHarness(() => imported.promise);
+  const module = await inertMainModule(() => harness.app, {
+    document: { fonts: {}, documentElement: harness.root, visibilityState: 'visible' },
+    waitForFonts: () => fonts.promise,
+    waitForPresentation,
+    abortInitialPresentation: () => {},
+    viewUsesSpinner,
+    appRoute,
+    yieldToStartupPaint: () => Promise.resolve(),
+    __matrixModule: async () => ({
+      initMatrix: async () => {
+        renders++;
+        harness.app.innerHTML = 'late matrix';
+      },
+    }),
+  });
+  imported.resolve(module);
+  await harness.run();
+  const terminal = harness.app.innerHTML;
+  fonts.resolve('custom');
+  for (let i = 0; i < 10; i++) {
+    await Promise.resolve();
+  }
+  assert.equal(renders, 0);
+  assert.equal(harness.app.innerHTML, terminal);
+  assert.equal(harness.root.dataset.fontMode, 'fallback');
+  assert.equal(harness.root.dataset.appReady, 'true');
 });

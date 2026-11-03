@@ -7,9 +7,14 @@ import {
   initialPresentation,
   presentationBootstrapSource,
   presentationKey,
+  parseAnalyticsCatalogueReference,
 } from './presentation-bootstrap.ts';
-import type { InitialRequest, PresentationHost } from './presentation-bootstrap.ts';
-import { PresentationLoader, abortInitialPresentation } from './presentation-loader.ts';
+import type { InitialRequest, PresentationHost, CatalogueHost } from './presentation-bootstrap.ts';
+import {
+  PresentationLoader,
+  abortInitialPresentation,
+  presentationCatalogue,
+} from './presentation-loader.ts';
 import type { PresentationCatalogue, MatrixCapsule } from './presentation-data.ts';
 
 const hash = 'a'.repeat(64);
@@ -75,14 +80,21 @@ async function fixture(value: unknown = capsule) {
     latestSnapshotId: 'latest',
     snapshots: [snapshot, { ...snapshot, snapshotId: 'old', asOfQuarter: '2013-Q2' }],
   };
-  return { bytes, ref, catalogue, choice: initialPresentation(new URLSearchParams(), catalogue)! };
+  return {
+    bytes,
+    ref,
+    catalogue,
+    choice: initialPresentation(new URLSearchParams('view=matrix'), catalogue)!,
+  };
 }
 await test('initial routes preserve precedence, exceptions, unknown ID policy and quarter fallback', async () => {
   const { catalogue } = await fixture();
-  for (const query of ['', 'view=matrix', 'view=matrix&legacy=1']) {
+  for (const query of ['view=matrix', 'view=matrix&legacy=1']) {
     assert.equal(initialPresentation(new URLSearchParams(query), catalogue)?.kind, 'matrix');
   }
   for (const query of [
+    '',
+    'view=picks',
     'view=matrix&reference=1',
     'view=explore&example=1',
     'view=reliability',
@@ -222,14 +234,20 @@ await test('size and mixed context bindings reject before caching', async () => 
   await assert.rejects(mixed.load(bad.choice), /binding mismatch/);
   assert.ok(bytes.byteLength > 1);
 });
-await test('classic bootstrap starts exact route request synchronously and handles early rejection', async () => {
-  const { catalogue, ref } = await fixture();
+await test('classic bootstrap starts catalogue request synchronously and handles early rejection', async () => {
+  const { catalogue } = await fixture();
+  const ref = {
+    contractVersion: 1,
+    path: `/assets/analytics-catalogue-${hash}.json`,
+    sha256: hash,
+    sizeBytes: 100,
+  };
   let count = 0;
   let requested = '';
-  const host: PresentationHost = {};
+  const host: CatalogueHost = {};
   vm.runInNewContext(presentationBootstrapSource(catalogue, '/'), {
     window: host,
-    document: { getElementById: () => ({ textContent: JSON.stringify(catalogue) }) },
+    document: { getElementById: () => ({ textContent: JSON.stringify(ref) }) },
     location: {
       href: 'https://example.test/?view=capacity&quarter=2026-Q1',
       search: '?view=capacity&quarter=2026-Q1',
@@ -245,8 +263,8 @@ await test('classic bootstrap starts exact route request synchronously and handl
   });
   assert.equal(count, 1);
   assert.equal(requested, `https://example.test${ref.path}`);
-  assert.equal(host.__presentationInitial?.key, JSON.stringify(['report', 'latest', '2026-Q1']));
-  await assert.rejects(host.__presentationInitial.promise, /offline/);
+  assert.deepEqual(JSON.parse(JSON.stringify(host.__analyticsCatalogueInitial?.ref)), ref);
+  await assert.rejects(host.__analyticsCatalogueInitial!.promise, /offline/);
 });
 
 await test('adopted cancellation aborts only early request; another consumer and retry remain independent', async () => {
@@ -453,5 +471,176 @@ await test('default fetch captures the global function without changing its requ
     assert.equal(requests, 1);
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+await test('external catalogue adoption validates bytes and rejects ambiguous or corrupt metadata', async () => {
+  const { catalogue } = await fixture();
+  const bytes = new TextEncoder().encode(JSON.stringify(catalogue)).buffer;
+  const sha256 = Buffer.from(await crypto.subtle.digest('SHA-256', bytes)).toString('hex');
+  const ref = {
+    contractVersion: 1 as const,
+    path: `/assets/analytics-catalogue-${sha256}.json`,
+    sha256,
+    sizeBytes: bytes.byteLength,
+  };
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  try {
+    for (const corrupt of [false, true]) {
+      const host: CatalogueHost = {
+        __analyticsCatalogueInitial: {
+          ref,
+          controller: new AbortController(),
+          promise: Promise.resolve(corrupt ? new ArrayBuffer(1) : bytes),
+        },
+      };
+      Object.defineProperty(globalThis, 'window', { configurable: true, value: host });
+      Object.defineProperty(globalThis, 'document', {
+        configurable: true,
+        value: {
+          querySelectorAll: (id: string) =>
+            id === '#presentation-catalogue-ref' ? [{ textContent: JSON.stringify(ref) }] : [],
+        },
+      });
+      if (corrupt) {
+        await assert.rejects(presentationCatalogue(), /integrity mismatch/);
+      } else {
+        const result = await presentationCatalogue();
+        assert.deepEqual(result, catalogue);
+        assert.ok(Object.isFrozen(result));
+      }
+      assert.equal(host.__analyticsCatalogueInitial, undefined);
+    }
+    Object.defineProperty(globalThis, 'document', {
+      configurable: true,
+      value: { querySelectorAll: () => [{ textContent: JSON.stringify(ref) }] },
+    });
+    await assert.rejects(presentationCatalogue(), /ambiguous/);
+    for (const bad of [
+      { ...ref, path: '/outside.json' },
+      { ...ref, sizeBytes: 0 },
+      { ...ref, extra: 1 },
+      { ...ref, sha256: 'b'.repeat(64) },
+    ]) {
+      assert.throws(() => parseAnalyticsCatalogueReference(bad));
+    }
+  } finally {
+    if (previousDocument) {
+      Object.defineProperty(globalThis, 'document', previousDocument);
+    } else {
+      Reflect.deleteProperty(globalThis, 'document');
+    }
+    if (previousWindow) {
+      Object.defineProperty(globalThis, 'window', previousWindow);
+    } else {
+      Reflect.deleteProperty(globalThis, 'window');
+    }
+  }
+});
+
+await test('verified catalogue starts exact early capsule before adoption without duplicate fetch', async () => {
+  const { catalogue, bytes, choice } = await fixture();
+  const catalogueBytes = new TextEncoder().encode(JSON.stringify(catalogue)).buffer;
+  const digest = Buffer.from(await crypto.subtle.digest('SHA-256', catalogueBytes)).toString('hex');
+  const ref = {
+    contractVersion: 1,
+    path: `/assets/analytics-catalogue-${digest}.json`,
+    sha256: digest,
+    sizeBytes: catalogueBytes.byteLength,
+  };
+  const host: CatalogueHost & PresentationHost = {};
+  const urls: string[] = [];
+  vm.runInNewContext(presentationBootstrapSource(catalogue, '/'), {
+    window: host,
+    document: { getElementById: () => ({ textContent: JSON.stringify(ref) }) },
+    location: { search: '?view=matrix', href: 'https://example.test/?view=matrix' },
+    URLSearchParams,
+    URL,
+    AbortController,
+    TextDecoder,
+    Uint8Array,
+    crypto,
+    fetch: async (url: URL) => {
+      urls.push(url.pathname);
+      return new Response(url.pathname === ref.path ? catalogueBytes : bytes);
+    },
+  });
+  assert.equal(
+    urls.length,
+    1,
+    'catalogue is first; capsule cannot start before integrity verification',
+  );
+  assert.equal(Object.hasOwn(host, '__presentationInitial'), false);
+  assert.deepEqual(
+    Buffer.from(await host.__analyticsCatalogueInitial!.promise),
+    Buffer.from(catalogueBytes),
+  );
+  assert.deepEqual(urls, [ref.path, choice.ref.path]);
+  assert.equal(host.__presentationInitial?.key, presentationKey(choice));
+  const reader = new PresentationLoader(
+    catalogue,
+    () => assert.fail('duplicate capsule request'),
+    host,
+    'https://example.test/',
+  );
+  assert.equal((await reader.load(choice)).kind, 'matrix');
+  assert.equal(urls.length, 2);
+});
+
+await test('early capsule fetch rejects corrupt catalogue bytes and preserves abort propagation', async () => {
+  const { catalogue, bytes } = await fixture();
+  const catalogueBytes = new TextEncoder().encode(JSON.stringify(catalogue)).buffer;
+  const digest = Buffer.from(await crypto.subtle.digest('SHA-256', catalogueBytes)).toString('hex');
+  const ref = {
+    contractVersion: 1,
+    path: `/assets/analytics-catalogue-${digest}.json`,
+    sha256: digest,
+    sizeBytes: catalogueBytes.byteLength,
+  };
+  for (const failure of ['size', 'hash', 'none']) {
+    const host: CatalogueHost & PresentationHost = {};
+    let calls = 0;
+    let payloadSignal: AbortSignal | undefined;
+    vm.runInNewContext(presentationBootstrapSource(catalogue, '/'), {
+      window: host,
+      document: { getElementById: () => ({ textContent: JSON.stringify(ref) }) },
+      location: { search: '?view=matrix', href: 'https://example.test/?view=matrix' },
+      URLSearchParams,
+      URL,
+      AbortController,
+      TextDecoder,
+      Uint8Array,
+      crypto,
+      fetch: async (_url: URL, init: RequestInit) => {
+        calls++;
+        if (calls === 1) {
+          return new Response(
+            failure === 'size'
+              ? new ArrayBuffer(1)
+              : failure === 'hash'
+                ? new Uint8Array(catalogueBytes.byteLength)
+                : catalogueBytes,
+          );
+        }
+        payloadSignal = init.signal ?? undefined;
+        return new Response(bytes);
+      },
+    });
+    if (failure !== 'none') {
+      await assert.rejects(
+        host.__analyticsCatalogueInitial!.promise,
+        /Catalogue (size|hash) mismatch/,
+      );
+      assert.equal(calls, 1);
+      assert.equal(host.__presentationInitial, undefined);
+    } else {
+      await host.__analyticsCatalogueInitial!.promise;
+      assert.equal(calls, 2);
+      abortInitialPresentation(host);
+      assert.equal(payloadSignal?.aborted, true);
+      assert.equal(host.__presentationInitial, undefined);
+      assert.equal(host.__analyticsCatalogueInitial, undefined);
+    }
   }
 });

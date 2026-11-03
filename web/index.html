@@ -5,6 +5,10 @@
     <script id="startup-policy">
       // Match viewUsesSpinner in app-route.ts before the first possible paint.
       // New and unknown views default to no spinner.
+      const startupView = new URLSearchParams(location.search).get('view');
+      if (startupView !== null && startupView !== 'picks') {
+        document.documentElement.classList.add('analytics-route');
+      }
       if (new URLSearchParams(location.search).get('view') === 'matrix') {
         document.documentElement.classList.add('matrix-startup');
       }
@@ -23,21 +27,10 @@
       type="font/woff2"
       crossorigin
     />
-    <link
-      rel="preload"
-      href="%BASE_URL%fonts/JetBrainsMono-Regular-2.304.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="%BASE_URL%fonts/JetBrainsMono-SemiBold-2.304.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
     <link rel="stylesheet" href="/src/fonts.css" />
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/published-navigation.css" />
+    <link rel="stylesheet" href="/src/owner-picks.css" />
     <style>
       html {
         background: #f5f6f2;
@@ -53,6 +46,9 @@
         transition:
           opacity 200ms ease-out 150ms,
           visibility 0s linear 150ms;
+      }
+      .analytics-route #static-picks-root {
+        display: none;
       }
       .app-pending #app {
         visibility: hidden;
@@ -134,6 +130,6 @@
       </style>
       <p>This data explorer needs JavaScript to load its reports.</p></noscript
     >
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/entry.ts"></script>
   </body>
 </html>

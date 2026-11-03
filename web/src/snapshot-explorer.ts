@@ -112,7 +112,9 @@ export async function initSnapshotExplorer(startupSignal?: AbortSignal) {
   const example = params.get('example') === '1';
   const loader = example ? await exampleTransport() : undefined;
   startupSignal?.throwIfAborted();
-  const presentation = example ? undefined : new PresentationLoader(presentationCatalogue());
+  const presentation = example
+    ? undefined
+    : new PresentationLoader(await presentationCatalogue(startupSignal));
   let index:
     | (Pick<ProductionIndex, 'latestSnapshotId'> & {
         snapshots: { snapshotId: string; asOfQuarter: string }[];

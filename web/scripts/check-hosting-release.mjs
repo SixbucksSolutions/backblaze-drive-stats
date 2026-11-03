@@ -10,7 +10,9 @@ import { expectedPublicBytes } from './minimize-public-json.mjs';
 import { activeReleaseSelection } from './active-release-selection.ts';
 import {
   auditPresentationAssets,
+  auditStaticPicks,
   presentationCatalogueFromHtml,
+  presentationCatalogueReferenceFromHtml,
 } from './presentation-capsules.mjs';
 
 export const immutable = 'public, max-age=31536000, immutable';
@@ -176,6 +178,18 @@ export function auditHostingInventory(publicFiles, distFiles, buildManifest) {
     'Vite manifest entry is missing',
   );
   const html = distFiles.get('index.html').toString('utf8');
+  // Vite's manifest is finalized before this late HTML-bound catalogue asset.
+  // Qualify it from its actual metadata and bytes, never merely its filename.
+  const catalogueRef = presentationCatalogueReferenceFromHtml(html, false);
+  if (catalogueRef) {
+    presentationCatalogueFromHtml(html, distFiles);
+    outputs.add(catalogueRef.path.slice(1));
+  }
+  assert.deepEqual(
+    [...distFiles.keys()].filter((path) => path.startsWith('assets/analytics-catalogue-')).sort(),
+    catalogueRef ? [catalogueRef.path.slice(1)] : [],
+    'Extra or unadvertised analytical catalogue',
+  );
   const assets = [...html.matchAll(/(?:src|href)="\/(assets\/[^"?#]+)"/g)].map((match) => match[1]);
   assert.ok(
     assets.some((path) => path.endsWith('.js')),
@@ -242,8 +256,16 @@ export async function checkHostingRelease(webRoot, distDirectory = resolve(webRo
   );
   await checkProductionData(resolve(distDirectory, 'data/production'), activeReleaseSelection);
   const servedFiles = await hostingFiles(distDirectory);
-  const catalogue = presentationCatalogueFromHtml(servedFiles.get('index.html').toString('utf8'));
+  const catalogue = presentationCatalogueFromHtml(
+    servedFiles.get('index.html').toString('utf8'),
+    servedFiles,
+  );
   await auditPresentationAssets(resolve(webRoot, 'public/data/production'), servedFiles, catalogue);
+  await auditStaticPicks(
+    resolve(webRoot, 'public/data/production'),
+    servedFiles.get('index.html').toString('utf8'),
+    catalogue,
+  );
   return { formatVersion: 1, assets: manifest };
 }
 

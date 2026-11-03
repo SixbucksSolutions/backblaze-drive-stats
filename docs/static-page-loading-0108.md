@@ -10,17 +10,37 @@ quarters), and capacity history. An independent packaging audit reconstructs
 projections from canonical readers and checks structures, deterministic bytes,
 references and reachability.
 
-The build embeds a catalogue and a small classic script near the end of the HTML
-head, after resource links and deferred module tags but before application module
-execution. The script resolves the URL selection and starts the exact capsule
-request immediately. The application adopts that request when its
-selection and reference match; otherwise it aborts the stale request. Later
-snapshot or quarter selections resolve through the catalogue. The matrix, Explore
-and the five specialized reports (deployments, distribution, capacity,
-manufacturers and datacenters) use this path without a runtime
-waterfall through the canonical index, descriptor and quarter graph. Example and
-explicit legacy routes retain their existing implementations. The matrix
-`reference=1` route uses workbook and synthetic fixtures.
+## Current home and analytical loading contract (#0134)
+
+Root and `?view=picks` deliver the complete latest recommendation markup, including
+navigation, facts, coverage and links. The build uses the validated latest matrix
+capsule and the existing exact-generation editorial and eligibility rules. A newer
+unreviewed generation shows awaiting review; it never substitutes old endorsements.
+An independent release audit reconstructs the latest capsule through canonical
+public readers and compares the actual HTML tree and its small generation context.
+
+Home does not request the matrix capsule or analytical catalogue and does not rerun
+selection in the browser. It keeps Inter and stable-font/fallback handling, with no
+Mono preload or readiness request. Minimal navigation/font JavaScript still runs.
+The shared static Pages index serves every query route; an early route gate hides
+home markup before first paint on non-home routes. No Worker is required.
+
+The build emits the analytical catalogue at
+`/assets/analytics-catalogue-<sha256>.json`. A small versioned JSON reference in HTML
+binds its path, SHA-256 and byte length. Analytical routes start that request early,
+verify the bytes and catalogue shape, then select the exact capsule. Later snapshot
+or quarter selections resolve through the verified catalogue. Matrix, Explore and
+the five specialized reports use this path without a runtime waterfall through the
+canonical index, descriptor and quarter graph. Example and explicit legacy routes
+retain their separate implementations; `reference=1` uses workbook and synthetic
+fixtures. Those routes do not fetch the analytical catalogue.
+
+The packaging reader accepts both the historical inline catalogue and the new
+external representation, rejects duplicate or ambiguous metadata, and verifies
+external bytes before parsing. Exact inventory and separately pinned retention
+checks keep all qualified predecessor immutable URLs and bytes, including old
+capsules and external catalogues. The catalogue lives outside the
+`assets/presentation-*` capsule namespace.
 
 The catalogue records the canonical index SHA-256 as an audit and generation
 identity. It is not embedded in capsule bodies: publishing or reordering other
@@ -38,7 +58,7 @@ prevent cancelled work from entering the cache, and stale selection completions
 are suppressed by the shell. Errors remain visible and retryable; examples are
 never silently substituted for production data.
 
-## Measured outcome
+## Historical #0108 measured outcome
 
 The 2026-11-01 comparison used the exact deployed #0104 bundle (`5377bd02`) and
 the #0108 candidate, extension-free Chrome 156 and Lighthouse 13.6. Both bundles
@@ -75,7 +95,8 @@ claim of a universal matrix render speedup. The retained private #0108 packet
 contains the full traces, earlier trials, targets, browser checks and independent
 reviews.
 
-Keep the static transport improvement without adding snapshot-specific HTML,
-SSR or a Worker for an uncertain rendering gain. The large matrix's rendering
+These measurements predate the #0134 static home and external catalogue. They do
+not establish current home latency or unchanged analytical startup. Measure bytes,
+request counts and visible readiness separately for the new request graph. The large matrix's rendering
 cost remains visible in these measurements. CDN/browser cache-policy changes
 belong to the separate #0109 card; this change preserves the existing headers.

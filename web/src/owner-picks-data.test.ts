@@ -1,3 +1,4 @@
+import { renderStaticPicks, staticPicksContext, parseStaticPicksContext } from './static-picks.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { MatrixModel, MatrixSnapshot } from './matrix-data.ts';
@@ -100,23 +101,18 @@ await test('editorial route is the home page while the six data views remain exp
   assert.equal(publishedViews.length, 6);
   assert.equal(appRoute(new URLSearchParams('view=matrix')), 'matrix');
 });
-await test('picks always bootstrap latest matrix, ignoring all stale and example controls', () => {
+await test('static picks never select browser evidence, ignoring stale and example controls', () => {
   const query = new URLSearchParams(
     'view=picks&snapshot=unknown&quarter=2099-Q4&example=1&reference=1',
   );
-  assert.equal(initialPresentation(query, catalogue)?.snapshotId, reviewedSnapshotId);
-  assert.equal(initialPresentation(query, catalogue)?.kind, 'matrix');
-  assert.equal(initialPresentation(query, catalogue)?.quarter, null);
-  assert.equal(
-    initialPresentation(new URLSearchParams(), catalogue)?.snapshotId,
-    reviewedSnapshotId,
-  );
+  assert.equal(initialPresentation(query, catalogue), null);
+  assert.equal(initialPresentation(new URLSearchParams(), catalogue), null);
   assert.equal(
     initialPresentation(new URLSearchParams('view=matrix&snapshot=unknown'), catalogue),
     null,
   );
 });
-await test('classic inline bootstrap uses same latest-only rule', () => {
+await test('classic inline bootstrap does not fetch for static home', () => {
   let requested = '';
   const host: Record<string, unknown> = {};
   vm.runInNewContext(presentationBootstrapSource(catalogue, '/'), {
@@ -131,8 +127,9 @@ await test('classic inline bootstrap uses same latest-only rule', () => {
       return Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(1)) });
     },
   });
-  assert.equal(requested, 'https://example.com/assets/latest.json');
-  assert.ok(host.__presentationInitial);
+  assert.equal(requested, '');
+  assert.equal(host.__presentationInitial, undefined);
+  assert.equal(host.__analyticsCatalogueInitial, undefined);
 });
 await test('anchor maturity differs from full first-observed history and does not compress gaps', () => {
   const evidence = pickEvidence(model, snapshot, '2026-Q2');
@@ -208,4 +205,39 @@ await test('future and missing evidence never render recommendations or stale su
   const unavailable = renderPicks({ ...capsule, body: { ...snapshot, models: [missingRate] } });
   assert.match(unavailable, /Not currently included/);
   assert.doesNotMatch(unavailable, /pick-metrics|Search PCPartPicker/);
+});
+
+await test('static home renderer preserves reviewed facts and rejects another generation', () => {
+  const html = renderStaticPicks(catalogue, capsule);
+  assert.match(html, /id="static-picks-root"/);
+  assert.match(html, /20,000/);
+  assert.match(html, /Search PCPartPicker/);
+  assert.match(html, /href="\?view=matrix&amp;snapshot=/);
+  assert.throws(
+    () => renderStaticPicks(catalogue, { ...capsule, snapshotId: 'older' }),
+    /binding mismatch/,
+  );
+  assert.doesNotMatch(renderStaticPicks(catalogue, undefined), /Search PCPartPicker/);
+  const newer = {
+    ...catalogue,
+    latestSnapshotId: 'newer',
+    snapshots: [{ ...catalogue.snapshots[0]!, snapshotId: 'newer' }],
+  };
+  const pending = renderStaticPicks(newer, { ...capsule, snapshotId: 'newer' });
+  assert.match(pending, /awaiting review/);
+  assert.doesNotMatch(pending, /Search PCPartPicker/);
+  assert.deepEqual(
+    parseStaticPicksContext(staticPicksContext(catalogue)),
+    staticPicksContext(catalogue),
+  );
+  for (const bad of [
+    null,
+    {},
+    { ...staticPicksContext(catalogue), contractVersion: 2 },
+    { ...staticPicksContext(catalogue), extra: 1 },
+    { ...staticPicksContext(catalogue), sourceIndexSha256: 'bad' },
+    { ...staticPicksContext(catalogue), asOfQuarter: '2026-Q5' },
+  ]) {
+    assert.throws(() => parseStaticPicksContext(bad));
+  }
 });

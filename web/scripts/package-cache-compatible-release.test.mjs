@@ -19,8 +19,44 @@ const reportBytes = '{"report":1}';
 const reportPath = 'assets/presentation-2013-Q2-2013-Q1-report-RO0OW2MM.json';
 const generationBytes = '{"descriptor":1}';
 const generationPath = `data/production/2026-Q2-v2-${'a'.repeat(24)}/descriptor.${hash(generationBytes)}.json`;
+const newCapsulePath = 'assets/presentation-2013-Q2-matrix-NewCaps8.json';
+const newReportPath = 'assets/presentation-2013-Q2-2013-Q1-report-NewRepo8.json';
+const testCatalogue = (old) => ({
+  contractVersion: 1,
+  sourceIndexSha256: 'a'.repeat(64),
+  latestSnapshotId: 'snapshot',
+  snapshots: [
+    {
+      snapshotId: 'snapshot',
+      asOfQuarter: '2013-Q2',
+      contextSha256: 'b'.repeat(64),
+      sourceManifestSha256: 'c'.repeat(64),
+      descriptor: {
+        path: `2013-Q2-v2-test/descriptor.${'d'.repeat(64)}.json`,
+        sha256: 'd'.repeat(64),
+        sizeBytes: 1,
+      },
+      matrix: {
+        path: `/${old ? capsulePath : newCapsulePath}`,
+        sizeBytes: Buffer.byteLength(capsuleBytes),
+        sha256: hash(capsuleBytes),
+      },
+      reports: [
+        {
+          quarter: '2013-Q1',
+          status: 'complete',
+          ref: {
+            path: `/${old ? reportPath : newReportPath}`,
+            sizeBytes: Buffer.byteLength(reportBytes),
+            sha256: hash(reportBytes),
+          },
+        },
+      ],
+    },
+  ],
+});
 const html = (script, old) =>
-  `<script src="/${script}"></script>${old ? `<link href="/${css}">` : ''}<script id="presentation-catalogue" type="application/json">${JSON.stringify({ snapshots: old ? [{ asOfQuarter: '2013-Q2', matrix: { path: `/${capsulePath}`, sizeBytes: Buffer.byteLength(capsuleBytes), sha256: hash(capsuleBytes) }, reports: [{ quarter: '2013-Q1', ref: { path: `/${reportPath}`, sizeBytes: Buffer.byteLength(reportBytes), sha256: hash(reportBytes) } }] }] : [] })}</script>`;
+  `<script src="/${script}"></script>${old ? `<link href="/${css}">` : ''}<script id="presentation-catalogue" type="application/json">${JSON.stringify(testCatalogue(old))}</script>`;
 
 async function fixture(context) {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'cache-package-')));
@@ -50,6 +86,8 @@ async function fixture(context) {
     ['index.html', html(newChunk, false)],
     ['data/production/index.json', '{"new":1}'],
     [newChunk, 'export const current = 1;'],
+    [newCapsulePath, capsuleBytes],
+    [newReportPath, reportBytes],
   ]);
   async function save(directory, path, files) {
     await mkdir(directory);
@@ -421,4 +459,58 @@ test('refuses outputs nested in source and source symlinks without overwriting e
     throw error;
   }
   await assert.rejects(packageCacheCompatibleRelease(options), /links|reparse/);
+});
+
+test('external predecessor catalogue bytes are authenticated and retained with their capsules', async (context) => {
+  const { options, mutate } = await fixture(context);
+  const bytes = JSON.stringify(testCatalogue(true));
+  const path = `assets/analytics-catalogue-${hash(bytes)}.json`;
+  const ref = {
+    contractVersion: 1,
+    path: `/${path}`,
+    sizeBytes: Buffer.byteLength(bytes),
+    sha256: hash(bytes),
+  };
+  const externalHtml = `<script id="presentation-catalogue-ref" type="application/json">${JSON.stringify(ref)}</script>`;
+  await writeFile(join(options.previousDirectory, path), bytes);
+  await writeFile(join(options.previousDirectory, 'index.html'), externalHtml);
+  await mutate('previous', (manifest) => {
+    const index = manifest.assets.find((asset) => asset.path === 'index.html');
+    index.sizeBytes = Buffer.byteLength(externalHtml);
+    index.sha256 = hash(externalHtml);
+    manifest.assets.push({
+      path,
+      sizeBytes: Buffer.byteLength(bytes),
+      sha256: hash(bytes),
+      cacheControl: immutable,
+      served: true,
+    });
+  });
+  const result = await packageCacheCompatibleRelease(options);
+  assert.equal(result.retainedAssets, 8);
+  assert.equal(await readFile(join(result.uploadDirectory, path), 'utf8'), bytes);
+  assert.equal(await readFile(join(result.uploadDirectory, capsulePath), 'utf8'), capsuleBytes);
+});
+
+test('Vite catalogue-shaped outputs still require exact predecessor metadata membership', async (context) => {
+  const { options, mutate } = await fixture(context);
+  const bytes = JSON.stringify(testCatalogue(true));
+  const path = `assets/analytics-catalogue-${hash(bytes)}.json`;
+  await writeFile(join(options.previousDirectory, path), bytes);
+  await mutate('previous', (manifest) => {
+    manifest.assets.push({
+      path,
+      sizeBytes: Buffer.byteLength(bytes),
+      sha256: hash(bytes),
+      cacheControl: immutable,
+      served: true,
+    });
+  });
+  const vite = JSON.parse(await readFile(options.previousViteManifestPath, 'utf8'));
+  vite.catalogue = { file: path };
+  await writeFile(options.previousViteManifestPath, JSON.stringify(vite));
+  options.expectedPreviousViteManifestSha256 = hash(
+    await readFile(options.previousViteManifestPath),
+  );
+  await assert.rejects(packageCacheCompatibleRelease(options), /Unqualified prior immutable class/);
 });

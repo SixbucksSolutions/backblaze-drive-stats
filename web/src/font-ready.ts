@@ -55,6 +55,8 @@ export function yieldToStartupPaint(
   });
 }
 
+export const UI_FONTS = ['400 14px Inter'] as const;
+
 export const REQUIRED_FONTS = [
   '400 14px Inter',
   '400 13px "JetBrains Mono"',
@@ -65,6 +67,7 @@ export const REQUIRED_FONTS = [
 export async function waitForFonts(
   fonts: FontSet | undefined,
   timeoutMs = 5000,
+  requiredFonts: readonly string[] = REQUIRED_FONTS,
 ): Promise<FontMode> {
   if (!fonts) {
     return 'fallback';
@@ -73,7 +76,7 @@ export async function waitForFonts(
   const loaded = Promise.resolve()
     .then(async (): Promise<FontMode> => {
       const faces = await Promise.all(
-        REQUIRED_FONTS.map((font) => fonts.load(font, '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ')),
+        requiredFonts.map((font) => fonts.load(font, '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ')),
       );
       if (faces.some((list) => list.length === 0)) {
         return 'fallback';

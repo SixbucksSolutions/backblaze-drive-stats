@@ -3,6 +3,14 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parse, parseFragment, serializeOuter } from 'parse5';
+import { minifyHtml } from './minimize-static-assets.mjs';
+import {
+  renderStaticPicks,
+  staticPicksContext,
+  parseStaticPicksContext,
+} from '../src/static-picks.ts';
+import { parseAnalyticsCatalogueReference } from '../src/presentation-bootstrap.ts';
 import { SnapshotLoader } from '../src/snapshot-loader.ts';
 import { CapacityHistoryReader } from '../src/capacity-report.ts';
 import { adaptProductionV2 } from '../src/matrix-production.ts';
@@ -191,12 +199,158 @@ export async function auditPresentationAssets(productionRoot, files, catalogue) 
   return { snapshots, reports, assets: paths.size, bytes };
 }
 
-export function presentationCatalogueFromHtml(html) {
-  const matches = [
-    ...html.matchAll(
-      /<script\s+id="presentation-catalogue"\s+type="application\/json">([^<]*)<\/script>/g,
+// Parse the actual browser tree, including template contents, so duplicate IDs,
+// malformed attributes and inert metadata cannot masquerade as build-owned data.
+function documentNodes(html) {
+  const errors = [];
+  const document = parse(html, { onParseError: (error) => errors.push(error.code) });
+  assert.deepEqual(
+    errors.filter((code) => code !== 'missing-doctype'),
+    [],
+    'Malformed release HTML',
+  );
+  const nodes = [];
+  const visit = (node, inert = false) => {
+    nodes.push({ node, inert });
+    for (const child of node.childNodes ?? []) {
+      visit(child, inert);
+    }
+    if (node.content) {
+      visit(node.content, true);
+    }
+  };
+  visit(document);
+  return nodes;
+}
+const attribute = (node, name) => node.attrs?.find((item) => item.name === name)?.value;
+function uniqueNode(nodes, id, required = true) {
+  const matches = nodes.filter(({ node }) => attribute(node, 'id') === id);
+  assert.ok(
+    matches.length <= 1 && (!required || matches.length === 1),
+    `Exactly one ${id} is required`,
+  );
+  if (!matches.length) {
+    return undefined;
+  }
+  const { node, inert } = matches[0];
+  assert.ok(
+    !inert && node.namespaceURI === 'http://www.w3.org/1999/xhtml',
+    `Inert or foreign ${id}`,
+  );
+  return node;
+}
+function jsonScript(node) {
+  assert.ok(
+    node.tagName === 'script' && attribute(node, 'type') === 'application/json',
+    'Invalid JSON metadata element',
+  );
+  assert.deepEqual(
+    node.attrs.map(({ name }) => name).sort(),
+    ['id', 'type'],
+    'Unexpected JSON metadata attributes',
+  );
+  assert.ok(
+    node.childNodes.every((child) => child.nodeName === '#text'),
+    'Invalid JSON metadata content',
+  );
+  return JSON.parse(node.childNodes.map((child) => child.value).join(''));
+}
+export function presentationCatalogueReferenceFromHtml(html, required = true) {
+  const nodes = documentNodes(html);
+  const inline = uniqueNode(nodes, 'presentation-catalogue', false);
+  const external = uniqueNode(nodes, 'presentation-catalogue-ref', false);
+  if (!required && !inline && !external) {
+    return null;
+  }
+  assert.equal(
+    Number(Boolean(inline)) + Number(Boolean(external)),
+    1,
+    'Exactly one build-owned presentation catalogue is required',
+  );
+  return external ? parseAnalyticsCatalogueReference(jsonScript(external)) : null;
+}
+export function presentationCatalogueFromHtml(html, files = new Map()) {
+  const ref = presentationCatalogueReferenceFromHtml(html);
+  if (!ref) {
+    return parsePresentationCatalogue(
+      jsonScript(uniqueNode(documentNodes(html), 'presentation-catalogue')),
+    );
+  }
+  const bytes = files.get(ref.path.slice(1));
+  assert.ok(bytes, 'Missing external presentation catalogue');
+  assert.equal(bytes.length, ref.sizeBytes, 'External catalogue size drift');
+  assert.equal(presentationDigest(bytes), ref.sha256, 'External catalogue digest drift');
+  return parsePresentationCatalogue(
+    JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)),
+  );
+}
+
+// Reconstruct latest facts through canonical readers. Neither the emitted capsule
+// nor a claimed HTML hash is evidence for the markup which browsers actually see.
+export async function auditStaticPicks(productionRoot, html, catalogue) {
+  const indexUrl = pathToFileURL(resolve(productionRoot, 'index.json')).href;
+  const fetcher = async (url) => new Response(await readFile(fileURLToPath(url)));
+  const loader = new SnapshotLoader(indexUrl, fetcher);
+  const index = await loader.loadIndex();
+  assert.equal(
+    catalogue.sourceIndexSha256,
+    presentationDigest(await readFile(fileURLToPath(indexUrl))),
+    'Static picks source index drift',
+  );
+  assert.equal(
+    catalogue.latestSnapshotId,
+    index.latestSnapshotId,
+    'Static picks latest snapshot drift',
+  );
+  const entry = index.snapshots.find((item) => item.snapshotId === index.latestSnapshotId);
+  assert.ok(entry, 'Static picks latest snapshot missing');
+  const descriptor = await loader.loadSnapshot(entry.snapshotId);
+  const matrix = await loader.loadMatrix(descriptor);
+  const capsule = {
+    artifactType: 'backblaze-presentation',
+    contractVersion: 1,
+    snapshotId: entry.snapshotId,
+    asOfQuarter: entry.asOfQuarter,
+    contextSha256: descriptor.contextSha256,
+    sourceManifestSha256: entry.sourceManifestSha256,
+    descriptor: entry.descriptor,
+    kind: 'matrix',
+    quarter: null,
+    body: adaptProductionV2(descriptor, matrix),
+  };
+  const nodes = documentNodes(html);
+  const context = parseStaticPicksContext(jsonScript(uniqueNode(nodes, 'static-picks-context')));
+  assert.deepEqual(context, staticPicksContext(catalogue), 'Static picks context binding drift');
+  const root = uniqueNode(nodes, 'static-picks-root');
+  const app = uniqueNode(nodes, 'app');
+  assert.equal(root.parentNode, app, 'Static picks must be inside application root');
+  assert.ok(
+    app.childNodes.every(
+      (node) => node === root || (node.nodeName === '#text' && !node.value.trim()),
     ),
-  ];
-  assert.equal(matches.length, 1, 'Exactly one build-owned presentation catalogue is required');
-  return parsePresentationCatalogue(JSON.parse(matches[0][1]));
+    'Unexpected application markup beside static picks',
+  );
+  // Apply the same reviewed whitespace policy before parsing both sides. Comparing
+  // normalized DOMs retains every attribute, link, fact and element while allowing
+  // equivalent entity encoding and attribute order after HTML minification.
+  const dom = async (markup) => {
+    const parsed = parseFragment(await minifyHtml(markup));
+    const shape = (node) => ({
+      name: node.nodeName,
+      namespace: node.namespaceURI,
+      attrs: node.attrs
+        ?.map(({ name, value, namespace, prefix }) => ({ name, value, namespace, prefix }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      text: node.value ?? node.data,
+      children: node.childNodes?.map(shape),
+      template: node.content ? shape(node.content) : undefined,
+    });
+    return shape(parsed);
+  };
+  assert.deepEqual(
+    await dom(serializeOuter(root)),
+    await dom(renderStaticPicks(catalogue, capsule)),
+    'Static picks markup differs from canonical latest evidence',
+  );
+  return { snapshotId: entry.snapshotId, sourceIndexSha256: catalogue.sourceIndexSha256 };
 }

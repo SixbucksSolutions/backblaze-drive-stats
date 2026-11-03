@@ -4,12 +4,7 @@ import { displayModelLabel } from './model-labels.ts';
 import { mountPublishedNavigation, updatePublishedNavigation } from './published-navigation.ts';
 import { appRoute, viewUsesSpinner } from './app-route.ts';
 import { abortInitialPresentation } from './presentation-loader.ts';
-import {
-  waitForFonts,
-  waitForPresentation,
-  withStartupDeadline,
-  yieldToStartupPaint,
-} from './font-ready.ts';
+import { waitForFonts, waitForPresentation, yieldToStartupPaint } from './font-ready.ts';
 import { csv, groupManufacturers, parseBundle, parseManifest, summarize } from './data.ts';
 import type { Bundle, Manifest, Model, Quarter } from './data.ts';
 
@@ -76,7 +71,8 @@ let loadError = '';
 let controller: AbortController | undefined;
 let requestId = 0;
 const cache = new Map<Quarter, Bundle>();
-const app = mountPublishedNavigation();
+let app: HTMLDivElement;
+let startupSignal: AbortSignal;
 const integer = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const decimal = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const pct = (value: number) => `${value.toFixed(2)}%`;
@@ -111,6 +107,9 @@ function syncUrl() {
   history.replaceState(null, '', url);
 }
 function render() {
+  if (startupSignal.aborted) {
+    return;
+  }
   const active = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
   const focusSelector = active?.id
     ? `#${CSS.escape(active.id)}`
@@ -563,46 +562,45 @@ async function init(startupSignal?: AbortSignal) {
     render();
   }
 }
-async function start() {
-  const startup = new AbortController();
+export async function startAnalytics(startup: AbortController) {
+  startup.signal.throwIfAborted();
+  startupSignal = startup.signal;
+  app = mountPublishedNavigation();
   startup.signal.addEventListener('abort', () => abortInitialPresentation(), { once: true });
-  // Font requests, route downloads and the HTML-started capsule request overlap.
+  // Font requests, route downloads and the HTML-started catalogue request overlap.
   // Apply the permanent font choice before constructing the large production matrix.
   const fonts = waitForFonts(document.fonts).then((mode) => {
-    document.documentElement.dataset.fontMode = mode;
+    if (!startup.signal.aborted) {
+      document.documentElement.dataset.fontMode = mode;
+    }
     return mode;
   });
   const spinner = viewUsesSpinner(params);
   const startupPaint = spinner
     ? yieldToStartupPaint(document.visibilityState === 'visible')
     : Promise.resolve();
-  const rendering = withStartupDeadline(
-    () =>
-      appRoute(params) === 'matrix'
-        ? import('./matrix.ts').then(async (module) => {
-            if (params.get('reference') !== '1') {
-              await fonts;
-            }
+  const rendering = Promise.resolve().then(() =>
+    appRoute(params) === 'matrix'
+      ? import('./matrix.ts').then(async (module) => {
+          if (params.get('reference') !== '1') {
+            await fonts;
+          }
+          await startupPaint;
+          startup.signal.throwIfAborted();
+          return module.initMatrix(startup.signal);
+        })
+      : appRoute(params) === 'snapshot'
+        ? import('./snapshot-explorer.ts').then(async (module) => {
             await startupPaint;
             startup.signal.throwIfAborted();
-            return module.initMatrix(startup.signal);
+            return module.initSnapshotExplorer(startup.signal);
           })
-        : appRoute(params) === 'picks'
-          ? import('./owner-picks.ts').then(async (module) => {
-              await startupPaint;
-              startup.signal.throwIfAborted();
-              return module.initOwnerPicks(startup.signal);
-            })
-          : appRoute(params) === 'snapshot'
-            ? import('./snapshot-explorer.ts').then(async (module) => {
-                await startupPaint;
-                startup.signal.throwIfAborted();
-                return module.initSnapshotExplorer(startup.signal);
-              })
-            : startupPaint.then(() => init(startup.signal)),
-    startup,
+        : startupPaint.then(() => init(startup.signal)),
   );
   const readiness = await waitForPresentation(fonts, rendering);
+  if (startup.signal.aborted) {
+    return;
+  }
   document.documentElement.dataset.fontMode = readiness.fontMode;
   if (readiness.renderFailed || startup.signal.aborted) {
     app.innerHTML =
@@ -615,7 +613,9 @@ async function start() {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
   }
+  if (startup.signal.aborted) {
+    return;
+  }
   document.documentElement.dataset.appReady = 'true';
   document.documentElement.classList.remove('app-pending');
 }
-void start();

@@ -1,10 +1,5 @@
-import {
-  activePublishedView,
-  publishedViews,
-  editorialViews,
-  navigationViews,
-  publishedViewUrl,
-} from './app-route.ts';
+import { renderPublishedNavigation } from './published-navigation-render.ts';
+import { activePublishedView, appRoute, navigationViews, publishedViewUrl } from './app-route.ts';
 import type { NavigationContext } from './app-route.ts';
 import './published-navigation.css';
 
@@ -14,7 +9,12 @@ let dismissNavigationTooltip: (() => void) | undefined;
 /** A persistent shell keeps navigation focus and collapse state across report renders. */
 export function mountPublishedNavigation() {
   const app = document.querySelector<HTMLDivElement>('#app')!;
-  app.innerHTML = `<div class="published-shell"><aside class="published-sidebar" aria-label="Data navigation"><div class="published-nav-heading"><a class="published-brand" href="?view=picks">DriveStats</a><button type="button" id="navigation-toggle" aria-controls="published-navigation" aria-expanded="true" aria-label="Collapse navigation" title="Collapse navigation">‹</button></div><div id="published-navigation"><nav aria-label="Editorial views">${editorialViews.map((view) => `<a id="view-${view.id}" class="published-nav-item" aria-label="${view.label}"><span aria-hidden="true">${view.icon}</span><span class="published-nav-text">${view.label}</span></a>`).join('')}</nav><p class="published-nav-label picks-nav-label">EXPLORE THE DATA</p><nav aria-label="Published data views">${publishedViews.map((view) => `<a id="view-${view.id}" class="published-nav-item" aria-label="${view.label}"><span aria-hidden="true">${view.icon}</span><span class="published-nav-text">${view.label}</span></a>`).join('')}</nav><details class="published-secondary"><summary>More context & references</summary><a id="context-link">Model context</a><a id="legacy-link">Original quarterly explorer</a><a id="reference-link">Workbook & synthetic references</a></details></div></aside><div id="route-content" class="published-content"></div><div id="published-nav-tooltip" role="tooltip" hidden></div></div>`;
+  if (
+    appRoute(new URLSearchParams(location.search)) !== 'picks' ||
+    !app.querySelector('#static-picks-root')
+  ) {
+    app.innerHTML = renderPublishedNavigation();
+  }
   const toggle = document.querySelector<HTMLButtonElement>('#navigation-toggle')!;
   const shell = document.querySelector<HTMLDivElement>('.published-shell')!;
   const tooltip = document.querySelector<HTMLDivElement>('#published-nav-tooltip')!;
