@@ -9,7 +9,7 @@ To view the website's committed aggregates, follow the [README](../README.md).
 ## Environment and source access
 
 Use the committed `.python-version` and `uv.lock`. The project currently pins
-Python 3.15.2 and uv 0.13.6-compatible tooling; see the
+Python 3.15.2 and uv 0.13.7-compatible tooling; see the
 [Python toolchain](python-toolchain.md) for native build prerequisites and the
 [quality policy](code-quality.md) for verification. From the repository root:
 

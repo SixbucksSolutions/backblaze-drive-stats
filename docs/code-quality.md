@@ -6,11 +6,12 @@ maintainability findings. Neither linter enables an indiscriminate all-rules pre
 
 ## Tool ownership and current pins
 
-Verified on 2026-11-01 (see the [buildchain freshness audit](buildchain-freshness-0102.md)):
+Python versions verified on 2026-11-03 (see the [Python freshness audit](buildchain-freshness-0126.md));
+frontend versions verified on 2026-11-01 (see the [full buildchain audit](buildchain-freshness-0102.md)):
 
 | Concern | Tool | Version / scope |
 | --- | --- | --- |
-| Python environment, dependencies and execution | uv | 0.13.6; accepted 0.13 minor |
+| Python environment, dependencies and execution | uv | 0.13.7; accepted 0.13 minor |
 | Python runtime | CPython | 3.15.2 in `.python-version` |
 | Python lint, imports and formatting | Ruff | 0.17.3 |
 | Python types and Python language server | Pyright | 1.1.414 |

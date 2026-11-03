@@ -17,7 +17,9 @@ rather than assuming an option name guarantees every optional field.
 
 ## Explicit shared policy
 
-PyArrow 26.0.0 is already a runtime dependency. The physical profile fingerprints
+PyArrow is a runtime dependency (26.0.1 after the
+[#0126 refresh](buildchain-freshness-0126.md); the measurements below used 26.0.0).
+The physical profile fingerprints
 options, engine version, sort keys and field descriptions, independently of
 numerical summary semantics (`private-drive-quarter-v2`).
 

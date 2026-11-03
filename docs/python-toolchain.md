@@ -1,16 +1,16 @@
 # Python toolchain
 
-Versions rechecked against official release/registry metadata on 2026-11-01;
-see the [buildchain freshness audit](buildchain-freshness-0102.md) for the current
+Versions rechecked against official release/registry metadata on 2026-11-03;
+see the [Python freshness audit](buildchain-freshness-0126.md) for the current
 quality gate and compatibility holds. Historical data verification below retains
 its original scope.
 
 | Component | Tested version |
 | --- | --- |
-| uv | 0.13.6 |
+| uv | 0.13.7 |
 | Python | 3.15.2 |
 | Polars | 2.1.0 |
-| PyArrow | 26.0.0 |
+| PyArrow | 26.0.1 |
 | PyIceberg | 0.12.0 |
 | s3fs | 2026.9.0 |
 | boto3 / botocore | 1.43.117 |
