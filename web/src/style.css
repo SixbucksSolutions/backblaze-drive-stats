@@ -697,21 +697,6 @@ footer a {
 .error {
   color: #9d573b;
 }
-.spinner {
-  display: block;
-  width: 22px;
-  height: 22px;
-  border: 2px solid #d5e6d5;
-  border-top-color: var(--green);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 20px;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 .empty {
   min-height: 220px;
   display: flex;

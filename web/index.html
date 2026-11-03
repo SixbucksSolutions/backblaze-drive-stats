@@ -2,6 +2,13 @@
 <html lang="en" class="app-pending">
   <head>
     <meta charset="UTF-8" />
+    <script id="startup-policy">
+      // Match viewUsesSpinner in app-route.ts before the first possible paint.
+      // New and unknown views default to no spinner.
+      if (new URLSearchParams(location.search).get('view') === 'matrix') {
+        document.documentElement.classList.add('matrix-startup');
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#183c40" />
     <meta
@@ -41,6 +48,8 @@
       #app {
         opacity: 1;
         visibility: visible;
+      }
+      .matrix-startup #app {
         transition:
           opacity 200ms ease-out 150ms,
           visibility 0s linear 150ms;
@@ -54,7 +63,7 @@
         position: fixed;
         inset: 0;
         z-index: 10;
-        display: flex;
+        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -75,7 +84,10 @@
           opacity 150ms ease-in,
           visibility 0s linear 150ms;
       }
-      .app-pending #startup-status {
+      .matrix-startup #startup-status {
+        display: flex;
+      }
+      .matrix-startup.app-pending #startup-status {
         opacity: 1;
         visibility: visible;
         transition: none;
@@ -86,6 +98,8 @@
         border: 4px solid #c9d9d6;
         border-top-color: #183c40;
         border-radius: 50%;
+      }
+      .matrix-startup.app-pending .startup-spinner {
         animation: startup-spin 0.8s linear infinite;
       }
       @keyframes startup-spin {
@@ -94,11 +108,11 @@
         }
       }
       @media (prefers-reduced-motion: reduce) {
-        #app,
-        #startup-status {
+        .matrix-startup #app,
+        .matrix-startup #startup-status {
           transition: none;
         }
-        .startup-spinner {
+        .matrix-startup.app-pending .startup-spinner {
           animation: none;
         }
       }

@@ -2,7 +2,7 @@ import './style.css';
 import { formatAfr } from './afr-format.ts';
 import { displayModelLabel } from './model-labels.ts';
 import { mountPublishedNavigation, updatePublishedNavigation } from './published-navigation.ts';
-import { appRoute } from './app-route.ts';
+import { appRoute, viewUsesSpinner } from './app-route.ts';
 import { abortInitialPresentation } from './presentation-loader.ts';
 import {
   waitForFonts,
@@ -137,7 +137,7 @@ function render() {
   app.innerHTML = `<div class="layout"><main id="main"><header class="topbar"><span>BACKBLAZE DRIVE STATS <span class="slash">/</span> ${escape(currentView.label)}</span><span class="local-label"><span class="status-dot"></span> QUARTERLY DATA EXPLORER</span></header><div class="page"><section class="page-heading"><div><p class="eyebrow">THE BIG PICTURE, DOWN TO THE DRIVE</p><h1>${currentView.title}</h1><p class="subtitle">${currentView.description}</p></div><div class="quarter-control"><label for="quarter">REPORTING QUARTER</label><select id="quarter" ${!manifest ? 'disabled' : ''}>${manifest ? manifest.quarters.map((item) => `<option value="${item.quarter}" ${item.quarter === selectedQuarter ? 'selected' : ''}>${escape(item.label)}${item.kind === 'sample' ? ' · sample' : ''}</option>`).join('') : '<option>Loading quarters…</option>'}</select></div></section>
     <aside class="source-credit" aria-label="Data attribution"><span><strong>Source dataset published by <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze</a>.</strong> Explore their <a href="https://www.backblaze.com/blog/category/hard-drive-stats/" target="_blank" rel="noreferrer">official Drive Stats reports</a>.</span><span>Independent analysis by <a href="https://github.com/SixbucksSolutions" target="_blank" rel="noreferrer">Sixbucks Solutions</a>. <a href="https://github.com/SixbucksSolutions/backblaze-drive-stats/blob/main/DATA_SOURCES.md" target="_blank" rel="noreferrer">Sources and ownership ↗</a></span></aside>
     ${sample ? '<div class="sample-banner"><span class="sample-tag">SAMPLE DATA</span><span>Development preview using illustrative numbers. These are not Backblaze results.</span></div>' : bundle && !loading && !loadError ? `<div class="coverage-banner"><span class="sample-tag">SOURCE COVERAGE</span><span><strong>${populationLabel}</strong> History begins ${escape(bundle.provenance.coverageStart)}. Cumulative AFR and first-observed counts use this available window; the initial fleet is included.</span></div>` : ''}
-    <div id="report" aria-busy="${loading}">${loading ? '<div class="state-panel" role="status"><span class="spinner"></span>Loading quarter data…</div>' : loadError ? `<div class="state-panel error" role="alert"><h2>We couldn’t load this quarter.</h2><p>${escape(loadError)}</p><button id="retry" class="button">Try again</button></div>` : report()}</div>
+    <div id="report" aria-busy="${loading}">${loading ? '<div class="state-panel" role="status">Loading quarter data…</div>' : loadError ? `<div class="state-panel error" role="alert"><h2>We couldn’t load this quarter.</h2><p>${escape(loadError)}</p><button id="retry" class="button">Try again</button></div>` : report()}</div>
     <footer>Data source: <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze Drive Stats ↗</a><span>Independent explorer · ${bundle && !loading && !loadError ? escape(bundle.period.start + ' → ' + bundle.period.end) : 'Quarterly observations'}</span><a href="${import.meta.env.BASE_URL}fonts/NOTICE.txt">Font credits & licenses</a></footer></div></main></div>`;
   updatePublishedNavigation();
   bindEvents();
@@ -572,7 +572,10 @@ async function start() {
     document.documentElement.dataset.fontMode = mode;
     return mode;
   });
-  const startupPaint = yieldToStartupPaint(document.visibilityState === 'visible');
+  const spinner = viewUsesSpinner(params);
+  const startupPaint = spinner
+    ? yieldToStartupPaint(document.visibilityState === 'visible')
+    : Promise.resolve();
   const rendering = withStartupDeadline(
     () =>
       appRoute(params) === 'matrix'
@@ -605,10 +608,13 @@ async function start() {
     app.innerHTML =
       '<section class="state-panel error" role="alert"><h1>Unable to open the explorer</h1><p>Loading did not complete. Reload the page to try again.</p></section>';
   }
-  // Let selected-font metrics and the completed initial DOM settle before reveal.
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-  });
+  // The matrix settles its selected-font metrics before the complete-view fade.
+  // Other routes reveal as soon as their font/data readiness has settled.
+  if (spinner) {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+  }
   document.documentElement.dataset.appReady = 'true';
   document.documentElement.classList.remove('app-pending');
 }

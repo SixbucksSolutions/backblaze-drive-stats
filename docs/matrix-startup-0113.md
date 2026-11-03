@@ -4,6 +4,19 @@
 
 ## What changed
 
+### Current per-view policy (#0133)
+
+Only matrix routes, including reference matrices, enable the startup spinner and
+sequential fade. Other views retain font/data readiness and error handling, then
+reveal without the spinner, its paint wait or its reveal-frame delay. Legacy
+quarter loading uses a plain accessible status.
+
+`viewUsesSpinner` in `web/src/app-route.ts` is the runtime policy. The blocking
+`startup-policy` script in `web/index.html` applies the same matrix-only decision
+before the first possible paint; focused tests keep those decisions aligned.
+New and unknown views default to no spinner. The measurements below are historical
+and do not claim a new loading-time improvement.
+
 The fixed indicator uses a system font, supports reduced motion, and is suppressed when JavaScript is unavailable. HTML and deferred module loading already allow downloads to overlap. The new startup helper gives a visible page one animation frame and a following task before heavy construction, giving the indicator an opportunity to paint. Hidden pages skip that wait; a 100 ms fallback bounds it and is not a minimum delay. Font and import requests remain parallel, and the existing whole-view and permanent font-choice gates remain in place.
 
 The original renderer was retained: both renderer TypeScript files were restored to `efdea05`. An investigated renderer cleanup was removed because measurements were mixed and did not establish a robust latency improvement. Published data, metrics, calculations and cache policy are unchanged; delivery remains static Pages.

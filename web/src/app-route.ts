@@ -17,6 +17,11 @@ export function appRoute(params: URLSearchParams): 'matrix' | 'snapshot' | 'pick
   return 'legacy';
 }
 
+/** Loading animation is an explicit view capability; every other route defaults off. */
+export function viewUsesSpinner(params: URLSearchParams): boolean {
+  return appRoute(params) === 'matrix';
+}
+
 export type SnapshotReport =
   'overview' | 'deployments' | 'distribution' | 'capacity' | 'manufacturers' | 'datacenters';
 

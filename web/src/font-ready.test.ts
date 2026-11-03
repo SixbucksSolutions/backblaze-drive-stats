@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { stripTypeScriptTypes } from 'node:module';
 import vm from 'node:vm';
-import { appRoute } from './app-route.ts';
+import { appRoute, viewUsesSpinner } from './app-route.ts';
 import type { FontMode } from './font-ready.ts';
 import {
   REQUIRED_FONTS,
@@ -119,6 +119,7 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
       .replace(/^import[\s\S]*?;\r?$/gm, '')
       .replace("import('./matrix.ts')", '__matrixModule()')
       .replace("import('./snapshot-explorer.ts')", '__snapshotModule()')
+      .replace("import('./owner-picks.ts')", '__picksModule()')
       .replaceAll('import.meta.env.BASE_URL', JSON.stringify('/'))
       .replace('void start();', '') + '\nstart;';
   const fontChoice = deferred<FontMode>();
@@ -126,6 +127,8 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
   const events: string[] = [];
   const root = { dataset: {} as Record<string, string>, classList: { remove: () => {} } };
   let fontStarts = 0;
+  let paintWaits = 0;
+  let revealFrames = 0;
   const context = {
     URLSearchParams,
     Intl,
@@ -147,9 +150,11 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
     withStartupDeadline,
     yieldToStartupPaint: (visible: boolean) => {
       assert.equal(visible, true);
+      paintWaits++;
       return firstPaint;
     },
     appRoute,
+    viewUsesSpinner,
     mountPublishedNavigation: () => ({}),
     updatePublishedNavigation: () => {},
     abortInitialPresentation: () => {
@@ -164,14 +169,83 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
         events.push('snapshot rendered');
       },
     }),
+    __picksModule: async () => ({
+      initOwnerPicks: async () => {
+        events.push('picks rendered');
+      },
+    }),
     requestAnimationFrame: (callback: () => void) => {
+      revealFrames++;
       callback();
     },
   };
   const start = vm.runInNewContext(executable, context) as () => Promise<void>;
   const rendering = start();
-  return { fontChoice, matrix, events, root, rendering, fontStarts: () => fontStarts };
+  return {
+    fontChoice,
+    matrix,
+    events,
+    root,
+    rendering,
+    fontStarts: () => fontStarts,
+    paintWaits: () => paintWaits,
+    revealFrames: () => revealFrames,
+  };
 }
+
+await test('prepaint spinner policy matches routes and defaults off for every other view', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const policy = html.match(/<script id="startup-policy">([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(policy);
+  // Run the actual head script: waiting for the module would allow a startup flash.
+  for (const query of [
+    '',
+    'view=picks',
+    'view=matrix',
+    'view=matrix&reference=1',
+    'view=matrix&legacy=1',
+    'view=explore',
+    'view=explore&report=matrix',
+    'view=reliability',
+    'view=unknown',
+    'view=picks&view=matrix',
+    'view=matrix&view=picks',
+    ...['deployments', 'distribution', 'capacity', 'manufacturers', 'datacenters'].flatMap(
+      (view) => [`view=${view}`, `view=${view}&legacy=1`],
+    ),
+  ]) {
+    const classes = new Set<string>();
+    vm.runInNewContext(policy, {
+      URLSearchParams,
+      location: { search: `?${query}` },
+      document: { documentElement: { classList: { add: (name: string) => classes.add(name) } } },
+    });
+    const expected = new URLSearchParams(query).get('view') === 'matrix';
+    assert.equal(viewUsesSpinner(new URLSearchParams(query)), expected, query);
+    assert.equal(classes.has('matrix-startup'), expected, query);
+  }
+});
+
+await test('nonmatrix startup keeps font readiness without spinner paint waits or reveal frames', async () => {
+  for (const query of ['', '?view=picks', '?view=deployments', '?view=explore&example=1']) {
+    const harness = await mainStartupHarness(query, new Promise<void>(() => {}));
+    // Allow the route module and renderer to complete while the font choice is pending.
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    assert.ok(
+      harness.events.some((event) => event.endsWith('rendered')),
+      query,
+    );
+    assert.equal(harness.root.dataset.appReady, undefined, query);
+    assert.equal(harness.paintWaits(), 0, query);
+    harness.fontChoice.resolve('custom');
+    await harness.rendering;
+    assert.equal(harness.root.dataset.fontMode, 'custom', query);
+    assert.equal(harness.root.dataset.appReady, 'true', query);
+    assert.equal(harness.revealFrames(), 0, query);
+  }
+});
 
 await test('startup feedback yields past a frame callback before synchronous rendering', async () => {
   let frame: (() => void) | undefined;
@@ -256,6 +330,8 @@ await test('main downloads matrix in parallel but applies font choice before its
     assert.equal(renders, 1);
     assert.equal(harness.fontStarts(), 1);
     assert.equal(harness.root.dataset.appReady, 'true');
+    assert.equal(harness.paintWaits(), 1);
+    assert.equal(harness.revealFrames(), 2);
   }
 });
 
