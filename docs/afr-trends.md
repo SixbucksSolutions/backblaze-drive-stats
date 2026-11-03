@@ -9,6 +9,10 @@ quarter. This view does not replace or remove the matrix.
 - Cumulative AFR is the default. Quarterly AFR is available in the metric control.
 - Relative time starts at each model's first recorded quarter, labeled Y1Q1.
   Missing quarters retain their time positions; the clock never resets.
+- Annual X-axis marks fall on Q1. Narrow layouts show fewer year labels while
+  keeping the annual marks aligned.
+- Whole-percent horizontal grid lines are solid; half-percent lines are dashed.
+  Broad automatic ranges use larger whole-number steps to stay readable.
 - Calendar time uses real quarters and ends at the selected snapshot. A model
   that stopped appearing earlier stops there, rather than being extended.
 - Drag across the plot to zoom into a time window, or use the From/To controls.
@@ -18,6 +22,10 @@ quarter. This view does not replace or remove the matrix.
   Off-scale indicators identify values above the displayed range. Choose Full
   range to include every value in the selected time window, or another fixed
   range for a closer comparison.
+- Hover a line to read its manufacturer, model and point AFR to three decimals.
+  A dashed vertical guide identifies the exact quarter. Keyboard inspection
+  provides the same point values. Chart labels use WD, Seagate and Toshiba,
+  consistent with the shortlist.
 - The same models as the selected snapshot’s matrix are available in the
   manufacturer/model selector, with their full recorded history. The initial chart shows the three
   largest populations in the snapshot quarter; users can select any models.

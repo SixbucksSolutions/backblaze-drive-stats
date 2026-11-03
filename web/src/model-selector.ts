@@ -15,6 +15,7 @@ export function renderModelSelector(
   search: string,
   controls = 'matrix-data',
   subject = 'table',
+  vendorLabel: (vendor: string) => string = (vendor) => vendor,
 ) {
   const query = search.trim().toLowerCase();
   const layout = modelSelectorLayout(allModels);
@@ -22,7 +23,7 @@ export function renderModelSelector(
     .map((group) => ({
       ...group,
       matches: group.models.filter((model) =>
-        `${model.name} ${model.vendor}`.toLowerCase().includes(query),
+        `${model.name} ${model.vendor} ${vendorLabel(model.vendor)}`.toLowerCase().includes(query),
       ),
     }))
     .filter((group) => group.matches.length);
@@ -36,7 +37,7 @@ export function renderModelSelector(
       groups
         .map((group) => {
           const state = vendorSelectionState(group.models, selected);
-          return `<div class="matrix-brand-group" data-render-key="choices-${esc(group.vendor)}" style="--brand-color:${vendorPaint(group.vendor).background}"><fieldset class="matrix-brand-options"><legend><label class="matrix-vendor-choice"><input type="checkbox" id="${controlId('vendor', group.vendor)}" data-vendor="${esc(group.vendor)}" aria-controls="${esc(controls)}" ${state.checked ? 'checked' : ''}><span>${esc(group.vendor)}</span><small aria-hidden="true">${state.selectedCount}/${state.totalCount}</small></label></legend><div class="matrix-model-choices">${group.matches
+          return `<div class="matrix-brand-group" data-render-key="choices-${esc(group.vendor)}" style="--brand-color:${vendorPaint(group.vendor).background}"><fieldset class="matrix-brand-options"><legend><label class="matrix-vendor-choice"><input type="checkbox" id="${controlId('vendor', group.vendor)}" data-vendor="${esc(group.vendor)}" aria-controls="${esc(controls)}" ${state.checked ? 'checked' : ''}><span>${esc(vendorLabel(group.vendor))}</span><small aria-hidden="true">${state.selectedCount}/${state.totalCount}</small></label></legend><div class="matrix-model-choices">${group.matches
             .map((model) => {
               const label = layout.labels.get(model.id)!;
               return `<label class="matrix-model-choice" data-render-key="choice-${esc(model.id)}"><input type="checkbox" id="${controlId('model', model.id)}" data-model="${esc(model.id)}" aria-controls="${esc(controls)}" ${selected.has(model.id) ? 'checked' : ''}><span class="model-id"><span class="matrix-model-code" style="padding-inline-start:${label.indent}ch">${esc(label.code)}</span> (<span class="matrix-model-capacity">${label.capacity === null ? 'capacity unknown' : `<span class="matrix-model-integer">${esc(label.integer)}</span><span class="matrix-model-fraction">${esc(label.fraction)}</span> TB`}</span>)</span></label>`;

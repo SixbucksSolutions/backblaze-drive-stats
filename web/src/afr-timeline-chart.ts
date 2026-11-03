@@ -1,3 +1,5 @@
+import { formatAfr } from './afr-format.ts';
+import { manufacturerModelLabel } from './model-labels.ts';
 import type {
   AfrTimelineModel,
   AfrTimelinePoint,
@@ -27,6 +29,7 @@ export type ChartGeometry = {
   x: (position: number) => number;
   y: (rate: number) => number;
   ticks: number[];
+  labelTicks: number[];
 };
 export type TimeRange = { minimum: number; maximum: number };
 export type YRange = 1 | 2 | 3 | 5 | 'auto';
@@ -139,17 +142,16 @@ export function chartGeometry(
   const rounded = Math.ceil((highest / magnitude) * 1.08) * magnitude;
   const yMaximum = yRange === 'auto' ? (Number.isFinite(rounded) ? rounded : highest) : yRange;
   const span = Math.max(1, maximum - minimum);
-  const step = Math.max(1, Math.ceil(span / (width < 480 ? 2 : width < 740 ? 4 : 7)));
-  const ticks = [minimum];
-  for (let value = minimum + step; value < maximum; value += step) {
-    ticks.push(value);
+  const firstYear =
+    Math.ceil((minimum - (mode === 'relative' ? 1 : 0)) / 4) * 4 + (mode === 'relative' ? 1 : 0);
+  const ticks: number[] = [];
+  for (let position = firstYear; position <= maximum; position += 4) {
+    ticks.push(position);
   }
-  if (maximum !== minimum) {
-    if (ticks.length > 1 && maximum - ticks.at(-1)! < step * 0.75) {
-      ticks.pop();
-    }
-    ticks.push(maximum);
-  }
+  // Keep every annual mark. Only labels thin, in whole-year increments.
+  const labelBudget = Math.max(1, Math.floor((width - plot.left - plot.right) / 85));
+  const labelStep = Math.max(1, Math.ceil(ticks.length / labelBudget));
+  const labelTicks = ticks.filter((_, index) => index % labelStep === 0);
   return {
     width,
     height,
@@ -157,6 +159,7 @@ export function chartGeometry(
     maximum,
     yMaximum,
     ticks,
+    labelTicks,
     x: (position) =>
       minimum === maximum
         ? (plot.left + width - plot.right) / 2
@@ -330,4 +333,46 @@ export function createChartResizeScheduler(
       }
     },
   };
+}
+
+export function pointTooltip(
+  model: AfrTimelineModel,
+  point: AfrTimelinePoint,
+  metric: AfrMetric,
+): string {
+  const value = pointRate(point, metric);
+  return `${manufacturerModelLabel(model)}: ${value === null ? 'Unavailable' : `${formatAfr(value)}%`}`;
+}
+
+/** Nearest recorded quarter in the visible window; stable on equal-distance ties. */
+export function nearestPointIndex(
+  points: readonly AfrTimelinePoint[],
+  mode: AfrTimeMode,
+  geometry: ChartGeometry,
+  targetX: number,
+): number {
+  let result = 0;
+  let distance = Infinity;
+  points.forEach((point, index) => {
+    const candidate = Math.abs(geometry.x(pointPosition(point, mode)) - targetX);
+    if (candidate < distance) {
+      distance = candidate;
+      result = index;
+    }
+  });
+  return result;
+}
+
+/** Focused views distinguish half percents; full range uses a bounded integer scale. */
+export function yAxisTicks(maximum: number, focused: boolean): { value: number; minor: boolean }[] {
+  const rawStep = maximum / 5;
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const normalized = rawStep / magnitude;
+  const nice = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const step = focused ? 0.5 : Math.max(1, nice * magnitude);
+  const count = Math.floor(maximum / step);
+  return Array.from({ length: count + 1 }, (_, index) => {
+    const value = index * step;
+    return { value, minor: focused && !Number.isInteger(value) };
+  });
 }

@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { conciseVendor } from './model-labels.ts';
 import assert from 'node:assert/strict';
 import { renderModelSelector, bindModelSelector } from './model-selector.ts';
 import type { MatrixModel } from './matrix-data.ts';
@@ -72,4 +73,13 @@ await test('shared bindings set tristate and apply search-visible brand to its w
   search.value = 'ST';
   search.oninput!({ target: search } as unknown as Event);
   assert.equal(query, 'ST');
+});
+
+await test('AFR concise brand display preserves canonical selector identity and matrix defaults', () => {
+  const html = renderModelSelector(models, new Set(), 'WD', 'afr-chart', 'chart', conciseVendor);
+  assert.match(html, /data-vendor="HGST\/WD"/);
+  assert.match(html, /<span>WD<\/span>/);
+  assert.match(html, /data-model="c"/);
+  assert.doesNotMatch(html, /<span>HGST\/WD<\/span>/);
+  assert.match(renderModelSelector(models, new Set(), ''), /<span>HGST\/WD<\/span>/);
 });

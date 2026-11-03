@@ -16,3 +16,12 @@ export function displayModelLabel<T extends { vendor: string; modelNumber: strin
     modelNumber: deskstar ? deskstar[1]! : model.modelNumber,
   };
 }
+
+/** Concise manufacturer name used by picks and AFR chart presentation only. */
+export function conciseVendor(vendor: string): string {
+  return displayVendor(vendor) === HGST_WD_VENDOR ? 'WD' : vendor;
+}
+
+export function manufacturerModelLabel(model: { vendor: string; name: string }): string {
+  return `${conciseVendor(model.vendor)} ${model.name}`;
+}

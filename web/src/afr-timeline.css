@@ -100,14 +100,8 @@
   font-size: 13px;
   fill: #354837;
 }
-.afr-guide line {
-  stroke: #65765e;
+.afr-axis-minor line {
   stroke-dasharray: 3 5;
-  opacity: 0.6;
-}
-.afr-guide text {
-  fill: #4e6248;
-  font-size: 11px;
 }
 .afr-series {
   fill: none;
@@ -357,4 +351,37 @@
     flex: 1 1 120px;
     min-width: 0;
   }
+}
+
+.afr-chart-frame {
+  position: relative;
+}
+.afr-crosshair {
+  pointer-events: none;
+}
+.afr-crosshair line {
+  stroke: #354837;
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+}
+.afr-crosshair text {
+  fill: #23382a;
+  font-size: 12px;
+  font-weight: 600;
+}
+.afr-tooltip {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  max-width: calc(100% - 8px);
+  padding: 7px 10px;
+  border: 1px solid #65765e;
+  border-radius: 5px;
+  background: #fff;
+  color: #23382a;
+  box-shadow: 0 2px 6px #23382a22;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }

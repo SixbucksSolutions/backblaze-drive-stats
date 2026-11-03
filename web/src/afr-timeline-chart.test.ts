@@ -1,8 +1,12 @@
 import test from 'node:test';
+import { conciseVendor, manufacturerModelLabel } from './model-labels.ts';
 import assert from 'node:assert/strict';
 import type { AfrTimelineModel, AfrTimelinePoint } from './afr-timeline-data.ts';
 import {
   chartGeometry,
+  nearestPointIndex,
+  yAxisTicks,
+  pointTooltip,
   createTimeBrush,
   createChartResizeScheduler,
   initialTimelineSelection,
@@ -117,11 +121,68 @@ await test('quarterly metric changes geometry and singleton remains visible', ()
   assert.match(seriesPath(data, quarterly, 'relative', 'quarterly'), /^M.*h0.01$/);
 });
 
-await test('calendar cutoff label replaces a tick too close to the right edge', () => {
+await test('annual marks stay on Q1 across calendar cutoffs and relative windows', () => {
   const data = model('calendar', [point('2018-Q2', 1, 1), point('2026-Q2', 33, 1)]);
   const geometry = chartGeometry([data], 'calendar', 'cumulative', '2026-Q2', 746);
-  assert.equal(geometry.ticks.at(-1), quarterOrdinal('2026-Q2'));
-  assert.ok(geometry.x(geometry.ticks.at(-1)!) - geometry.x(geometry.ticks.at(-2)!) > 60);
+  assert.equal(geometry.ticks[0], quarterOrdinal('2019-Q1'));
+  assert.equal(geometry.ticks.at(-1), quarterOrdinal('2026-Q1'));
+  assert.ok(geometry.ticks.every((tick) => tick % 4 === 0));
+  const relative = chartGeometry([data], 'relative', 'cumulative', '2026-Q2', 746, {
+    minimum: 2,
+    maximum: 13,
+  });
+  assert.deepEqual(relative.ticks, [5, 9, 13]);
+  const noAnnual = chartGeometry([data], 'relative', 'cumulative', '2026-Q2', 746, {
+    minimum: 2,
+    maximum: 4,
+  });
+  assert.deepEqual(noAnnual.ticks, []);
+  assert.deepEqual(noAnnual.labelTicks, []);
+});
+await test('point inspection uses current metric, concise shared brands and three decimals', () => {
+  const drive = { ...model('WUH722222ALE6L4', []), vendor: 'HGST/WD' };
+  const value = point('2025-Q4', 4, 0.58, 1.23456);
+  assert.equal(pointTooltip(drive, value, 'cumulative'), 'WD WUH722222ALE6L4: 0.580%');
+  assert.equal(pointTooltip(drive, value, 'quarterly'), 'WD WUH722222ALE6L4: 1.235%');
+  assert.equal(
+    pointTooltip(drive, point('2025-Q4', 4, null), 'cumulative'),
+    'WD WUH722222ALE6L4: Unavailable',
+  );
+  for (const vendor of ['HGST', 'WDC', 'WD', 'WDC/HGST', 'WD/HGST', 'HGST/WD']) {
+    assert.equal(conciseVendor(vendor), 'WD');
+  }
+  assert.equal(conciseVendor('Seagate'), 'Seagate');
+  assert.equal(conciseVendor('Toshiba'), 'Toshiba');
+  assert.equal(manufacturerModelLabel({ vendor: 'Other', name: 'X' }), 'Other X');
+  assert.equal(drive.vendor, 'HGST/WD');
+});
+await test('nearest inspection point respects actual visible quarters in both modes', () => {
+  const drive = model('gaps', [
+    point('2024-Q4', 1, 0),
+    point('2025-Q2', 3, null),
+    point('2025-Q4', 5, 2),
+  ]);
+  for (const mode of ['relative', 'calendar'] as const) {
+    const geometry = chartGeometry([drive], mode, 'cumulative', '2025-Q4');
+    assert.equal(nearestPointIndex(drive.points, mode, geometry, -100), 0);
+    assert.equal(nearestPointIndex(drive.points, mode, geometry, 2000), 2);
+    assert.equal(
+      nearestPointIndex(
+        drive.points,
+        mode,
+        geometry,
+        geometry.x(mode === 'relative' ? 3 : quarterOrdinal('2025-Q2')),
+      ),
+      1,
+    );
+    const window = {
+      minimum: mode === 'relative' ? 3 : quarterOrdinal('2025-Q2'),
+      maximum: geometry.maximum,
+    };
+    const points = visiblePoints(drive, mode, window);
+    assert.equal(nearestPointIndex(points, mode, geometry, -100), 0);
+    assert.equal(points[0]?.quarter, '2025-Q2');
+  }
 });
 await test('finite extremes and large selected sets do not overflow argument or chart bounds', () => {
   const extreme = model('large', [point('2024-Q1', 1, Number.MAX_VALUE)]);
@@ -158,12 +219,17 @@ await test('initial three use positive as-of counts, exclude retired and null co
   assert.deepEqual(seriesStyle('a'), seriesStyle('a'));
 });
 
-await test('mobile geometry uses measured width, readable unscaled labels and at most three ticks', () => {
+await test('mobile geometry retains all annual marks and thins Q1 labels by whole years', () => {
   const data = model('mobile', [point('2014-Q1', 1, 1), point('2025-Q4', 48, 2)]);
   const geometry = chartGeometry([data], 'calendar', 'cumulative', '2025-Q4', 340);
   assert.equal(geometry.width, 340);
   assert.equal(geometry.height, 340);
-  assert.ok(geometry.ticks.length <= 3);
+  assert.equal(geometry.ticks.length, 12);
+  assert.ok(geometry.labelTicks.length <= 3);
+  assert.ok(geometry.labelTicks.every((tick) => tick % 4 === 0));
+  const wide = chartGeometry([data], 'calendar', 'cumulative', '2025-Q4', 1000);
+  assert.deepEqual(geometry.ticks, wide.ticks);
+  assert.ok(wide.labelTicks.length > geometry.labelTicks.length);
   assert.equal(geometry.x(geometry.maximum), 340 - plot.right);
   assert.equal(geometry.y(0), 340 - plot.bottom);
 });
@@ -383,4 +449,30 @@ await test('resize redraws coalesce outside delivery, retain latest width and st
   scheduler.measure(1000);
   assert.equal(frames.size, 0);
   assert.deepEqual(widths, [500, 280]);
+});
+
+await test('focused Y grid has solid whole percents and dashed half percents', () => {
+  for (const maximum of [1, 2, 3, 5]) {
+    const ticks = yAxisTicks(maximum, true);
+    assert.equal(ticks.length, maximum * 2 + 1);
+    assert.equal(ticks.at(-1)?.value, maximum);
+    ticks.forEach(({ value, minor }, index) => {
+      assert.equal(value, index / 2);
+      assert.equal(minor, index % 2 === 1);
+    });
+  }
+});
+await test('full-range Y grid stays bounded with readable integer solid levels', () => {
+  for (const maximum of [3, 30, 300, 12000, Number.MAX_VALUE]) {
+    const ticks = yAxisTicks(maximum, false);
+    assert.ok(ticks.length >= 2 && ticks.length <= 6);
+    assert.ok(
+      ticks.every(
+        ({ value, minor }) =>
+          Number.isFinite(value) && Number.isInteger(value) && !minor && value <= maximum,
+      ),
+    );
+    assert.equal(ticks[0]?.value, 0);
+    assert.ok(ticks.at(-1)!.value >= maximum / 2);
+  }
 });
