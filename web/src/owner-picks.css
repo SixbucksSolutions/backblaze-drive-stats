@@ -10,9 +10,13 @@
 .pick-card {
   padding: 24px;
   overflow-wrap: anywhere;
+  container-type: inline-size;
 }
 .pick-card h2 {
-  font-size: 23px;
+  font-size: min(23px, 5.5cqi);
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
 }
 .pick-metrics {
   display: grid;
