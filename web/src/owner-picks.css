@@ -14,24 +14,19 @@
 .pick-card h2 {
   font-size: 23px;
 }
-.pick-status {
-  color: #365847;
-  line-height: 1.6;
-}
 .pick-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 18px;
-  row-gap: 5px;
+  row-gap: 18px;
   margin: 24px 0;
 }
 .pick-metrics > div {
-  display: grid;
-  grid-row: span 2;
-  grid-template-rows: subgrid;
+  min-width: 0;
+  text-align: center;
 }
-.pick-metrics > div:nth-child(-n + 2) {
-  margin-bottom: 13px;
+.pick-metrics > .pick-metric-wide {
+  grid-column: 1 / -1;
 }
 .pick-metrics dt {
   color: #526657;

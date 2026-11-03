@@ -207,5 +207,5 @@ await test('future and missing evidence never render recommendations or stale su
   assert.equal(pickEvidence(missingRate, snapshot, '2026-Q2').eligible, false);
   const unavailable = renderPicks({ ...capsule, body: { ...snapshot, models: [missingRate] } });
   assert.match(unavailable, /Not currently included/);
-  assert.doesNotMatch(unavailable, /Meets size/);
+  assert.doesNotMatch(unavailable, /pick-metrics|Search PCPartPicker/);
 });
