@@ -2,6 +2,7 @@ import './owner-picks.css';
 import { PresentationLoader, presentationCatalogue } from './presentation-loader.ts';
 import { updatePublishedNavigation } from './published-navigation.ts';
 import { renderPicks } from './owner-picks-render.ts';
+import { editorialUpdateDate, reviewedSnapshotId } from './owner-picks-data.ts';
 
 const esc = (value: unknown) =>
   String(value).replace(
@@ -34,7 +35,11 @@ export async function initOwnerPicks(signal?: AbortSignal): Promise<void> {
   canonical.searchParams.delete('quarter');
   history.replaceState(null, '', canonical);
   const latest = catalogue.snapshots.find((item) => item.snapshotId === catalogue.latestSnapshotId);
-  const heading = `<main id="main"><header class="topbar"><span>BACKBLAZE DRIVE STATS / WHAT I’D BUY</span></header><div class="page picks-page"><section class="page-heading"><div><p class="eyebrow">AN EDITORIAL SHORTLIST</p><h1>What I’d Buy</h1><p class="subtitle">My shortlist for a replacement drive, based on observed reliability and a substantial deployment history.</p><p>Latest published data: <strong>${esc(latest?.asOfQuarter ?? 'unavailable')}</strong></p></div></section>`;
+  const update =
+    latest?.snapshotId === reviewedSnapshotId
+      ? `Updated: <strong>${esc(editorialUpdateDate)}</strong> using Backblaze data from <strong>${esc(latest.asOfQuarter.replace('-', ' '))}</strong>.`
+      : `Latest published data: <strong>${esc(latest?.asOfQuarter.replace('-', ' ') ?? 'unavailable')}</strong>`;
+  const heading = `<main id="main"><header class="topbar"><span>BACKBLAZE DRIVE STATS / WHAT I’D BUY</span></header><div class="page picks-page"><section class="page-heading"><div><p class="eyebrow">AN EDITORIAL SHORTLIST</p><h1>What I’d Buy</h1><p class="subtitle">My shortlist for a replacement drive, based on observed reliability and a substantial deployment history.</p><p>${update}</p></div></section>`;
   const methodology = `<details class="methodology panel"><summary>How these picks were chosen</summary><div class="methodology-body"><p>The public factual screen is nominal capacity ≥16 TB, at least 20,000 observed drives in the selected latest quarter, and at least eight completed calendar-quarter positions from the reporting anchor (the first proven quarter meeting the 2,000-drive threshold); twelve are preferred. A complete latest quarter is required. Editorial inclusion also requires a recorded reliability review for this exact snapshot.</p><p>The shortlist is curated, not a trained score, exhaustive ranking or statistically certified recommendation. Passing the screen alone does not make a model a pick. AFR = recorded failures ÷ recorded drive-days × 365 × 100. Cumulative AFR includes available pre-anchor exposure; gaps are not imputed. A calendar position is not proof of complete data for that quarter.</p><p>Backblaze’s deployment conditions may differ from yours. Current manufacture, availability and system compatibility have not been verified. Check those before buying.</p><p><a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data" target="_blank" rel="noreferrer">Backblaze source data ↗</a> · <a href="https://github.com/SixbucksSolutions/backblaze-drive-stats/blob/main/docs/owners-picks.md" target="_blank" rel="noreferrer">Open selection rules ↗</a></p></div></details></div></main>`;
   const render = (body: string, loading = false) => {
     app.innerHTML = `${heading}<div id="picks-results" aria-busy="${loading}">${body}</div>${methodology}`;

@@ -14,16 +14,24 @@
 .pick-card h2 {
   font-size: 23px;
 }
-.pick-status,
-.picks-reviewed {
+.pick-status {
   color: #365847;
   line-height: 1.6;
 }
 .pick-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  column-gap: 18px;
+  row-gap: 5px;
   margin: 24px 0;
+}
+.pick-metrics > div {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+}
+.pick-metrics > div:nth-child(-n + 2) {
+  margin-bottom: 13px;
 }
 .pick-metrics dt {
   color: #526657;
@@ -31,7 +39,7 @@
   line-height: 1.5;
 }
 .pick-metrics dd {
-  margin: 5px 0 0;
+  margin: 0;
   font-size: 22px;
   font-weight: 650;
 }
@@ -40,6 +48,10 @@
 }
 .pick-card .small {
   color: #526657;
+}
+.pick-links {
+  display: grid;
+  gap: 12px;
 }
 .picks-page .methodology {
   margin-top: 24px;
