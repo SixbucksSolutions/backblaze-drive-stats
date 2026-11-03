@@ -153,6 +153,7 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
     inspectionVisible = false;
     app.querySelector<HTMLElement>('#afr-tooltip')?.setAttribute('hidden', '');
     app.querySelector('#afr-crosshair')?.setAttribute('visibility', 'hidden');
+    app.querySelector('#afr-current-point')?.setAttribute('visibility', 'hidden');
   }
   function showInspection() {
     inspectionVisible = true;
@@ -189,7 +190,9 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
     if (dot) {
       dot.setAttribute(
         'visibility',
-        point && value !== null && value <= geometry.yMaximum ? 'visible' : 'hidden',
+        inspectionVisible && !dragging && point && value !== null && value <= geometry.yMaximum
+          ? 'visible'
+          : 'hidden',
       );
       if (point && value !== null) {
         dot.setAttribute(
