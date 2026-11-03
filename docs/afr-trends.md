@@ -11,6 +11,13 @@ quarter. This view does not replace or remove the matrix.
   Missing quarters retain their time positions; the clock never resets.
 - Calendar time uses real quarters and ends at the selected snapshot. A model
   that stopped appearing earlier stops there, rather than being extended.
+- Drag across the plot to zoom into a time window, or use the From/To controls.
+  Zoom out expands the window; All time restores the full timeline. Time ranges
+  reset when switching between calendar and relative time or changing snapshots.
+- The AFR scale starts at 0–3% to make ordinary reliability differences readable.
+  Off-scale indicators identify values above the displayed range. Choose Full
+  range to include every value in the selected time window, or another fixed
+  range for a closer comparison.
 - The same models as the selected snapshot’s matrix are available in the
   manufacturer/model selector, with their full recorded history. The initial chart shows the three
   largest populations in the snapshot quarter; users can select any models.
@@ -46,3 +53,8 @@ source aggregates. No daily source data is downloaded to generate this view.
 
 The chart uses SVG series paths instead of one DOM table cell per metric and
 quarter. What I'd Buy remains build-rendered and does not load timeline JSON.
+
+Zoom changes the displayed range, not the underlying observations or cumulative
+calculation. Missing quarters still break lines. Mouse and pen users can select
+a range by dragging in either direction; keyboard and touch users have the same
+range controls without intercepting page scrolling.

@@ -28,33 +28,116 @@ export type ChartGeometry = {
   y: (rate: number) => number;
   ticks: number[];
 };
+export type TimeRange = { minimum: number; maximum: number };
+export type YRange = 1 | 2 | 3 | 5 | 'auto';
+export const pointPosition = (point: AfrTimelinePoint, mode: AfrTimeMode): number =>
+  mode === 'relative' ? point.relativeQuarter : quarterOrdinal(point.quarter);
+export function timeDomain(
+  models: readonly AfrTimelineModel[],
+  mode: AfrTimeMode,
+  asOfQuarter: string,
+): TimeRange {
+  let minimum = mode === 'relative' ? 1 : quarterOrdinal(asOfQuarter);
+  let maximum = minimum;
+  for (const model of models) {
+    for (const point of model.points) {
+      const position = pointPosition(point, mode);
+      minimum = Math.min(minimum, position);
+      maximum = Math.max(maximum, position);
+    }
+  }
+  return { minimum, maximum };
+}
+export function clampTimeRange(range: TimeRange | null, domain: TimeRange): TimeRange {
+  if (!range || range.maximum < domain.minimum || range.minimum > domain.maximum) {
+    return { ...domain };
+  }
+  return {
+    minimum: Math.max(domain.minimum, Math.round(range.minimum)),
+    maximum: Math.min(domain.maximum, Math.round(range.maximum)),
+  };
+}
+/** An empty selection is temporary, not a new one-quarter data domain. */
+export function reconcileTimeRange(
+  range: TimeRange | null,
+  models: readonly AfrTimelineModel[],
+  mode: AfrTimeMode,
+  asOfQuarter: string,
+): TimeRange | null {
+  return !range || !models.some((model) => model.points.length > 0)
+    ? range
+    : clampTimeRange(range, timeDomain(models, mode, asOfQuarter));
+}
+export function selectedTimeRange(start: number, end: number, domain: TimeRange): TimeRange {
+  return clampTimeRange({ minimum: Math.min(start, end), maximum: Math.max(start, end) }, domain);
+}
+export function zoomOutTimeRange(range: TimeRange, domain: TimeRange): TimeRange {
+  const padding = Math.max(1, Math.ceil((range.maximum - range.minimum + 1) / 2));
+  return clampTimeRange(
+    { minimum: range.minimum - padding, maximum: range.maximum + padding },
+    domain,
+  );
+}
+export function visiblePoints(
+  model: AfrTimelineModel,
+  mode: AfrTimeMode,
+  range: TimeRange,
+): AfrTimelinePoint[] {
+  return model.points.filter((point) => {
+    const position = pointPosition(point, mode);
+    return position >= range.minimum && position <= range.maximum;
+  });
+}
+export function offscaleRuns(
+  model: AfrTimelineModel,
+  mode: AfrTimeMode,
+  metric: AfrMetric,
+  geometry: ChartGeometry,
+): { point: AfrTimelinePoint; count: number; maximum: number }[] {
+  const runs: { point: AfrTimelinePoint; count: number; maximum: number }[] = [];
+  let previous = -Infinity;
+  for (const point of visiblePoints(model, mode, geometry)) {
+    const value = pointRate(point, metric);
+    const position = pointPosition(point, mode);
+    if (value !== null && value > geometry.yMaximum) {
+      const last = runs.at(-1);
+      if (last && position === previous + 1) {
+        last.count++;
+        if (value > last.maximum) {
+          last.maximum = value;
+          last.point = point;
+        }
+      } else {
+        runs.push({ point, count: 1, maximum: value });
+      }
+      previous = position;
+    } else {
+      previous = -Infinity;
+    }
+  }
+  return runs;
+}
 export function chartGeometry(
   models: readonly AfrTimelineModel[],
   mode: AfrTimeMode,
   metric: AfrMetric,
   asOfQuarter: string,
   viewportWidth = plot.width,
+  range: TimeRange | null = null,
+  yRange: YRange = 3,
 ): ChartGeometry {
   const width = Math.max(280, Math.min(plot.width, viewportWidth));
   const height = width < 640 ? 340 : plot.height;
-  let minimum = mode === 'relative' ? 1 : quarterOrdinal(asOfQuarter);
-  let maximum = mode === 'relative' ? 1 : quarterOrdinal(asOfQuarter);
+  const { minimum, maximum } = clampTimeRange(range, timeDomain(models, mode, asOfQuarter));
   let highest = 2;
   for (const model of models) {
-    for (const point of model.points) {
-      const position = mode === 'relative' ? point.relativeQuarter : quarterOrdinal(point.quarter);
-      if (mode === 'calendar') {
-        minimum = Math.min(minimum, position);
-      } else {
-        maximum = Math.max(maximum, position);
-      }
+    for (const point of visiblePoints(model, mode, { minimum, maximum })) {
       highest = Math.max(highest, pointRate(point, metric) ?? 0);
     }
   }
-  // Round upwards while retaining finite, safe coordinates even for very large rates.
   const magnitude = 10 ** Math.floor(Math.log10(highest));
   const rounded = Math.ceil((highest / magnitude) * 1.08) * magnitude;
-  const yMaximum = Number.isFinite(rounded) ? rounded : highest;
+  const yMaximum = yRange === 'auto' ? (Number.isFinite(rounded) ? rounded : highest) : yRange;
   const span = Math.max(1, maximum - minimum);
   const step = Math.max(1, Math.ceil(span / (width < 480 ? 2 : width < 740 ? 4 : 7)));
   const ticks = [minimum];
@@ -74,8 +157,13 @@ export function chartGeometry(
     maximum,
     yMaximum,
     ticks,
-    x: (position) => plot.left + ((position - minimum) / span) * (width - plot.left - plot.right),
-    y: (rate) => height - plot.bottom - (rate / yMaximum) * (height - plot.top - plot.bottom),
+    x: (position) =>
+      minimum === maximum
+        ? (plot.left + width - plot.right) / 2
+        : plot.left + ((position - minimum) / span) * (width - plot.left - plot.right),
+    // Finite coordinates far outside the clip retain extreme values without SVG overflow.
+    y: (rate) =>
+      height - plot.bottom - Math.min(rate / yMaximum, 1e100) * (height - plot.top - plot.bottom),
   };
 }
 export function seriesPath(
@@ -87,7 +175,9 @@ export function seriesPath(
   let connected = false;
   let previous = -Infinity;
   const commands: string[] = [];
-  for (const point of model.points) {
+  const points =
+    geometry.minimum === geometry.maximum ? visiblePoints(model, mode, geometry) : model.points;
+  for (const point of points) {
     const rate = pointRate(point, metric);
     const position = mode === 'relative' ? point.relativeQuarter : quarterOrdinal(point.quarter);
     if (rate === null) {
@@ -141,4 +231,103 @@ export function initialTimelineSelection(
       .slice(0, 3)
       .map(({ model }) => model.id),
   );
+}
+
+export type BrushPointer = {
+  pointerId: number;
+  pointerType: string;
+  button: number;
+  clientX: number;
+};
+/** Gesture state shared by pointer adapters; cancellation never commits a range. */
+export function createTimeBrush(callbacks: {
+  capture: (id: number) => void;
+  release: (id: number) => void;
+  preview: (range: { start: number; end: number } | null) => void;
+  select: (start: number, end: number) => void;
+  click: () => void;
+}) {
+  let pointer: number | null = null;
+  let start = 0;
+  let clientStart = 0;
+  function cancel() {
+    const id = pointer;
+    pointer = null;
+    callbacks.preview(null);
+    if (id !== null) {
+      callbacks.release(id);
+    }
+  }
+  return {
+    start(event: BrushPointer, x: number): boolean {
+      if (event.pointerType === 'touch' || event.button !== 0 || pointer !== null) {
+        return false;
+      }
+      pointer = event.pointerId;
+      start = x;
+      clientStart = event.clientX;
+      callbacks.capture(pointer);
+      return true;
+    },
+    move(event: BrushPointer, x: number) {
+      if (event.pointerId !== pointer) {
+        return;
+      }
+      callbacks.preview(Math.abs(event.clientX - clientStart) >= 6 ? { start, end: x } : null);
+    },
+    end(event: BrushPointer, x: number) {
+      if (event.pointerId !== pointer) {
+        return;
+      }
+      const dragged = Math.abs(event.clientX - clientStart) >= 6;
+      const initial = start;
+      cancel();
+      if (dragged) {
+        callbacks.select(initial, x);
+      } else {
+        callbacks.click();
+      }
+    },
+    cancel,
+  };
+}
+
+/** Coalesce observer measurements without mutating layout in its delivery callback. */
+export function createChartResizeScheduler(
+  initialWidth: number,
+  resize: (width: number) => void,
+  requestFrame: (callback: () => void) => number,
+  cancelFrame: (id: number) => void,
+) {
+  const normalize = (width: number) => Math.max(280, Math.min(1000, width));
+  let applied = normalize(initialWidth);
+  let latest = applied;
+  let pending: number | null = null;
+  let disposed = false;
+  return {
+    measure(width: number) {
+      if (disposed || !Number.isFinite(width) || width <= 0) {
+        return;
+      }
+      latest = normalize(width);
+      if (pending !== null || Math.abs(latest - applied) <= 2) {
+        return;
+      }
+      pending = requestFrame(() => {
+        pending = null;
+        if (disposed || Math.abs(latest - applied) <= 2) {
+          return;
+        }
+        applied = latest;
+        resize(applied);
+      });
+    },
+    dispose() {
+      disposed = true;
+      if (pending !== null) {
+        cancelFrame(pending);
+        pending = null;
+      }
+    },
+  };
 }

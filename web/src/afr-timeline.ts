@@ -2,6 +2,8 @@ import { formatAfr } from './afr-format.ts';
 import type { AfrTimelineData, AfrTimelineModel } from './afr-timeline-data.ts';
 import {
   chartGeometry,
+  createTimeBrush,
+  createChartResizeScheduler,
   plot,
   pointRate,
   quarterLabel,
@@ -10,8 +12,16 @@ import {
   seriesPath,
   seriesStyle,
   initialTimelineSelection,
+  timeDomain,
+  clampTimeRange,
+  reconcileTimeRange,
+  selectedTimeRange,
+  zoomOutTimeRange,
+  visiblePoints,
+  pointPosition,
+  offscaleRuns,
 } from './afr-timeline-chart.ts';
-import type { AfrMetric, AfrTimeMode } from './afr-timeline-chart.ts';
+import type { AfrMetric, AfrTimeMode, TimeRange, YRange } from './afr-timeline-chart.ts';
 import type { MatrixModel } from './matrix-data.ts';
 import { matrixModelLabel } from './matrix-data.ts';
 import { captureControlFocus, restoreControlFocus } from './matrix-focus.ts';
@@ -46,6 +56,11 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
   let search = '';
   let inspected = '';
   let pointIndex = 0;
+  let timeRange: TimeRange | null = null;
+  let yRange: YRange = 3;
+  let cancelDrag = () => {};
+  let dragging = false;
+  let suppressClick = false;
   let pending = '';
   let error = '';
   let showTable = false;
@@ -54,14 +69,30 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
   let userSelected = false;
   let chartWidth = Math.max(280, Math.min(1000, app.clientWidth - (innerWidth > 1050 ? 430 : 44)));
   let currentGeometry = chartGeometry([], mode, metric, '2000-Q1', chartWidth);
+  const chartResize = createChartResizeScheduler(
+    chartWidth,
+    (width) => {
+      chartWidth = width;
+      render();
+    },
+    (callback) => requestAnimationFrame(callback),
+    (id) => cancelAnimationFrame(id),
+  );
   const resizeObserver = new ResizeObserver((entries) => {
     const width = entries[0]?.contentRect.width;
-    if (width && Math.abs(chartWidth - Math.min(1000, width)) > 2) {
-      chartWidth = Math.min(1000, width);
-      render();
+    if (width !== undefined) {
+      chartResize.measure(width);
     }
   });
-  routeSignal?.addEventListener('abort', () => resizeObserver.disconnect(), { once: true });
+  routeSignal?.addEventListener('abort', () => cancelDrag(), { once: true });
+  routeSignal?.addEventListener(
+    'abort',
+    () => {
+      resizeObserver.disconnect();
+      chartResize.dispose();
+    },
+    { once: true },
+  );
   routeSignal?.addEventListener('abort', () => switchController?.abort(), { once: true });
 
   function visible(): AfrTimelineModel[] {
@@ -70,11 +101,18 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
   function active(): AfrTimelineModel | undefined {
     return visible().find((model) => model.id === inspected);
   }
+  function inspectionPoints() {
+    const model = active();
+    return model ? visiblePoints(model, mode, currentRange()) : [];
+  }
+  function currentRange() {
+    return clampTimeRange(timeRange, timeDomain(visible(), mode, data.asOfQuarter));
+  }
   function reconcileInspection() {
     if (!visible().some((model) => model.id === inspected)) {
       inspected = visible()[0]?.id ?? '';
     }
-    pointIndex = Math.max(0, Math.min(pointIndex, (active()?.points.length ?? 1) - 1));
+    pointIndex = Math.max(0, Math.min(pointIndex, inspectionPoints().length - 1));
   }
   function updateUrl() {
     const url = new URL(location.href);
@@ -87,9 +125,11 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
   }
   function readout(): string {
     const model = active();
-    const point = model?.points[pointIndex];
+    const point = inspectionPoints()[pointIndex];
     if (!model || !point) {
-      return '<p>Select a model to inspect its recorded values.</p>';
+      return model
+        ? '<p>This model has no recorded quarters in this time range. Choose another model or use All time.</p>'
+        : '<p>Select a model to inspect its recorded values.</p>';
     }
     return `<h3>${esc(matrixModelLabel({ ...model, cells: [], anchor: model.firstQuarter }))}</h3><p><strong>${esc(point.quarter.replace('-Q', ' Q'))} · ${relativeLabel(point.relativeQuarter)}</strong></p><dl><div><dt>${metric === 'cumulative' ? 'Observed-history' : 'Quarterly'} AFR</dt><dd>${rate(pointRate(point, metric))}</dd></div><div><dt>Observed drives</dt><dd>${number(point.count)}</dd></div><div><dt>Quarter failures</dt><dd>${number(point.failures)}</dd></div><div><dt>Quarter drive-days</dt><dd>${number(point.driveDays)}</dd></div><div><dt>Quarter coverage</dt><dd>${esc(point.coverage)}</dd></div><div><dt>Cumulative source coverage</dt><dd>${point.historyComplete ? 'Complete' : 'Incomplete'}</dd></div></dl>${pointRate(point, metric) === null ? '<p>AFR is unavailable for incomplete coverage or zero recorded exposure. The line breaks here.</p>' : ''}`;
   }
@@ -98,7 +138,12 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
     if (!model || !showTable) {
       return '';
     }
-    return `<div class="afr-table-scroll"><table><caption>Recorded values for ${esc(model.name)} · ${metric === 'cumulative' ? 'observed-history' : 'quarterly'} AFR</caption><thead><tr><th scope="col">Quarter</th><th scope="col">Relative</th><th scope="col">AFR</th><th scope="col">Count</th><th scope="col">Failures</th><th scope="col">Drive-days</th><th scope="col">Coverage</th><th scope="col">History</th></tr></thead><tbody>${model.points.map((point) => `<tr><th scope="row">${esc(point.quarter)}</th><td>${relativeLabel(point.relativeQuarter)}</td><td>${rate(pointRate(point, metric))}</td><td>${number(point.count)}</td><td>${number(point.failures)}</td><td>${number(point.driveDays)}</td><td>${esc(point.coverage)}</td><td>${point.historyComplete ? 'Complete' : 'Incomplete'}</td></tr>`).join('')}</tbody></table></div>`;
+    return `<div class="afr-table-scroll"><table><caption>Recorded values in this time range for ${esc(model.name)} · ${metric === 'cumulative' ? 'observed-history' : 'quarterly'} AFR</caption><thead><tr><th scope="col">Quarter</th><th scope="col">Relative</th><th scope="col">AFR</th><th scope="col">Count</th><th scope="col">Failures</th><th scope="col">Drive-days</th><th scope="col">Coverage</th><th scope="col">History</th></tr></thead><tbody>${inspectionPoints()
+      .map(
+        (point) =>
+          `<tr><th scope="row">${esc(point.quarter)}</th><td>${relativeLabel(point.relativeQuarter)}</td><td>${rate(pointRate(point, metric))}</td><td>${number(point.count)}</td><td>${number(point.failures)}</td><td>${number(point.driveDays)}</td><td>${esc(point.coverage)}</td><td>${point.historyComplete ? 'Complete' : 'Incomplete'}</td></tr>`,
+      )
+      .join('')}</tbody></table></div>`;
   }
   function refreshInspection() {
     if (routeSignal?.aborted) {
@@ -109,9 +154,10 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
     const modelSelect = app.querySelector<HTMLSelectElement>('#afr-inspect-model')!;
     modelSelect.value = inspected;
     const slider = app.querySelector<HTMLInputElement>('#afr-point')!;
-    slider.max = String(Math.max(0, (active()?.points.length ?? 1) - 1));
+    slider.max = String(Math.max(0, inspectionPoints().length - 1));
     slider.value = String(pointIndex);
-    const point = active()?.points[pointIndex];
+    slider.disabled = inspectionPoints().length === 0;
+    const point = inspectionPoints()[pointIndex];
     slider.setAttribute(
       'aria-valuetext',
       point
@@ -128,7 +174,10 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
     const value = point ? pointRate(point, metric) : null;
     const dot = app.querySelector<SVGCircleElement>('#afr-current-point');
     if (dot) {
-      dot.setAttribute('visibility', point && value !== null ? 'visible' : 'hidden');
+      dot.setAttribute(
+        'visibility',
+        point && value !== null && value <= geometry.yMaximum ? 'visible' : 'hidden',
+      );
       if (point && value !== null) {
         dot.setAttribute(
           'cx',
@@ -142,38 +191,211 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
   }
   function chart(): string {
     const showing = visible();
-    const geometry = chartGeometry(showing, mode, metric, data.asOfQuarter, chartWidth);
+    const geometry = chartGeometry(
+      showing,
+      mode,
+      metric,
+      data.asOfQuarter,
+      chartWidth,
+      timeRange,
+      yRange,
+    );
     currentGeometry = geometry;
     if (!showing.length) {
       return '<div id="afr-chart" class="afr-empty"><h2>No models selected</h2><p>Choose models at the left, or use Select all.</p></div>';
     }
     const ticks = Array.from({ length: 5 }, (_, index) => (geometry.yMaximum * index) / 4);
     const noRates = !showing.some((model) =>
-      model.points.some((point) => pointRate(point, metric) !== null),
+      visiblePoints(model, mode, geometry).some((point) => pointRate(point, metric) !== null),
     );
-    return `${noRates ? '<p class="afr-unavailable" role="status">Selected models have no complete quarter with positive recorded exposure in this snapshot. Inspect their recorded coverage below, or choose other models.</p>' : ''}<div class="afr-legend" aria-label="Selected model lines">${showing
+    const runs = showing.flatMap((model) =>
+      offscaleRuns(model, mode, metric, geometry).map((run) => ({ ...run, model })),
+    );
+    const aboveCount = runs.reduce((sum, run) => sum + run.count, 0);
+    return `${aboveCount ? `<p class="afr-offscale-note" role="status">${aboveCount} recorded values exceed ${geometry.yMaximum}% in this time range. Triangle markers identify off-scale runs; inspect them for actual values or choose Full range.</p>` : ''}${noRates ? '<p class="afr-unavailable" role="status">Selected models have no available AFR in this time range. Use All time, inspect recorded coverage below, or choose other models.</p>' : ''}<div class="afr-legend" aria-label="Selected model lines">${showing
       .map((model) => {
         const style = seriesStyle(model.id);
         return `<button type="button" id="afr-legend-${esc(encodeURIComponent(model.id))}" data-inspect="${esc(model.id)}"><svg width="36" height="12" viewBox="0 0 36 12" aria-hidden="true"><path d="M0,6H36" stroke="${style.color}" stroke-width="3" stroke-dasharray="${style.dash}"/></svg><span>${esc(model.name)}</span></button>`;
       })
       .join(
         '',
-      )}</div><svg id="afr-chart" viewBox="0 0 ${geometry.width} ${geometry.height}" role="group" aria-labelledby="afr-chart-title afr-chart-description"><title id="afr-chart-title">${metric === 'cumulative' ? 'Observed-history' : 'Quarterly'} AFR by ${mode === 'relative' ? 'quarter since first recorded appearance' : 'calendar quarter'}</title><desc id="afr-chart-description">${showing.length} selected model lines. Missing or incomplete quarters break lines. Focus a line or choose an inspection model, then use the quarter slider to read every value.</desc>${ticks.map((value) => `<g class="afr-axis"><line x1="${plot.left}" x2="${geometry.width - plot.right}" y1="${geometry.y(value)}" y2="${geometry.y(value)}"/><text x="${plot.left - 10}" y="${geometry.y(value) + 4}" text-anchor="end">${esc(value >= 1000000 ? value.toExponential(1) : value >= 100 ? number(Math.round(value)) : Number(value.toFixed(2)))}%</text></g>`).join('')}${[1, 2].map((value) => `<g class="afr-guide"><line x1="${plot.left}" x2="${geometry.width - plot.right}" y1="${geometry.y(value)}" y2="${geometry.y(value)}"/><title>${value}% guide</title></g>`).join('')}${geometry.ticks.map((position) => `<g class="afr-axis"><line x1="${geometry.x(position)}" x2="${geometry.x(position)}" y1="${geometry.height - plot.bottom}" y2="${geometry.height - plot.bottom + 6}"/><text x="${geometry.x(position)}" y="${geometry.height - plot.bottom + 24}" text-anchor="middle">${mode === 'relative' ? relativeLabel(position) : quarterLabel(position)}</text></g>`).join('')}<text class="afr-axis-label" x="${geometry.width / 2}" y="${geometry.height - 14}" text-anchor="middle">${mode === 'relative' ? 'Quarters since first recorded appearance' : 'Calendar quarter'}</text>${showing
+      )}</div><svg id="afr-chart" viewBox="0 0 ${geometry.width} ${geometry.height}" role="group" aria-labelledby="afr-chart-title afr-chart-description"><title id="afr-chart-title">${metric === 'cumulative' ? 'Observed-history' : 'Quarterly'} AFR by ${mode === 'relative' ? 'quarter since first recorded appearance' : 'calendar quarter'}</title><desc id="afr-chart-description">${showing.length} selected model lines. Missing or incomplete quarters break lines. Focus a line or choose an inspection model, then use the quarter slider to read every value.</desc><defs><clipPath id="afr-plot-clip"><rect x="${plot.left}" y="${plot.top}" width="${geometry.width - plot.left - plot.right}" height="${geometry.height - plot.top - plot.bottom}"/></clipPath></defs>${ticks.map((value) => `<g class="afr-axis"><line x1="${plot.left}" x2="${geometry.width - plot.right}" y1="${geometry.y(value)}" y2="${geometry.y(value)}"/><text x="${plot.left - 10}" y="${geometry.y(value) + 4}" text-anchor="end">${esc(value >= 1000000 ? value.toExponential(1) : value >= 100 ? number(Math.round(value)) : Number(value.toFixed(2)))}%</text></g>`).join('')}${[
+      1, 2,
+    ]
+      .filter((value) => value <= geometry.yMaximum)
+      .map(
+        (value) =>
+          `<g class="afr-guide"><line x1="${plot.left}" x2="${geometry.width - plot.right}" y1="${geometry.y(value)}" y2="${geometry.y(value)}"/><title>${value}% guide</title></g>`,
+      )
+      .join(
+        '',
+      )}${geometry.ticks.map((position) => `<g class="afr-axis"><line x1="${geometry.x(position)}" x2="${geometry.x(position)}" y1="${geometry.height - plot.bottom}" y2="${geometry.height - plot.bottom + 6}"/><text x="${geometry.x(position)}" y="${geometry.height - plot.bottom + 24}" text-anchor="middle">${mode === 'relative' ? relativeLabel(position) : quarterLabel(position)}</text></g>`).join('')}<text class="afr-axis-label" x="${geometry.width / 2}" y="${geometry.height - 14}" text-anchor="middle">${mode === 'relative' ? 'Quarters since first recorded appearance' : 'Calendar quarter'}</text><g clip-path="url(#afr-plot-clip)">${showing
       .map((model) => {
         const style = seriesStyle(model.id);
         return `<path id="afr-series-${esc(encodeURIComponent(model.id))}" class="afr-series" data-series="${esc(model.id)}" tabindex="0" role="button" aria-label="Inspect ${esc(model.name)}" d="${seriesPath(model, geometry, mode, metric)}" stroke="${style.color}" stroke-dasharray="${style.dash}"><title>${esc(model.vendor)} · ${esc(model.name)}</title></path>`;
       })
       .join(
         '',
-      )}<circle id="afr-current-point" class="afr-current-point" r="5" visibility="hidden"/></svg>`;
+      )}<circle id="afr-current-point" class="afr-current-point" r="5" visibility="hidden"/></g>${runs
+      .map((run) => {
+        const x = geometry.x(pointPosition(run.point, mode));
+        const label = `${run.model.name}: ${run.count} off-scale value${run.count === 1 ? '' : 's'}, highest ${rate(run.maximum)} at ${run.point.quarter}. Inspect highest value.`;
+        return `<path class="afr-offscale" data-offscale="${esc(run.model.id)}" data-position="${pointPosition(run.point, mode)}" role="button" tabindex="0" aria-label="${esc(label)}" d="M${x - 6},${plot.top + 10} L${x},${plot.top} L${x + 6},${plot.top + 10}Z" fill="${seriesStyle(run.model.id).color}"><title>${esc(label)}</title></path>`;
+      })
+      .join(
+        '',
+      )}<rect id="afr-brush" class="afr-brush" x="0" y="${plot.top}" width="0" height="${geometry.height - plot.top - plot.bottom}" visibility="hidden"/></svg>`;
   }
+  function axisControls(): string {
+    const domain = timeDomain(visible(), mode, data.asOfQuarter);
+    const range = currentRange();
+    const all = range.minimum === domain.minimum && range.maximum === domain.maximum;
+    const options = (selectedPosition: number) =>
+      Array.from({ length: domain.maximum - domain.minimum + 1 }, (_, index) => {
+        const position = domain.minimum + index;
+        return `<option value="${position}" ${position === selectedPosition ? 'selected' : ''}>${mode === 'relative' ? relativeLabel(position) : quarterLabel(position)}</option>`;
+      }).join('');
+    return `<div class="afr-axis-controls" role="group" aria-label="Chart ranges"><label>From ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-from">${options(range.minimum)}</select></label><label>To ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-to">${options(range.maximum)}</select></label><button id="afr-zoom-out" type="button" ${all ? 'disabled' : ''}>Zoom out</button><button id="afr-all-time" type="button" ${all ? 'disabled' : ''}>All time</button><label>Y range<select id="afr-y-range">${([1, 2, 3, 5, 'auto'] as const).map((value) => `<option value="${value}" ${value === yRange ? 'selected' : ''}>${value === 'auto' ? 'Full range (auto)' : `0-${value}%`}</option>`).join('')}</select></label></div><p class="afr-range-help">Drag across the plot to zoom to quarters. Use From and To with keyboard or touch. Escape cancels a drag.</p>`;
+  }
+  function bindAxes() {
+    const setRange = (range: TimeRange | null) => {
+      timeRange = range;
+      render();
+    };
+    const from = app.querySelector<HTMLSelectElement>('#afr-from')!;
+    const to = app.querySelector<HTMLSelectElement>('#afr-to')!;
+    from.onchange = () =>
+      setRange({
+        minimum: Number(from.value),
+        maximum: Math.max(Number(from.value), Number(to.value)),
+      });
+    to.onchange = () =>
+      setRange({
+        minimum: Math.min(Number(from.value), Number(to.value)),
+        maximum: Number(to.value),
+      });
+    app.querySelector<HTMLButtonElement>('#afr-all-time')!.onclick = () => setRange(null);
+    app.querySelector<HTMLButtonElement>('#afr-zoom-out')!.onclick = () =>
+      setRange(zoomOutTimeRange(currentRange(), timeDomain(visible(), mode, data.asOfQuarter)));
+    app.querySelector<HTMLSelectElement>('#afr-y-range')!.onchange = (event) => {
+      const value = (event.target as HTMLSelectElement).value;
+      yRange = value === 'auto' ? 'auto' : (Number(value) as YRange);
+      render();
+    };
+    app.querySelectorAll<SVGPathElement>('[data-offscale]').forEach((marker) => {
+      const inspect = () => {
+        inspected = marker.dataset.offscale!;
+        pointIndex = inspectionPoints().findIndex(
+          (point) => pointPosition(point, mode) === Number(marker.dataset.position),
+        );
+        reconcileInspection();
+        refreshInspection();
+      };
+      marker.onclick = () => {
+        if (!suppressClick) {
+          inspect();
+        }
+      };
+      marker.onkeydown = (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          inspect();
+        }
+      };
+    });
+    const svg = app.querySelector<SVGSVGElement>('svg#afr-chart');
+    if (!svg) {
+      return;
+    }
+    const brush = app.querySelector<SVGRectElement>('#afr-brush')!;
+    let clickTarget: EventTarget | null = null;
+    const x = (event: PointerEvent) => {
+      const bounds = svg.getBoundingClientRect();
+      return Math.max(
+        plot.left,
+        Math.min(
+          currentGeometry.width - plot.right,
+          ((event.clientX - bounds.left) / bounds.width) * currentGeometry.width,
+        ),
+      );
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        suppressClick = true;
+        gesture.cancel();
+      }
+    };
+    const gesture = createTimeBrush({
+      capture: (id) => {
+        svg.setPointerCapture(id);
+        document.addEventListener('keydown', escape);
+      },
+      release: (id) => {
+        document.removeEventListener('keydown', escape);
+        if (svg.hasPointerCapture(id)) {
+          svg.releasePointerCapture(id);
+        }
+      },
+      preview: (range) => {
+        dragging = range !== null;
+        brush.setAttribute('visibility', range ? 'visible' : 'hidden');
+        if (range) {
+          brush.setAttribute('x', String(Math.min(range.start, range.end)));
+          brush.setAttribute('width', String(Math.abs(range.end - range.start)));
+        }
+      },
+      select: (start, finish) => {
+        suppressClick = true;
+        const geometry = currentGeometry;
+        const position = (px: number) =>
+          geometry.minimum +
+          ((px - plot.left) / (geometry.width - plot.left - plot.right)) *
+            (geometry.maximum - geometry.minimum);
+        setRange(selectedTimeRange(position(start), position(finish), currentRange()));
+      },
+      click: () => {
+        // Pointer capture retargets native clicks to the SVG; retain short-click inspection.
+        if (clickTarget instanceof SVGElement) {
+          clickTarget.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        }
+      },
+    });
+    cancelDrag = gesture.cancel;
+    svg.onpointerdown = (event) => {
+      suppressClick = false;
+      const bounds = svg.getBoundingClientRect();
+      const px = ((event.clientX - bounds.left) / bounds.width) * currentGeometry.width;
+      const py = ((event.clientY - bounds.top) / bounds.height) * currentGeometry.height;
+      if (
+        px < plot.left ||
+        px > currentGeometry.width - plot.right ||
+        py < plot.top ||
+        py > currentGeometry.height - plot.bottom
+      ) {
+        return;
+      }
+      if (gesture.start(event, x(event))) {
+        clickTarget = event.target;
+      }
+    };
+    svg.onpointermove = (event) => gesture.move(event, x(event));
+    svg.onpointerup = (event) => gesture.end(event, x(event));
+    svg.onpointercancel = () => {
+      suppressClick = true;
+      gesture.cancel();
+    };
+    svg.onlostpointercapture = gesture.cancel;
+  }
+
   function render() {
     if (routeSignal?.aborted) {
       return;
     }
+    cancelDrag();
+    const showing = visible();
+    timeRange = reconcileTimeRange(timeRange, showing, mode, data.asOfQuarter);
     reconcileInspection();
     const focus = captureControlFocus(document.activeElement as HTMLElement | null);
-    const showing = visible();
     patchContent(
       app,
       `<main id="main" class="afr-page"><header class="afr-heading"><div><p class="eyebrow">RECORDED HDD HISTORY</p><h1>AFR trends</h1><p>Compare how annualized failure rates change through recorded deployment history.</p></div><label>As-of evidence<select id="afr-snapshot">${choices
@@ -183,9 +405,9 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
             `<option value="${esc(choice.snapshotId)}" ${choice.snapshotId === (pending || data.snapshotId) ? 'selected' : ''} ${choice.timeline ? '' : 'disabled'}>${esc(choice.asOfQuarter.replace('-Q', ' Q'))}${choice.timeline ? '' : ' · unavailable'}</option>`,
         )
         .join('')}</select></label></header>
-      <div class="afr-controls"><label>Rate<select id="afr-metric"><option value="cumulative" ${metric === 'cumulative' ? 'selected' : ''}>Observed-history cumulative AFR</option><option value="quarterly" ${metric === 'quarterly' ? 'selected' : ''}>Quarterly AFR</option></select></label><label>Time alignment<select id="afr-time"><option value="relative" ${mode === 'relative' ? 'selected' : ''}>Since first recorded appearance</option><option value="calendar" ${mode === 'calendar' ? 'selected' : ''}>Calendar quarters</option></select></label><p class="afr-method-note">Models with at least 2,000 observed drives in a quarter; all recorded quarters shown. Starts with the three most-deployed models; choose any models to compare.</p></div>
+      <div class="afr-controls"><label>Rate<select id="afr-metric"><option value="cumulative" ${metric === 'cumulative' ? 'selected' : ''}>Observed-history cumulative AFR</option><option value="quarterly" ${metric === 'quarterly' ? 'selected' : ''}>Quarterly AFR</option></select></label><label>Time alignment<select id="afr-time"><option value="relative" ${mode === 'relative' ? 'selected' : ''}>Since first recorded appearance</option><option value="calendar" ${mode === 'calendar' ? 'selected' : ''}>Calendar quarters</option></select></label><p class="afr-method-note">Models with at least 2,000 observed drives in a quarter; all recorded quarters available. Starts with the three most-deployed models; choose any models to compare.</p></div>
       ${pending ? '<p role="status">Loading selected evidence… Previous validated chart remains visible.</p>' : ''}${error ? `<p role="alert">${esc(error)}</p>` : ''}
-      <div class="afr-workspace">${renderModelSelector(models, selected, search, 'afr-chart', 'chart')}<section class="afr-chart-area" aria-label="AFR comparison">${chart()}<p class="afr-chart-note">Gaps mean unavailable AFR. The 1% and 2% guides are context, not predictions.</p><div class="afr-inspection-controls"><label>Inspect model<select id="afr-inspect-model" ${showing.length ? '' : 'disabled'}>${showing.map((model) => `<option value="${esc(model.id)}" ${model.id === inspected ? 'selected' : ''}>${esc(model.name)} · ${esc(model.vendor)}</option>`).join('')}</select></label><label>Inspect quarter<input id="afr-point" type="range" min="0" max="${Math.max(0, (active()?.points.length ?? 1) - 1)}" value="${pointIndex}" step="1" ${active()?.points.length ? '' : 'disabled'}></label></div><p class="afr-keyboard-help">Focus a line to identify it. Use the quarter slider with arrow keys, Home or End to inspect its values.</p><section id="afr-readout" class="afr-readout" aria-live="polite" aria-atomic="true">${readout()}</section><details id="afr-values" ${showTable ? 'open' : ''}><summary>Values for inspected model</summary><div id="afr-table">${valuesTable()}</div></details><button id="afr-download" type="button" ${showing.length ? '' : 'disabled'}>Download selected data (CSV)</button></section></div>
+      <div class="afr-workspace">${renderModelSelector(models, selected, search, 'afr-chart', 'chart')}<section class="afr-chart-area" aria-label="AFR comparison">${axisControls()}${chart()}<p class="afr-chart-note">Gaps mean unavailable AFR. The 1% and 2% guides are context, not predictions.</p><div class="afr-inspection-controls"><label>Inspect model<select id="afr-inspect-model" ${showing.length ? '' : 'disabled'}>${showing.map((model) => `<option value="${esc(model.id)}" ${model.id === inspected ? 'selected' : ''}>${esc(model.name)} · ${esc(model.vendor)}</option>`).join('')}</select></label><label>Inspect quarter<input id="afr-point" type="range" min="0" max="${Math.max(0, inspectionPoints().length - 1)}" value="${pointIndex}" step="1" ${inspectionPoints().length ? '' : 'disabled'}></label></div><p class="afr-keyboard-help">Focus a line to identify it. Use the quarter slider with arrow keys, Home or End to inspect its values.</p><section id="afr-readout" class="afr-readout" aria-live="polite" aria-atomic="true">${readout()}</section><details id="afr-values" ${showTable ? 'open' : ''}><summary>Values for inspected model</summary><div id="afr-table">${valuesTable()}</div></details><button id="afr-download" type="button" ${showing.length ? '' : 'disabled'}>Download full selected history (CSV)</button></section></div>
       <footer class="afr-method"><h2>Reading these rates</h2><p>First recorded appearance is not the age of individual drives. Observed-history cumulative AFR uses recorded failures ÷ recorded drive-days × 36500; it is not lifetime AFR. Quarterly AFR uses that quarter's recorded components. Incomplete, missing, unpublished and zero-exposure quarters break lines. Later cumulative values include earlier recorded exposure, even when earlier coverage is incomplete.</p><p>Early quarters below 2,000 drives remain visible. Models end at their last recorded quarter. Rate calculation version: ${esc(data.rateVersion)}. Data: <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">Backblaze Drive Stats</a>.</p></footer></main>`,
     );
     bindModelSelector(
@@ -207,6 +429,7 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
     };
     app.querySelector<HTMLSelectElement>('#afr-time')!.onchange = (event) => {
       mode = (event.target as HTMLSelectElement).value as AfrTimeMode;
+      timeRange = null;
       updateUrl();
       render();
     };
@@ -243,13 +466,21 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
         refreshInspection();
       };
       path.onfocus = inspect;
-      path.onpointerenter = inspect;
-      path.onclick = inspect;
+      path.onpointerenter = () => {
+        if (!dragging) {
+          inspect();
+        }
+      };
+      path.onclick = () => {
+        if (!suppressClick) {
+          inspect();
+        }
+      };
       path.onkeydown = (event) => {
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(event.key)) {
           event.preventDefault();
           inspect();
-          const end = Math.max(0, (active()?.points.length ?? 1) - 1);
+          const end = Math.max(0, inspectionPoints().length - 1);
           pointIndex =
             event.key === 'Home'
               ? 0
@@ -267,6 +498,9 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
         }
       };
       path.onpointermove = (event) => {
+        if (dragging || event.buttons) {
+          return;
+        }
         inspect();
         const model = active();
         const svg = app.querySelector<SVGSVGElement>('#afr-chart')!;
@@ -274,7 +508,10 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
         const geometry = currentGeometry;
         const target = ((event.clientX - bounds.left) / bounds.width) * geometry.width;
         let distance = Infinity;
-        model?.points.forEach((point, index) => {
+        if (!model) {
+          return;
+        }
+        inspectionPoints().forEach((point, index) => {
           const candidate = Math.abs(
             geometry.x(
               mode === 'relative' ? point.relativeQuarter : quarterOrdinal(point.quarter),
@@ -288,6 +525,7 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
         refreshInspection();
       };
     });
+    bindAxes();
     refreshInspection();
     resizeObserver.observe(app.querySelector<HTMLElement>('.afr-chart-area')!);
     restoreControlFocus(focus, (id) => document.getElementById(id));
@@ -357,6 +595,7 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
       if (capsule.kind !== 'timeline') {
         throw new Error('Invalid AFR trends presentation.');
       }
+      timeRange = null;
       data = capsule.body;
       models = selectorModels(data);
       selected = userSelected

@@ -313,3 +313,48 @@
 .afr-page .matrix-model-choice .model-id {
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 }
+.afr-axis-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+.afr-axis-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.afr-range-help,
+.afr-offscale-note {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.afr-offscale-note {
+  padding: 10px;
+  background: #fff5dc;
+  border-left: 3px solid #a45513;
+}
+.afr-brush {
+  fill: #205a9130;
+  stroke: #205a91;
+  pointer-events: none;
+}
+.afr-offscale {
+  cursor: pointer;
+  stroke: #fff;
+  stroke-width: 1;
+}
+.afr-page button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+#afr-chart {
+  touch-action: pan-y pinch-zoom;
+}
+@media (max-width: 600px) {
+  .afr-axis-controls label {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+}
