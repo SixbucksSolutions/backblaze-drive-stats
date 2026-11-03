@@ -16,6 +16,6 @@ Cards are ordered by latest-quarter observed drive count, largest first. Full fi
 
 Each included model links to its exact model-number search on PCPartPicker and to the underlying AFR comparison. A search link does not establish availability or current production.
 
-Model-number highlights reuse the matrix brand palette. Toshiba uses a card-only darker red (`#B40000`) so white text exceeds the [WCAG AAA normal-text contrast requirement](https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html) of 7:1 at every size. Seagate uses black text; WD and Toshiba use white text. These category colors are independent of the AFR values.
+The full vendor/model/capacity title has a padded background using the matrix brand palette. Toshiba uses a card-only darker red (`#B40000`) so white text exceeds the [WCAG AAA normal-text contrast requirement](https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html) of 7:1 at every size. Seagate uses black text; WD and Toshiba use white text. These category colors are independent of the AFR values.
 
 These are curated research candidates, not trained scores or statistically certified predictions. Current manufacture and system compatibility are not established by these aggregates. The public implementation contains no personal inventory, ownership history or private narrative. The route renders only the three cards and never mounts the full matrix.
