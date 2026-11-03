@@ -4,7 +4,7 @@ import { displayModelLabel } from './model-labels.ts';
 import { mountPublishedNavigation, updatePublishedNavigation } from './published-navigation.ts';
 import { appRoute, viewUsesSpinner } from './app-route.ts';
 import { abortInitialPresentation } from './presentation-loader.ts';
-import { waitForFonts, waitForPresentation, yieldToStartupPaint } from './font-ready.ts';
+import { UI_FONTS, waitForFonts, waitForPresentation, yieldToStartupPaint } from './font-ready.ts';
 import { csv, groupManufacturers, parseBundle, parseManifest, summarize } from './data.ts';
 import type { Bundle, Manifest, Model, Quarter } from './data.ts';
 
@@ -569,7 +569,11 @@ export async function startAnalytics(startup: AbortController) {
   startup.signal.addEventListener('abort', () => abortInitialPresentation(), { once: true });
   // Font requests, route downloads and the HTML-started catalogue request overlap.
   // Apply the permanent font choice before constructing the large production matrix.
-  const fonts = waitForFonts(document.fonts).then((mode) => {
+  const fonts = waitForFonts(
+    document.fonts,
+    5000,
+    appRoute(params) === 'timeline' ? UI_FONTS : undefined,
+  ).then((mode) => {
     if (!startup.signal.aborted) {
       document.documentElement.dataset.fontMode = mode;
     }
@@ -589,13 +593,18 @@ export async function startAnalytics(startup: AbortController) {
           startup.signal.throwIfAborted();
           return module.initMatrix(startup.signal);
         })
-      : appRoute(params) === 'snapshot'
-        ? import('./snapshot-explorer.ts').then(async (module) => {
-            await startupPaint;
+      : appRoute(params) === 'timeline'
+        ? import('./afr-timeline.ts').then(async (module) => {
             startup.signal.throwIfAborted();
-            return module.initSnapshotExplorer(startup.signal);
+            return module.initAfrTimeline(startup.signal);
           })
-        : startupPaint.then(() => init(startup.signal)),
+        : appRoute(params) === 'snapshot'
+          ? import('./snapshot-explorer.ts').then(async (module) => {
+              await startupPaint;
+              startup.signal.throwIfAborted();
+              return module.initSnapshotExplorer(startup.signal);
+            })
+          : startupPaint.then(() => init(startup.signal)),
   );
   const readiness = await waitForPresentation(fonts, rendering);
   if (startup.signal.aborted) {

@@ -60,6 +60,7 @@ export function presentationCapsulesPlugin() {
             sourceManifestSha256: item.entry.sourceManifestSha256,
             descriptor: item.entry.descriptor,
             matrix: emit(item.matrixCapsule, `${item.entry.asOfQuarter}-matrix`),
+            timeline: emit(item.timelineCapsule, `${item.entry.asOfQuarter}-timeline`),
             reports: item.reports.map((row) => ({
               quarter: row.quarter,
               status: row.status,
@@ -189,6 +190,7 @@ export function presentationCapsulesPlugin() {
           sourceManifestSha256: item.entry.sourceManifestSha256,
           descriptor: item.entry.descriptor,
           matrix: emit(item.matrixCapsule, `${item.entry.asOfQuarter}-matrix`),
+          timeline: emit(item.timelineCapsule, `${item.entry.asOfQuarter}-timeline`),
           reports: item.reports.map((row) => ({
             quarter: row.quarter,
             status: row.status,
@@ -214,6 +216,7 @@ export function presentationCapsulesPlugin() {
           snapshots: catalogue.snapshots.map((snapshot) => ({
             ...snapshot,
             matrix: reference(snapshot.matrix),
+            timeline: reference(snapshot.timeline),
             reports: snapshot.reports.map((row) => ({ ...row, ref: reference(row.ref) })),
           })),
         });

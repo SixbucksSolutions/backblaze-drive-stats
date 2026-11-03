@@ -43,8 +43,8 @@ import type {
 } from './matrix-data.ts';
 import { captureControlFocus, controlId, restoreControlFocus } from './matrix-focus.ts';
 import { connectMatrixScroll } from './matrix-scroll.ts';
-import { groupModels, setVendorSelected, vendorSelectionState } from './matrix-selection.ts';
-import { modelSelectorLayout } from './model-alignment.ts';
+import { groupModels } from './matrix-selection.ts';
+import { bindModelSelector, renderModelSelector } from './model-selector.ts';
 
 const files = [q4, q3, later, earlier, correction, xyz];
 const esc = (value: unknown) =>
@@ -235,37 +235,8 @@ function failureUnit() {
 function productionMethod() {
   return `${snapshot.hddScopeDescription ? `<p>${esc(snapshot.hddScopeDescription)}</p>` : ''}<p><strong>${esc(snapshot.rateLabel ?? 'Observed-history AFR')}</strong> = ${failureUnit()} ÷ recorded drive-days × 36500. It includes recorded pre-anchor and below-threshold history. Missing days are not imputed or assumed representative. It is not lifetime AFR, complete-history AFR or individual-drive survival.</p><p>Each model starts at its earliest proven ≥2,000-drive quarter in supplied history, including a partial-quarter lower-bound proof. Earlier qualification can remain possible. Gaps, below-threshold quarters and reentry consume positions; the clock never resets. Relative history is not physical drive age.</p><p>Current partial, missing and unpublished rows have unavailable display metrics. A later complete eligible row can have Observed-history AFR despite a past gap. Inspect complete-history availability and source completeness separately. A numeric zero is an observed value; a dash is unavailable.</p><p>Deltas compare the prior eligible complete quarter at this rate basis and disclose its actual calendar quarter and elapsed distance. ${snapshot.matrixCalculationVersion === '2.1.0' ? 'First eligible deltas subtract a synthetic zero baseline for AFR and Count; zero is not a prior observed quarter.' : 'This snapshot uses the legacy 2.0 convention: first eligible deltas are initialized to zero; no prior AFR or Count baseline is asserted.'} A gap-spanning difference is not a quarter-over-quarter rate. Count is distinct observed identities during a complete quarter. New means first recorded observation, including the initial observed fleet. ${snapshot.matrixCalculationVersion === '2.1.0' ? 'Failed counts each model/serial with at least one failure flag once per quarter. AFR accumulates those quarterly counts; the same serial can count again in a later quarter.' : 'Failed sums daily failure flags; repeated flags on one serial count repeatedly and also contribute to AFR.'} ${snapshot.matrixCalculationVersion === '2.1.0' ? 'Retired counts unique identities observed this quarter whose final recorded observation is in this quarter, provided it precedes the selected snapshot quarter. It includes failed identities and does not prove physical exit. The terminal quarter is right-censored and unavailable; gaps can also obstruct inference.' : 'Retired includes failed departures and is inferred from last observations, becomes unavailable when gaps obstruct inference, and uses a provisional Retired = Failed proxy at the selected cutoff.'} Population Delta does not equal New minus Retired.</p><p>All accepted analysis models start selected. Supporting context is wider than this matrix; filters do not change its denominator. Purchase and historical-reference defaults remain unassigned in the current generation. Deployment evidence is not a manufacturing, retail availability, NAS compatibility or purchase recommendation.</p><p>The single guide defaults to after relative year 6 (quarter 24), with choices 1–6. It is a reading reference, not a lifetime or replacement prediction. The full history remains visible beyond it.</p><p>Colors use all numeric eligible cells in the selected snapshot, including initialization, with the accepted reference palette and edge rules. Selection never recalculates domains. Vendor colors identify categories; no composite ranking is calculated.</p>`;
 }
-function modelNavigation(models: MatrixModel[]) {
-  const query = search.trim().toLowerCase();
-  const layout = modelSelectorLayout(snapshot.models);
-  const groups = groupModels(snapshot.models)
-    .map((group) => ({
-      ...group,
-      matches: group.models.filter((model) =>
-        `${model.name} ${model.vendor}`.toLowerCase().includes(query),
-      ),
-    }))
-    .filter((group) => group.matches.length);
-  return `<aside class="matrix-model-nav" aria-label="Brands and drive models" style="--matrix-model-code-width:${layout.codeWidth}ch;--matrix-model-integer-width:${layout.integerWidth}ch;--matrix-model-fraction-width:${layout.fractionWidth}ch;--matrix-model-capacity-width:${layout.capacityWidth}ch">
-    <h2 class="matrix-nav-heading">Brands & models</h2>
-    <p class="matrix-nav-count" role="status">${models.length} of ${snapshot.models.length} models selected</p>
-    <label class="matrix-nav-search">Find choices<input id="matrix-search" type="search" value="${esc(search)}" placeholder="Model or brand" aria-describedby="matrix-selection-help"></label>
-    <p id="matrix-selection-help" class="matrix-nav-help">Search finds choices. Checkboxes control the table. Brand checkboxes apply to all models in that brand.</p>
-    <div class="matrix-nav-actions"><button type="button" id="matrix-select-all">Select all</button><button type="button" id="matrix-clear">Clear all</button></div>
-    <div class="matrix-brand-list">${
-      groups
-        .map((group) => {
-          const state = vendorSelectionState(group.models, selected);
-          return `<div class="matrix-brand-group" data-render-key="choices-${esc(group.vendor)}" style="--brand-color:${vendorPaint(group.vendor).background}"><fieldset class="matrix-brand-options"><legend><label class="matrix-vendor-choice"><input type="checkbox" id="${controlId('vendor', group.vendor)}" data-vendor="${esc(group.vendor)}" aria-controls="matrix-data" ${state.checked ? 'checked' : ''}><span>${esc(group.vendor)}</span><small aria-hidden="true">${state.selectedCount}/${state.totalCount}</small></label></legend><div class="matrix-model-choices">${group.matches
-            .map((model) => {
-              const label = layout.labels.get(model.id)!;
-              return `<label class="matrix-model-choice" data-render-key="choice-${esc(model.id)}"><input type="checkbox" id="${controlId('model', model.id)}" data-model="${esc(model.id)}" aria-controls="matrix-data" ${selected.has(model.id) ? 'checked' : ''}><span class="model-id"><span class="matrix-model-code" style="padding-inline-start:${label.indent}ch">${esc(label.code)}</span> (<span class="matrix-model-capacity">${label.capacity === null ? 'capacity unknown' : `<span class="matrix-model-integer">${esc(label.integer)}</span><span class="matrix-model-fraction">${esc(label.fraction)}</span> TB`}</span>)</span></label>`;
-            })
-            .join('')}</div></fieldset></div>`;
-        })
-        .join('') || '<p class="matrix-nav-empty">No matching brands or models.</p>'
-    }</div>
-  </aside>`;
+function modelNavigation(_models: MatrixModel[]) {
+  return renderModelSelector(snapshot.models, selected, search);
 }
 function updateSelected(next: Set<string>) {
   selected = next;
@@ -423,10 +394,6 @@ function bind() {
   app.querySelector<HTMLElement>('#matrix-snapshot')!.onchange = (event) => {
     void changeSnapshot((event.target as HTMLSelectElement).value);
   };
-  app.querySelector<HTMLElement>('#matrix-search')!.oninput = (event) => {
-    search = (event.target as HTMLInputElement).value;
-    render();
-  };
   app.querySelector<HTMLElement>('#matrix-guide')!.onchange = (event) => {
     const year = Number((event.target as HTMLSelectElement).value);
     guideYear = Number.isInteger(year) && year >= 1 && year <= 6 ? year : 6;
@@ -436,28 +403,15 @@ function bind() {
     neutral = !(event.target as HTMLInputElement).checked;
     render();
   };
-  app.querySelector<HTMLElement>('#matrix-select-all')!.onclick = () =>
-    updateSelected(new Set(snapshot.models.map((model) => model.id)));
-  app.querySelector<HTMLElement>('#matrix-clear')!.onclick = () => updateSelected(new Set());
-  app.querySelectorAll<HTMLInputElement>('[data-vendor]').forEach((input) => {
-    const models = snapshot.models.filter((model) => model.vendor === input.dataset.vendor);
-    input.indeterminate = vendorSelectionState(models, selected).indeterminate;
-    input.onchange = () =>
-      updateSelected(
-        setVendorSelected(snapshot.models, input.dataset.vendor!, selected, input.checked),
-      );
-  });
-  app.querySelectorAll<HTMLInputElement>('[data-model]').forEach(
-    (input) =>
-      (input.onchange = () => {
-        const next = new Set(selected);
-        if (input.checked) {
-          next.add(input.dataset.model!);
-        } else {
-          next.delete(input.dataset.model!);
-        }
-        updateSelected(next);
-      }),
+  bindModelSelector(
+    app,
+    snapshot.models,
+    selected,
+    (value) => {
+      search = value;
+      render();
+    },
+    updateSelected,
   );
   app.querySelectorAll<HTMLButtonElement>('[data-story]').forEach(
     (button) =>

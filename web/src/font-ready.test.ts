@@ -121,6 +121,7 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
       .replace(/^import[\s\S]*?;\r?$/gm, '')
       .replace("import('./matrix.ts')", '__matrixModule()')
       .replace("import('./snapshot-explorer.ts')", '__snapshotModule()')
+      .replace("import('./afr-timeline.ts')", '__timelineModule()')
       .replace("import('./owner-picks.ts')", '__picksModule()')
       .replaceAll('import.meta.env.BASE_URL', JSON.stringify('/'))
       .replace('export async function startAnalytics', 'async function startAnalytics') +
@@ -132,6 +133,7 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
   let fontStarts = 0;
   let paintWaits = 0;
   let revealFrames = 0;
+  let requestedFonts: readonly string[] | undefined;
   const context = {
     URLSearchParams,
     Intl,
@@ -144,7 +146,9 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
       documentElement: root,
       visibilityState: 'visible',
     },
-    waitForFonts: () => {
+    UI_FONTS,
+    waitForFonts: (_fonts: unknown, _timeout?: number, fonts?: readonly string[]) => {
+      requestedFonts = fonts;
       fontStarts++;
       events.push('fonts started');
       return fontChoice.promise;
@@ -172,6 +176,11 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
         events.push('snapshot rendered');
       },
     }),
+    __timelineModule: async () => ({
+      initAfrTimeline: async () => {
+        events.push('timeline rendered');
+      },
+    }),
     __picksModule: async () => ({
       initOwnerPicks: async () => {
         events.push('picks rendered');
@@ -195,6 +204,7 @@ async function mainStartupHarness(query: string, firstPaint = Promise.resolve())
     fontStarts: () => fontStarts,
     paintWaits: () => paintWaits,
     revealFrames: () => revealFrames,
+    requestedFonts: () => requestedFonts,
   };
 }
 
@@ -206,6 +216,7 @@ await test('prepaint spinner policy matches routes and defaults off for every ot
   for (const query of [
     '',
     'view=picks',
+    'view=afr',
     'view=matrix',
     'view=matrix&reference=1',
     'view=matrix&legacy=1',
@@ -232,7 +243,7 @@ await test('prepaint spinner policy matches routes and defaults off for every ot
 });
 
 await test('nonmatrix startup keeps font readiness without spinner paint waits or reveal frames', async () => {
-  for (const query of ['?view=deployments', '?view=explore&example=1']) {
+  for (const query of ['?view=deployments', '?view=explore&example=1', '?view=afr']) {
     const harness = await mainStartupHarness(query, new Promise<void>(() => {}));
     // Allow the route module and renderer to complete while the font choice is pending.
     for (let i = 0; i < 10; i++) {
@@ -249,6 +260,9 @@ await test('nonmatrix startup keeps font readiness without spinner paint waits o
     assert.equal(harness.root.dataset.fontMode, 'custom', query);
     assert.equal(harness.root.dataset.appReady, 'true', query);
     assert.equal(harness.revealFrames(), 0, query);
+    if (query === '?view=afr') {
+      assert.deepEqual(harness.requestedFonts(), UI_FONTS);
+    }
   }
 });
 

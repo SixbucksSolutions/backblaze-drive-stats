@@ -95,7 +95,9 @@ export class PresentationLoader {
     const expected =
       selection.kind === 'matrix'
         ? snapshot?.matrix
-        : snapshot?.reports.find((q) => q.quarter === selection.quarter)?.ref;
+        : selection.kind === 'timeline'
+          ? snapshot?.timeline
+          : snapshot?.reports.find((q) => q.quarter === selection.quarter)?.ref;
     if (!snapshot || !expected || JSON.stringify(expected) !== JSON.stringify(selection.ref)) {
       throw new Error('Unknown presentation reference.');
     }

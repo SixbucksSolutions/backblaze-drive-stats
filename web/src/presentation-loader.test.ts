@@ -128,6 +128,38 @@ await test('initial routes preserve precedence, exceptions, unknown ID policy an
     'old',
   );
 });
+
+await test('timeline selection supports latest, immutable snapshots and old catalogue absence', async () => {
+  const value = {
+    ...capsule,
+    kind: 'timeline',
+    body: {
+      snapshotId: 'latest',
+      asOfQuarter: '2026-Q2',
+      sourceManifestSha256: hash,
+      rateVersion: 'recorded-v1',
+      models: [],
+    },
+  };
+  const { catalogue, ref, bytes } = await fixture(value);
+  assert.equal(initialPresentation(new URLSearchParams('view=afr'), catalogue), null);
+  catalogue.snapshots[0]!.timeline = ref;
+  const selection = initialPresentation(new URLSearchParams('view=afr'), catalogue)!;
+  assert.equal(selection.kind, 'timeline');
+  assert.equal(selection.quarter, null);
+  assert.equal(
+    initialPresentation(new URLSearchParams('view=afr&snapshot=unknown'), catalogue),
+    null,
+  );
+  assert.equal(initialPresentation(new URLSearchParams('view=afr&snapshot=old'), catalogue), null);
+  const reader = new PresentationLoader(
+    catalogue,
+    async () => new Response(bytes),
+    {},
+    'https://test.local/',
+  );
+  assert.deepEqual(await reader.load(selection), value);
+});
 await test('matching early bytes adopted once and only validated completed values cached', async () => {
   const { catalogue, choice, bytes, ref } = await fixture();
   let requests = 0;

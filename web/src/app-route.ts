@@ -1,11 +1,16 @@
 /** Editorial home, with all analytical and legacy views explicitly addressable. */
-export function appRoute(params: URLSearchParams): 'matrix' | 'snapshot' | 'picks' | 'legacy' {
+export function appRoute(
+  params: URLSearchParams,
+): 'matrix' | 'timeline' | 'snapshot' | 'picks' | 'legacy' {
   const view = params.get('view');
   if (view === null || view === 'picks') {
     return 'picks';
   }
   if (view === 'matrix') {
     return 'matrix';
+  }
+  if (view === 'afr') {
+    return 'timeline';
   }
   if (
     view === 'explore' ||
@@ -25,8 +30,9 @@ export function viewUsesSpinner(params: URLSearchParams): boolean {
 export type SnapshotReport =
   'overview' | 'deployments' | 'distribution' | 'capacity' | 'manufacturers' | 'datacenters';
 
-/** The six published views share one navigation, independent of their renderer. */
+/** Published views share one navigation, independent of their renderer. */
 export const publishedViews = [
+  { id: 'afr', label: 'AFR trends', icon: '⌁' },
   { id: 'matrix', label: 'AFR comparison', icon: '◴' },
   { id: 'deployments', label: 'Deployments', icon: '↗' },
   { id: 'distribution', label: 'Drive mix', icon: '▥' },
@@ -46,6 +52,9 @@ export function activePublishedView(params: URLSearchParams): PublishedView | un
   }
   if (route === 'matrix') {
     return params.get('reference') === '1' ? undefined : 'matrix';
+  }
+  if (route === 'timeline') {
+    return 'afr';
   }
   const report = snapshotReport(params);
   return route === 'snapshot' && params.get('example') !== '1' && report !== 'overview'

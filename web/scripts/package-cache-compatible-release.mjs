@@ -17,7 +17,7 @@ const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const safePath = /^[A-Za-z0-9_-][A-Za-z0-9_.-]*(?:\/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*$/;
 const built = /^assets\/[A-Za-z0-9_.-]+-[A-Za-z0-9_-]{8,}\.(?:js|css|json)$/;
 const capsule =
-  /^assets\/presentation-\d{4}-Q[1-4]-(?:matrix|\d{4}-Q[1-4]-report)-[A-Za-z0-9_-]{8,}\.json$/;
+  /^assets\/presentation-\d{4}-Q[1-4]-(?:matrix|timeline|\d{4}-Q[1-4]-report)-[A-Za-z0-9_-]{8,}\.json$/;
 const generation =
   /^data\/production\/\d{4}-Q[1-4]-v2-[a-f0-9]{24}\/(?:descriptor|matrix|\d{4}-Q[1-4])\.([a-f0-9]{64})\.json$/;
 const fixedImmutable = new Set([
@@ -168,6 +168,7 @@ function predecessorKnownAssets(files, viteManifest) {
     );
     for (const [name, ref] of [
       [`${snapshot.asOfQuarter}-matrix`, snapshot.matrix],
+      ...(snapshot.timeline ? [[`${snapshot.asOfQuarter}-timeline`, snapshot.timeline]] : []),
       ...snapshot.reports.map((report) => {
         assert.match(report.quarter ?? '', /^\d{4}-Q[1-4]$/, 'Invalid predecessor report quarter');
         return [`${snapshot.asOfQuarter}-${report.quarter}-report`, report.ref];

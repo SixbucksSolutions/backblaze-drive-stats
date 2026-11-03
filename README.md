@@ -26,7 +26,7 @@ npm run dev
 ```
 
 Open the localhost URL printed by Vite. The default view is **What I’d Buy**, a concise editorial shortlist using the latest published data.
-The AFR comparison and five other data views remain separately accessible. The latest committed snapshot is **2026 Q2**; 2025 Q3 and Q4 as-of
+AFR trends, the matrix and five other data views remain separately accessible. The latest committed snapshot is **2026 Q2**; 2025 Q3 and Q4 as-of
 snapshots are also available. The site is static and needs no backend.
 
 ## What you can explore
@@ -34,20 +34,24 @@ snapshots are also available. The site is static and needs no backend.
 Use these query strings after the localhost URL, or follow the site's navigation.
 [Selection rules](docs/owners-picks.md) explain the shortlist and its review boundary.
 
-| View | Open | What it shows |
-| --- | --- | --- |
-| What I’d Buy | `?view=picks` (default) | Latest-data editorial replacement-drive shortlist, with observed reliability, population and history evidence. |
-| AFR comparison | `?view=matrix` | Model histories aligned by relative quarter, with AFR, population, additions, retirements and failures side by side. |
-| Deployments | `?view=deployments` | First recorded additions by model in the selected calendar quarter. |
-| Drive mix | `?view=distribution` | Distinct drives observed by model during the quarter. |
-| Capacity history | `?view=capacity` | Nominal raw capacity across calendar quarters. |
-| Manufacturer shares | `?view=manufacturers` | Each manufacturer's share of the selected HDD population, first recorded additions and capacity. |
-| Datacenters | `?view=datacenters` | Capacity and population assigned to each drive's last observed datacenter in the quarter, including Unknown. |
+| View                | Open                    | What it shows                                                                                                                       |
+| ------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| What I’d Buy        | `?view=picks` (default) | Latest-data editorial replacement-drive shortlist, with observed reliability, population and history evidence.                      |
+| AFR trends          | `?view=afr`             | Cumulative or quarterly AFR lines, aligned by first recorded quarter or calendar time, including early quarters below 2,000 drives. |
+| AFR comparison      | `?view=matrix`          | Model histories aligned by relative quarter, with AFR, population, additions, retirements and failures side by side.                |
+| Deployments         | `?view=deployments`     | First recorded additions by model in the selected calendar quarter.                                                                 |
+| Drive mix           | `?view=distribution`    | Distinct drives observed by model during the quarter.                                                                               |
+| Capacity history    | `?view=capacity`        | Nominal raw capacity across calendar quarters.                                                                                      |
+| Manufacturer shares | `?view=manufacturers`   | Each manufacturer's share of the selected HDD population, first recorded additions and capacity.                                    |
+| Datacenters         | `?view=datacenters`     | Capacity and population assigned to each drive's last observed datacenter in the quarter, including Unknown.                        |
 
 In the matrix, choose brands or models in the left selector and inspect a cell
 for its exposure, coverage and source details. Relative quarters begin at the
 model's first proven 2,000-drive threshold; they do not measure physical drive age.
-Explore views use calendar quarters. Select an as-of snapshot separately from
+The [AFR trends view](docs/afr-trends.md) uses the same model list and picker as the matrix, with
+full history including early quarters below its population threshold. Its relative clock starts at first recorded
+appearance; the calendar mode ends at the selected snapshot. Other Explore
+views use calendar quarters. Select an as-of snapshot separately from
 the reporting quarter to see the history available at that cutoff.
 
 ## Read the numbers with their coverage

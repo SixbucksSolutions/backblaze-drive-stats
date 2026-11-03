@@ -95,10 +95,10 @@ const catalogue: PresentationCatalogue = {
     },
   ],
 };
-await test('editorial route is the home page while the six data views remain explicit', () => {
+await test('editorial route is the home page while the seven data views remain explicit', () => {
   assert.equal(appRoute(new URLSearchParams()), 'picks');
   assert.equal(activePublishedView(new URLSearchParams()), 'picks');
-  assert.equal(publishedViews.length, 6);
+  assert.equal(publishedViews.length, 7);
   assert.equal(appRoute(new URLSearchParams('view=matrix')), 'matrix');
 });
 await test('static picks never select browser evidence, ignoring stale and example controls', () => {

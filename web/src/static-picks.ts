@@ -49,6 +49,7 @@ export function renderStaticPicks(
   let shell = renderPublishedNavigation(content);
   for (const [id, view] of [
     ['picks', 'picks'],
+    ['afr', 'afr'],
     ['matrix', 'matrix'],
     ['deployments', 'deployments'],
     ['distribution', 'distribution'],

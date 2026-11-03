@@ -7,6 +7,7 @@ import {
   publishedViews,
   publishedViewUrl,
   snapshotReport,
+  viewUsesSpinner,
 } from './app-route.ts';
 
 await test('landing page opens editorial picks and explicit matrix routes to the flagship with reference selection preserved', () => {
@@ -43,14 +44,17 @@ await test('adopted reports use v2; explicit legacy and later reports remain add
   assert.equal(snapshotReport(new URLSearchParams('view=explore&report=toString')), 'overview');
 });
 
-await test('the shared navigation reaches exactly the six published data views', () => {
+await test('the shared navigation includes the AFR timeline and existing data views', () => {
   assert.deepEqual(
     publishedViews.map((view) => view.id),
-    ['matrix', 'deployments', 'distribution', 'capacity', 'manufacturers', 'datacenters'],
+    ['afr', 'matrix', 'deployments', 'distribution', 'capacity', 'manufacturers', 'datacenters'],
   );
   for (const view of publishedViews) {
     const url = publishedViewUrl('https://example.org/project/', view.id);
-    assert.equal(appRoute(url.searchParams), view.id === 'matrix' ? 'matrix' : 'snapshot');
+    assert.equal(
+      appRoute(url.searchParams),
+      view.id === 'matrix' ? 'matrix' : view.id === 'afr' ? 'timeline' : 'snapshot',
+    );
     assert.equal(activePublishedView(url.searchParams), view.id);
   }
 });
@@ -102,7 +106,7 @@ await test('secondary example, reference and legacy routes enter production with
 });
 
 await test('existing Explore report deep links mark the corresponding canonical view active', () => {
-  for (const view of publishedViews.filter((view) => view.id !== 'matrix')) {
+  for (const view of publishedViews.filter((view) => !['matrix', 'afr'].includes(view.id))) {
     assert.equal(
       activePublishedView(new URLSearchParams({ view: 'explore', report: view.id })),
       view.id,
@@ -116,4 +120,11 @@ await test('existing Explore report deep links mark the corresponding canonical 
     }).searchParams.has('snapshot'),
     false,
   );
+});
+
+await test('AFR timeline has an explicit route without a matrix spinner', () => {
+  const params = new URLSearchParams('view=afr&snapshot=older&time=calendar&metric=quarterly');
+  assert.equal(appRoute(params), 'timeline');
+  assert.equal(activePublishedView(params), 'afr');
+  assert.equal(viewUsesSpinner(params), false);
 });

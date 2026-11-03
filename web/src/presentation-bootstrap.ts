@@ -2,7 +2,7 @@ import { appRoute } from './app-route.ts';
 import type { PresentationCatalogue, CapsuleReference } from './presentation-data.ts';
 
 export type InitialPresentation = {
-  kind: 'matrix' | 'report';
+  kind: 'matrix' | 'report' | 'timeline';
   snapshotId: string;
   quarter: string | null;
   ref: CapsuleReference;
@@ -24,7 +24,7 @@ export function initialPresentation(
   const requested = params.get('snapshot');
   const snapshot =
     catalogue.snapshots.find((s) => s.snapshotId === requested) ??
-    (route === 'matrix' && requested !== null
+    ((route === 'matrix' || route === 'timeline') && requested !== null
       ? undefined
       : catalogue.snapshots.find((s) => s.snapshotId === catalogue.latestSnapshotId));
   if (!snapshot) {
@@ -32,6 +32,11 @@ export function initialPresentation(
   }
   if (route === 'matrix') {
     return { kind: 'matrix', snapshotId: snapshot.snapshotId, quarter: null, ref: snapshot.matrix };
+  }
+  if (route === 'timeline') {
+    return snapshot.timeline
+      ? { kind: 'timeline', snapshotId: snapshot.snapshotId, quarter: null, ref: snapshot.timeline }
+      : null;
   }
   const quarter =
     snapshot.reports.find((q) => q.quarter === params.get('quarter')) ??

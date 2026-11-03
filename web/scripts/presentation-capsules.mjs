@@ -16,6 +16,7 @@ import { CapacityHistoryReader } from '../src/capacity-report.ts';
 import { adaptProductionV2 } from '../src/matrix-production.ts';
 import { parsePresentationCapsule, parsePresentationCatalogue } from '../src/presentation-data.ts';
 import { displayModelLabel } from '../src/model-labels.ts';
+import { deriveAfrTimeline } from '../src/afr-timeline-data.ts';
 
 export const presentationDigest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 export const safePresentationJson = (value) =>
@@ -66,6 +67,13 @@ export async function* derivePresentationSnapshots(productionRoot) {
       body: adaptProductionV2(descriptor, matrix),
     };
     parsePresentationCapsule(matrixCapsule);
+    const timelineCapsule = {
+      ...binding,
+      kind: 'timeline',
+      quarter: null,
+      body: deriveAfrTimeline(descriptor, matrix),
+    };
+    parsePresentationCapsule(timelineCapsule);
     const thin = displayDescriptor(descriptor);
     const reports = [];
     for (const row of descriptor.quarters) {
@@ -79,7 +87,7 @@ export async function* derivePresentationSnapshots(productionRoot) {
       parsePresentationCapsule(capsule);
       reports.push({ quarter: row.quarter, status: row.status, capsule });
     }
-    yield { index, entry, sourceIndexSha256, descriptor, matrixCapsule, reports };
+    yield { index, entry, sourceIndexSha256, descriptor, matrixCapsule, timelineCapsule, reports };
   }
 }
 
@@ -157,6 +165,73 @@ export async function auditPresentationAssets(productionRoot, files, catalogue) 
       kind: 'matrix',
       quarter: null,
       body: adaptProductionV2(descriptor, matrix),
+    });
+    // Independently reconstruct every timeline field from the canonical inventory.
+    // Do not call the timeline projector: its omissions and arithmetic need auditing too.
+    const context = descriptor.context;
+    const models = [];
+    for (const source of context.inventory) {
+      if (
+        !matrix.models.some((model) => model.modelId === source.modelId) ||
+        source.mediaClass !== 'hdd' ||
+        source.firstObservedInDeclaredHistory === null
+      ) {
+        continue;
+      }
+      const firstQuarter = source.firstObservedInDeclaredHistory;
+      const rows = source.history.filter((row) => row.quarter <= entry.asOfQuarter);
+      const observed = rows.filter((row) => row.knownDriveDays > 0);
+      const end = observed.at(-1)?.quarter;
+      const points = [];
+      for (const row of rows) {
+        if (row.quarter < firstQuarter || !end || row.quarter > end) {
+          continue;
+        }
+        const through = rows.filter((prior) => prior.quarter <= row.quarter);
+        const coverage =
+          context.coverage.find((item) => item.quarter === row.quarter)?.status ?? 'missing';
+        const available = coverage === 'complete' && row.knownDriveDays > 0;
+        const [year, quarter] = row.quarter.split('-Q').map(Number);
+        const [firstYear, first] = firstQuarter.split('-Q').map(Number);
+        points.push({
+          quarter: row.quarter,
+          relativeQuarter: (year - firstYear) * 4 + quarter - first + 1,
+          cumulativeAfr: available
+            ? (through.reduce((sum, prior) => sum + prior.knownFailures, 0) /
+                through.reduce((sum, prior) => sum + prior.knownDriveDays, 0)) *
+              36500
+            : null,
+          quarterlyAfr: available ? (row.knownFailures / row.knownDriveDays) * 36500 : null,
+          count: row.quarterCount,
+          failures: row.knownFailures,
+          driveDays: row.knownDriveDays,
+          coverage,
+          historyComplete: !context.coverage.some(
+            (item) => item.quarter <= row.quarter && item.status !== 'complete',
+          ),
+        });
+      }
+      const label = displayModelLabel(source);
+      models.push({
+        id: source.modelId,
+        name: label.modelNumber,
+        vendor: label.vendor,
+        capacityTB: source.capacityTB,
+        firstQuarter,
+        points,
+      });
+    }
+    compare(actual.timeline, {
+      ...envelope,
+      kind: 'timeline',
+      quarter: null,
+      body: {
+        snapshotId: entry.snapshotId,
+        asOfQuarter: entry.asOfQuarter,
+        sourceManifestSha256: entry.sourceManifestSha256,
+        rateVersion: context.versions.rate,
+        models,
+      },
     });
     assert.equal(actual.reports.length, descriptor.quarters.length);
     for (const [index, row] of descriptor.quarters.entries()) {

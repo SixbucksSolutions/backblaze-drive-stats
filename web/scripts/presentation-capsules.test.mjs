@@ -91,6 +91,7 @@ async function fixture(latest = false) {
         sourceManifestSha256: entry.sourceManifestSha256,
         descriptor: entry.descriptor,
         matrix: emit(item.matrixCapsule),
+        timeline: emit(item.timelineCapsule),
         reports: item.reports.map((row) => ({
           quarter: row.quarter,
           status: row.status,
@@ -105,7 +106,7 @@ test('equivalence audit checks every full adapter/quarter/history structure inde
   const f = await fixture();
   try {
     const good = await auditPresentationAssets(f.root, f.files, f.catalogue);
-    assert.deepEqual({ ...good, bytes: 0 }, { snapshots: 1, reports: 2, assets: 3, bytes: 0 });
+    assert.deepEqual({ ...good, bytes: 0 }, { snapshots: 1, reports: 2, assets: 4, bytes: 0 });
     const matrixRef = f.catalogue.snapshots[0].matrix;
     const original = f.files.get(matrixRef.path.slice(1));
     const changed = JSON.parse(original);
@@ -132,6 +133,37 @@ test('equivalence audit checks every full adapter/quarter/history structure inde
       auditPresentationAssets(f.root, f.files, f.catalogue),
       /Missing presentation/,
     );
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test('independent timeline audit detects omitted models and altered ledger rates with valid hashes', async () => {
+  const f = await fixture(true);
+  try {
+    const ref = f.catalogue.snapshots[0].timeline;
+    const original = JSON.parse(f.files.get(ref.path.slice(1)));
+    for (const mutation of [
+      (body) => {
+        body.models.pop();
+      },
+      (body) => {
+        body.models
+          .flatMap((model) => model.points)
+          .find((point) => point.cumulativeAfr !== null).cumulativeAfr += 1;
+      },
+    ]) {
+      const value = structuredClone(original);
+      mutation(value.body);
+      const bytes = Buffer.from(JSON.stringify(value));
+      f.files.set(ref.path.slice(1), bytes);
+      ref.sha256 = presentationDigest(bytes);
+      ref.sizeBytes = bytes.length;
+      await assert.rejects(
+        auditPresentationAssets(f.root, f.files, f.catalogue),
+        /differs from canonical/,
+      );
+    }
   } finally {
     await rm(f.root, { recursive: true, force: true });
   }
@@ -362,8 +394,8 @@ test('existing capsule bytes and hashes survive unrelated publication/latest/ind
       assert.fail('Original snapshot absent');
     };
     const encoded = (item) =>
-      [item.matrixCapsule, ...item.reports.map((row) => row.capsule)].map((capsule) =>
-        Buffer.from(JSON.stringify(capsule)),
+      [item.matrixCapsule, item.timelineCapsule, ...item.reports.map((row) => row.capsule)].map(
+        (capsule) => Buffer.from(JSON.stringify(capsule)),
       );
     const original = encoded(before);
     const index = {

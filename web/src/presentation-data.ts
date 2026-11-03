@@ -7,6 +7,7 @@ import type {
 } from './production-data.ts';
 import type { MatrixSnapshot } from './matrix-data.ts';
 import type { CapacityPoint } from './capacity-report.ts';
+import type { AfrTimelineData } from './afr-timeline-data.ts';
 
 export const PRESENTATION_VERSION = 1;
 export type DisplayDescriptor = Omit<SnapshotDescriptor, 'context' | 'matrix'> & {
@@ -38,7 +39,12 @@ export type ReportCapsule = CapsuleBinding & {
     capacityHistory: readonly CapacityPoint[];
   };
 };
-export type PresentationCapsule = MatrixCapsule | ReportCapsule;
+export type TimelineCapsule = CapsuleBinding & {
+  kind: 'timeline';
+  quarter: null;
+  body: AfrTimelineData;
+};
+export type PresentationCapsule = MatrixCapsule | ReportCapsule | TimelineCapsule;
 export type CatalogueSnapshot = {
   snapshotId: string;
   asOfQuarter: string;
@@ -46,6 +52,7 @@ export type CatalogueSnapshot = {
   sourceManifestSha256: string;
   descriptor: Reference;
   matrix: CapsuleReference;
+  timeline?: CapsuleReference;
   reports: {
     quarter: string;
     status: 'complete' | 'partial' | 'missing' | 'unpublished';
@@ -348,6 +355,40 @@ export function parsePresentationCapsule(value: unknown): PresentationCapsule {
   }
   if (value.kind === 'matrix') {
     check(value, { ...binding, kind: '=matrix', quarter: 'null', body: matrix });
+  } else if (value.kind === 'timeline') {
+    check(value, {
+      ...binding,
+      kind: '=timeline',
+      quarter: 'null',
+      body: {
+        snapshotId: s,
+        asOfQuarter: q,
+        sourceManifestSha256: h,
+        rateVersion: s,
+        models: [
+          {
+            id: s,
+            name: s,
+            vendor: s,
+            capacityTB: nn,
+            firstQuarter: q,
+            points: [
+              {
+                quarter: q,
+                relativeQuarter: 'positiveInteger',
+                cumulativeAfr: nn,
+                quarterlyAfr: nn,
+                count: nn,
+                failures: n,
+                driveDays: n,
+                coverage: status,
+                historyComplete: 'boolean',
+              },
+            ],
+          },
+        ],
+      },
+    });
   } else if (value.kind === 'report') {
     check(value, {
       ...binding,
@@ -379,6 +420,40 @@ export function parsePresentationCapsule(value: unknown): PresentationCapsule {
       capsule.body.sourceHash !== capsule.sourceManifestSha256
     ) {
       throw new Error('Mixed matrix presentation binding');
+    }
+  } else if (capsule.kind === 'timeline') {
+    const timeline = capsule.body;
+    if (
+      timeline.snapshotId !== capsule.snapshotId ||
+      timeline.asOfQuarter !== capsule.asOfQuarter ||
+      timeline.sourceManifestSha256 !== capsule.sourceManifestSha256
+    ) {
+      throw new Error('Mixed timeline presentation binding');
+    }
+    const ordinal = (quarter: string) => Number(quarter.slice(0, 4)) * 4 + Number(quarter.at(-1));
+    if (new Set(timeline.models.map((model) => model.id)).size !== timeline.models.length) {
+      throw new Error('Duplicate timeline model');
+    }
+    for (const model of timeline.models) {
+      let previous = '';
+      for (const point of model.points) {
+        if (
+          point.quarter <= previous ||
+          point.quarter < model.firstQuarter ||
+          point.quarter > timeline.asOfQuarter ||
+          point.relativeQuarter !== ordinal(point.quarter) - ordinal(model.firstQuarter) + 1 ||
+          point.failures < 0 ||
+          point.driveDays < 0 ||
+          (point.count !== null && point.count < 0) ||
+          (point.cumulativeAfr !== null && point.cumulativeAfr < 0) ||
+          (point.quarterlyAfr !== null && point.quarterlyAfr < 0) ||
+          ((point.coverage !== 'complete' || point.driveDays === 0) &&
+            (point.cumulativeAfr !== null || point.quarterlyAfr !== null))
+        ) {
+          throw new Error('Invalid timeline point');
+        }
+        previous = point.quarter;
+      }
     }
   } else {
     const display = capsule.body.descriptor;
@@ -434,6 +509,7 @@ export function parsePresentationCatalogue(value: unknown): PresentationCatalogu
         sourceManifestSha256: h,
         descriptor: ref,
         matrix: asset,
+        'timeline?': asset,
         reports: [{ quarter: q, status, ref: asset }],
       },
     ],

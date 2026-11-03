@@ -10,6 +10,7 @@ const first = await derivePresentationSnapshots(
 assert.ok(first.value);
 const matrix = first.value.matrixCapsule;
 const report = first.value.reports.at(-1).capsule;
+const timeline = first.value.timelineCapsule;
 const bad = (original, mutate) => {
   const value = structuredClone(original);
   mutate(value);
@@ -18,11 +19,39 @@ const bad = (original, mutate) => {
 test('presentation types retain complete adapter and report body structures', () => {
   assert.deepEqual(parsePresentationCapsule(matrix), matrix);
   assert.deepEqual(parsePresentationCapsule(report), report);
+  assert.deepEqual(parsePresentationCapsule(timeline), timeline);
   assert.ok(
     report.body.descriptor.context.inventory.every(
       (model) => Object.keys(model).sort().join(',') === 'modelId,modelNumber,vendor',
     ),
   );
+});
+test('timeline rejects mixed bindings, invalid points and duplicate models', () => {
+  bad(timeline, (v) => {
+    v.body.snapshotId = 'different';
+  });
+  bad(timeline, (v) => {
+    v.body.asOfQuarter = '2099-Q1';
+  });
+  bad(timeline, (v) => {
+    v.body.sourceManifestSha256 = '0'.repeat(64);
+  });
+  bad(timeline, (v) => {
+    v.body.models.push(v.body.models[0]);
+  });
+  bad(timeline, (v) => {
+    v.body.models[0].points[0].relativeQuarter = 0;
+  });
+  bad(timeline, (v) => {
+    v.body.models[0].points[0].quarterlyAfr = Infinity;
+  });
+  bad(timeline, (v) => {
+    v.body.models[0].points[0].driveDays = -1;
+  });
+  bad(timeline, (v) => {
+    v.body.models[0].points[0].coverage = 'partial';
+    v.body.models[0].points[0].cumulativeAfr = 1;
+  });
 });
 test('presentation structural validation rejects unsupported/malformed/nonfinite values', () => {
   bad(matrix, (v) => {

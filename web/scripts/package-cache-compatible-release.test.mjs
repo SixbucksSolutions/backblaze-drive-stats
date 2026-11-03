@@ -21,7 +21,9 @@ const generationBytes = '{"descriptor":1}';
 const generationPath = `data/production/2026-Q2-v2-${'a'.repeat(24)}/descriptor.${hash(generationBytes)}.json`;
 const newCapsulePath = 'assets/presentation-2013-Q2-matrix-NewCaps8.json';
 const newReportPath = 'assets/presentation-2013-Q2-2013-Q1-report-NewRepo8.json';
-const testCatalogue = (old) => ({
+const timelinePath = 'assets/presentation-2013-Q2-timeline-Abcd1234.json';
+const timelineBytes = '{"timeline":1}';
+const testCatalogue = (old, timeline = false) => ({
   contractVersion: 1,
   sourceIndexSha256: 'a'.repeat(64),
   latestSnapshotId: 'snapshot',
@@ -41,6 +43,15 @@ const testCatalogue = (old) => ({
         sizeBytes: Buffer.byteLength(capsuleBytes),
         sha256: hash(capsuleBytes),
       },
+      ...(timeline
+        ? {
+            timeline: {
+              path: `/${timelinePath}`,
+              sizeBytes: Buffer.byteLength(timelineBytes),
+              sha256: hash(timelineBytes),
+            },
+          }
+        : {}),
       reports: [
         {
           quarter: '2013-Q1',
@@ -55,10 +66,10 @@ const testCatalogue = (old) => ({
     },
   ],
 });
-const html = (script, old) =>
-  `<script src="/${script}"></script>${old ? `<link href="/${css}">` : ''}<script id="presentation-catalogue" type="application/json">${JSON.stringify(testCatalogue(old))}</script>`;
+const html = (script, old, timeline = false) =>
+  `<script src="/${script}"></script>${old ? `<link href="/${css}">` : ''}<script id="presentation-catalogue" type="application/json">${JSON.stringify(testCatalogue(old, timeline))}</script>`;
 
-async function fixture(context) {
+async function fixture(context, timeline = false) {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'cache-package-')));
   context.after(() => rm(root, { recursive: true, force: true }));
   const options = {
@@ -71,7 +82,7 @@ async function fixture(context) {
   };
   const previousFiles = new Map([
     ['_headers', 'old-policy'],
-    ['index.html', html(oldChunk, true)],
+    ['index.html', html(oldChunk, true, timeline)],
     ['data/production/index.json', '{"old":1}'],
     [oldChunk, `import("./lazy-Abcd1234.js")`],
     [oldLazy, 'export const lazy = 1;'],
@@ -81,6 +92,9 @@ async function fixture(context) {
     [generationPath, generationBytes],
     ['fonts/InterVariable-4.1.woff2', 'font'],
   ]);
+  if (timeline) {
+    previousFiles.set(timelinePath, timelineBytes);
+  }
   const currentFiles = new Map([
     ['_headers', 'new-policy'],
     ['index.html', html(newChunk, false)],
@@ -138,6 +152,13 @@ async function fixture(context) {
     },
   };
 }
+
+test('retains authenticated timeline capsules while accepting current catalogues without timelines', async (context) => {
+  const { options } = await fixture(context, true);
+  const result = await packageCacheCompatibleRelease(options);
+  assert.equal(await readFile(join(result.uploadDirectory, timelinePath), 'utf8'), timelineBytes);
+  assert.equal(result.retainedAssets, 8);
+});
 
 test('copies exact current plus authenticated immutable history with private lineage evidence', async (context) => {
   const { options } = await fixture(context);
