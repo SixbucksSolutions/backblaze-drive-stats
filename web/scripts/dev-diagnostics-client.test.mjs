@@ -1,0 +1,369 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { sampleDiagnosticsState, startDiagnostics } from './dev-diagnostics-client.mjs';
+
+function fixture(fetchImplementation = async () => ({ ok: true })) {
+  const elements = new Map();
+  const frames = new Map();
+  const timers = new Map();
+  const requests = [];
+  let next = 0;
+  let observer;
+  class Element {
+    constructor(id = '') {
+      this.id = id;
+      this.parentElement = null;
+      this.children = [];
+      this.attributes = new Map();
+      this.listeners = new Map();
+      this.style = {};
+      this.value = '';
+      this.hidden = false;
+      this.isConnected = true;
+      this.afr = false;
+    }
+    append(...children) {
+      for (const child of children) {
+        this.children.push(child);
+        child.parentElement = this;
+        elements.set(child.id, child);
+      }
+    }
+    contains(node) {
+      return node === this || this.children.some((child) => child.contains(node));
+    }
+    remove() {
+      this.isConnected = false;
+      this.parentElement.children = this.parentElement.children.filter((child) => child !== this);
+    }
+    closest() {
+      return this.afr ? this : this.parentElement?.closest();
+    }
+    setAttribute(key, value) {
+      this.attributes.set(key, value);
+    }
+    getAttribute(key) {
+      return this.attributes.get(key) ?? null;
+    }
+    addEventListener(type, callback) {
+      if (!this.listeners.has(type)) {
+        this.listeners.set(type, new Set());
+      }
+      this.listeners.get(type).add(callback);
+    }
+    removeEventListener(type, callback) {
+      this.listeners.get(type)?.delete(callback);
+    }
+    trigger(type, target = this, extra = {}) {
+      for (const callback of this.listeners.get(type) ?? []) {
+        callback({ target, ...extra });
+      }
+    }
+  }
+  const document = new Element();
+  document.body = new Element('body');
+  document.createElement = () => new Element();
+  document.getElementById = (id) => elements.get(id) ?? null;
+  const page = new Element('main');
+  page.afr = true;
+  document.body.append(page);
+  document.querySelector = () => page;
+  document.querySelectorAll = () => [{ checked: true }, { checked: true }];
+  for (const [id, value] of Object.entries({
+    'afr-time': 'relative',
+    'afr-metric': 'cumulative',
+    'afr-from': '0',
+    'afr-to': '16',
+    'afr-y-range': '5',
+    'afr-point': '4',
+    'afr-tooltip': '',
+    'afr-crosshair': '',
+    'afr-current-point': '',
+    'afr-chart': '',
+  })) {
+    const element = new Element(id);
+    element.value = value;
+    page.append(element);
+  }
+  elements.get('afr-tooltip').hidden = true;
+  elements.get('afr-crosshair').setAttribute('visibility', 'hidden');
+  elements.get('afr-current-point').setAttribute('visibility', 'hidden');
+  const inspection = new Element('afr-inspect-model');
+  inspection.options = [{}, {}];
+  page.append(inspection);
+  const window = new Element();
+  Object.assign(window, {
+    document,
+    crypto: { randomUUID: () => 'f737b3e8-f66b-4196-ac22-b7ce959e4e87' },
+    getComputedStyle: (element) => ({
+      display: 'block',
+      visibility: 'visible',
+      opacity: '1',
+      ...element.style,
+    }),
+    AbortController,
+    requestAnimationFrame: (callback) => {
+      frames.set(++next, callback);
+      return next;
+    },
+    cancelAnimationFrame: (id) => frames.delete(id),
+    setTimeout: (callback, delay) => {
+      timers.set(++next, { callback, delay });
+      return next;
+    },
+    clearTimeout: (id) => timers.delete(id),
+    fetch: (url, options) => {
+      requests.push({ url, options, body: JSON.parse(options.body) });
+      return fetchImplementation(url, options);
+    },
+    MutationObserver: class {
+      constructor(callback) {
+        this.callback = callback;
+        this.active = true;
+        observer = this;
+      }
+      observe() {}
+      disconnect() {
+        this.active = false;
+      }
+    },
+  });
+  return {
+    window,
+    document,
+    elements,
+    requests,
+    frames,
+    timers,
+    mutate(target) {
+      if (observer.active) {
+        observer.callback([{ target }]);
+      }
+    },
+    settleFrame() {
+      for (const callback of [...frames.values()]) {
+        callback();
+      }
+    },
+    start() {
+      return startDiagnostics(
+        {
+          runId: '52bcbf1f-e744-4f8d-a038-7f51bdf6024f',
+          token: 'private-token',
+          endpoint: '/__dev-diagnostics',
+          password: 'must-not-leak',
+        },
+        window,
+      );
+    },
+  };
+}
+async function settle() {
+  for (let i = 0; i < 150; i += 1) {
+    await Promise.resolve();
+  }
+}
+
+test('samples actual visibility including ancestors, numeric bounds and fixed projection', () => {
+  const f = fixture();
+  let state = sampleDiagnosticsState(f.window);
+  assert.equal(state.violation, false);
+  assert.equal(state.selectionCount, 2);
+  // Filtered model checkboxes do not alter the complete inspection choices.
+  f.document.querySelectorAll = () => [];
+  assert.equal(sampleDiagnosticsState(f.window).selectionCount, 2);
+  f.elements.get('afr-current-point').setAttribute('visibility', 'visible');
+  assert.equal(sampleDiagnosticsState(f.window).marker, true);
+  assert.equal(sampleDiagnosticsState(f.window).violation, true);
+  f.elements.get('afr-current-point').setAttribute('visibility', 'hidden');
+  f.elements.get('afr-crosshair').setAttribute('visibility', 'visible');
+  state = sampleDiagnosticsState(f.window);
+  assert.equal(state.violation, true);
+  f.elements.get('afr-tooltip').hidden = false;
+  assert.equal(sampleDiagnosticsState(f.window).violation, false);
+  f.elements.get('main').style.display = 'none';
+  assert.equal(sampleDiagnosticsState(f.window).crosshair, false);
+  f.elements.get('main').style.display = 'block';
+  f.elements.get('afr-tooltip').style.opacity = '0';
+  assert.equal(sampleDiagnosticsState(f.window).tooltip, false);
+  f.elements.get('afr-to').value = 'Infinity';
+  f.elements.get('afr-from').value = '-1';
+  f.elements.get('afr-point').value = '2.5';
+  f.elements.get('afr-y-range').value = 'auto';
+  f.elements.get('afr-time').value = 'secret-value';
+  state = sampleDiagnosticsState(f.window);
+  assert.deepEqual(
+    [state.to, state.from, state.pointIndex, state.y, state.mode],
+    [null, null, null, null, 'unknown'],
+  );
+});
+
+test('serializes only the fixed projection and acknowledges ready and explicit finish', async () => {
+  const f = fixture();
+  f.start();
+  await settle();
+  assert.match(f.elements.get('dev-diagnostics-message').textContent, /ready acknowledged/);
+  assert.deepEqual(Object.keys(f.requests[0].body), [
+    'schemaVersion',
+    'runId',
+    'pageId',
+    'sequence',
+    'event',
+    'source',
+    'state',
+  ]);
+  assert.deepEqual(Object.keys(f.requests[0].body.state), [
+    'view',
+    'mode',
+    'metric',
+    'from',
+    'to',
+    'y',
+    'selectionCount',
+    'tooltip',
+    'crosshair',
+    'marker',
+    'pointIndex',
+    'violation',
+  ]);
+  assert.equal(JSON.stringify(f.requests[0].body).includes('private-token'), false);
+  assert.equal(JSON.stringify(f.requests[0].body).includes('must-not-leak'), false);
+  f.elements.get('dev-diagnostics-finish').trigger('click');
+  await settle();
+  assert.equal(f.requests.at(-1).body.event, 'end');
+  assert.equal(f.requests.at(-1).body.source, 'finish');
+  assert.match(f.elements.get('dev-diagnostics-message').textContent, /end acknowledged/);
+  assert.equal(f.elements.get('dev-diagnostics-finish').disabled, true);
+});
+
+test('settles DOM changes, deduplicates motion, preserves action source and same-state checks', async () => {
+  const f = fixture();
+  f.start();
+  await settle();
+  for (let i = 0; i < 100; i += 1) {
+    f.document.trigger('pointermove', f.elements.get('afr-chart'));
+  }
+  f.settleFrame();
+  await settle();
+  assert.equal(f.requests.length, 1);
+  f.document.trigger('pointermove', f.elements.get('afr-chart'));
+  f.elements.get('afr-tooltip').hidden = false;
+  f.elements.get('afr-crosshair').setAttribute('visibility', 'visible');
+  f.mutate(f.elements.get('afr-crosshair'));
+  assert.equal(f.requests.length, 1);
+  f.settleFrame();
+  await settle();
+  assert.equal(f.requests.at(-1).body.source, 'pointer');
+  assert.equal(f.requests.at(-1).body.state.tooltip, true);
+  f.document.trigger('change', f.elements.get('afr-y-range'));
+  f.settleFrame();
+  await settle();
+  assert.equal(f.requests.at(-1).body.event, 'check');
+  assert.equal(f.requests.at(-1).body.source, 'control');
+  f.document.trigger('pointerleave', f.elements.get('afr-chart'));
+  f.settleFrame();
+  await settle();
+  assert.equal(f.requests.at(-1).body.source, 'pointer');
+  assert.equal(f.requests.at(-1).body.event, 'check');
+  f.mutate(f.elements.get('dev-diagnostics-message'));
+  assert.equal(f.frames.size, 0);
+});
+
+test('bounded queue and a single flight; end survives saturation and errors carry no raw data', async () => {
+  let release;
+  const f = fixture(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  f.start();
+  for (let i = 0; i < 80; i += 1) {
+    f.window.trigger('error', f.window, {
+      message: 'password secret',
+      filename: 'https://private.example',
+    });
+  }
+  assert.equal(f.requests.length, 1);
+  assert.match(f.elements.get('dev-diagnostics-message').textContent, /dropped 17/);
+  f.elements.get('dev-diagnostics-finish').trigger('click');
+  for (let i = 0; i < 64; i += 1) {
+    release({ ok: true });
+    await settle();
+  }
+  assert.equal(f.requests.length, 64);
+  assert.equal(f.requests.at(-1).body.event, 'end');
+  assert.equal(f.requests.at(-1).body.sequence, 82);
+  assert.equal(JSON.stringify(f.requests).includes('password secret'), false);
+  assert.equal(JSON.stringify(f.requests).includes('private.example'), false);
+  assert.match(f.elements.get('dev-diagnostics-message').textContent, /end acknowledged/);
+});
+
+test('transport rejection/timeout are isolated without retries or recursive error reports', async () => {
+  const f = fixture(async () => {
+    throw new Error('sensitive transport details');
+  });
+  const api = f.start();
+  await settle();
+  assert.equal(f.requests.length, 1);
+  assert.match(f.elements.get('dev-diagnostics-message').textContent, /failed 1/);
+  api.teardown();
+  await settle();
+  assert.equal(f.requests.length, 2);
+  assert.equal(f.timers.size, 0);
+  const timed = fixture(
+    (_url, options) =>
+      new Promise((_resolve, reject) => {
+        options.signal.addEventListener('abort', () => reject(new Error('aborted')));
+      }),
+  );
+  timed.start();
+  [...timed.timers.values()].find((timer) => timer.delay === 2000).callback();
+  await settle();
+  assert.equal(timed.requests.length, 1);
+  assert.match(timed.elements.get('dev-diagnostics-message').textContent, /failed 1/);
+});
+
+test('pagehide sends one best-effort end and teardown removes observers/listeners/scheduled samples', async () => {
+  const f = fixture();
+  const api = f.start();
+  await settle();
+  f.document.trigger('pointermove', f.elements.get('afr-chart'));
+  f.window.trigger('pagehide');
+  await settle();
+  const count = f.requests.length;
+  assert.equal(f.requests.at(-1).body.source, 'pagehide');
+  assert.equal(f.requests.at(-1).options.keepalive, true);
+  assert.equal(f.frames.size, 0);
+  f.document.trigger('change', f.elements.get('afr-to'));
+  f.window.trigger('unhandledrejection', f.window, { reason: 'secret' });
+  f.mutate(f.elements.get('afr-to'));
+  api.teardown();
+  f.settleFrame();
+  await settle();
+  assert.equal(f.requests.length, count);
+  assert.equal(f.timers.size, 0);
+  assert.equal(
+    [...f.document.listeners.values()].every((listeners) => listeners.size === 0),
+    true,
+  );
+});
+
+test('repeated injection ends the prior session and retains one status bar', async () => {
+  const f = fixture();
+  f.start();
+  await settle();
+  const original = f.elements.get('dev-diagnostics-status');
+  const api = f.start();
+  await settle();
+  assert.equal(original.isConnected, false);
+  assert.equal(
+    f.document.body.children.filter((node) => node.id === 'dev-diagnostics-status').length,
+    1,
+  );
+  assert.equal(f.requests.filter((request) => request.body.event === 'end').length, 1);
+  api.teardown();
+  await settle();
+  assert.match(f.elements.get('dev-diagnostics-message').textContent, /Stopped; reload to resume/);
+  assert.equal(f.window.__driveStatsDevDiagnostics, undefined);
+});
