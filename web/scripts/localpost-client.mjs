@@ -1,3 +1,5 @@
+import { validDiagnosticEvent } from './localpost-protocol.mjs';
+
 // Embedded by the opt-in development plugin; never import into application source.
 export function sampleDiagnosticsState(window) {
   const document = window.document;
@@ -63,13 +65,15 @@ export function sampleDiagnosticsState(window) {
 }
 
 export function startDiagnostics(config, window) {
-  window.__driveStatsDevDiagnostics?.teardown();
-  window.document.getElementById('dev-diagnostics-status')?.remove();
+  window.__localpostDiagnostics?.teardown();
+  window.document.getElementById('localpost-status')?.remove();
   const document = window.document;
   const pageId = window.crypto.randomUUID();
   const queue = [];
   const listeners = [];
   let sequence = 0;
+  let attempts = 0;
+  let attemptedBytes = 0;
   let dropped = 0;
   let failures = 0;
   let readyAck = false;
@@ -82,14 +86,14 @@ export function startDiagnostics(config, window) {
   let pendingCheck = false;
   let previous = '';
   const bar = document.createElement('div');
-  bar.id = 'dev-diagnostics-status';
+  bar.id = 'localpost-status';
   bar.style.cssText =
     'position:fixed;bottom:0;right:0;z-index:2147483647;background:#102838;color:white;padding:8px;font:12px sans-serif';
   const status = document.createElement('span');
-  status.id = 'dev-diagnostics-message';
+  status.id = 'localpost-message';
   status.setAttribute('role', 'status');
   const finish = document.createElement('button');
-  finish.id = 'dev-diagnostics-finish';
+  finish.id = 'localpost-finish';
   finish.type = 'button';
   finish.textContent = 'Finish diagnostics';
   bar.append(status, finish);
@@ -98,26 +102,77 @@ export function startDiagnostics(config, window) {
     status.textContent = `Diagnostics: ready ${readyAck ? 'acknowledged' : 'pending'}; end ${endAck ? 'acknowledged' : ended ? 'pending' : 'open'}; dropped ${dropped}; failed ${failures}.${ended ? ' Stopped; reload to resume.' : ''} `;
   };
   updateStatus();
+  const reserveBudget = (bytes) => {
+    const key = `localpost-budget-${config.runId}`;
+    const stored = window.sessionStorage.getItem(key);
+    const budget = stored === null ? { attempts: 0, bytes: 0 } : JSON.parse(stored);
+    if (
+      !Number.isSafeInteger(budget.attempts) ||
+      !Number.isSafeInteger(budget.bytes) ||
+      budget.attempts < 0 ||
+      budget.bytes < 0 ||
+      budget.attempts >= 4096 ||
+      budget.bytes + bytes > 2 * 1024 * 1024
+    ) {
+      throw new Error('budget');
+    }
+    window.sessionStorage.setItem(
+      key,
+      JSON.stringify({ attempts: budget.attempts + 1, bytes: budget.bytes + bytes }),
+    );
+  };
   const drain = async () => {
     if (inflight || !queue.length) {
       return;
     }
     inflight = true;
-    const record = queue.shift();
+    const { record, body, bytes } = queue.shift();
+    attempts += 1;
+    attemptedBytes += bytes;
     const controller = new window.AbortController();
     const timer = window.setTimeout(() => controller.abort(), 2000);
     try {
+      reserveBudget(bytes);
       const response = await window.fetch(config.endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Drive-Stats-Diagnostics': config.token },
-        body: JSON.stringify(record),
+        headers: { 'Content-Type': 'application/json' },
+        body,
         signal: controller.signal,
         keepalive: record.source === 'pagehide',
         credentials: 'omit',
         redirect: 'error',
       });
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('transport');
+      }
+      const reader = response.body.getReader();
+      let receiptBytes = 0;
+      const chunks = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        receiptBytes += value.byteLength;
+        if (receiptBytes > 512) {
+          await reader.cancel();
+          throw new Error('receipt-size');
+        }
+        chunks.push(...value);
+      }
+      const receipt = JSON.parse(
+        new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(chunks)),
+      );
+      if (
+        !receipt ||
+        Object.keys(receipt).length !== 2 ||
+        typeof receipt.filename !== 'string' ||
+        !/^localpost_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.dat$/i.test(
+          receipt.filename,
+        ) ||
+        receipt.bytes !== bytes
+      ) {
+        throw new Error('receipt');
       }
       if (record.event === 'ready') {
         readyAck = true;
@@ -148,7 +203,7 @@ export function startDiagnostics(config, window) {
       updateStatus();
       return;
     }
-    queue.push({
+    const record = {
       schemaVersion: 1,
       runId: config.runId,
       pageId,
@@ -156,7 +211,25 @@ export function startDiagnostics(config, window) {
       event,
       source,
       state,
-    });
+    };
+    if (!validDiagnosticEvent(record, config.runId)) {
+      dropped += 1;
+      updateStatus();
+      return;
+    }
+    const body = JSON.stringify(record);
+    const bytes = new TextEncoder().encode(body).byteLength;
+    const queuedBytes = queue.reduce((sum, item) => sum + item.bytes, 0);
+    if (
+      bytes > 4096 ||
+      attempts + queue.length >= 4096 ||
+      attemptedBytes + queuedBytes + bytes > 2 * 1024 * 1024
+    ) {
+      dropped += 1;
+      updateStatus();
+      return;
+    }
+    queue.push({ record, body, bytes });
     void drain();
   };
   const flush = () => {
@@ -266,11 +339,11 @@ export function startDiagnostics(config, window) {
   const session = {
     teardown: () => {
       stop('runtime');
-      if (window.__driveStatsDevDiagnostics === session) {
-        delete window.__driveStatsDevDiagnostics;
+      if (window.__localpostDiagnostics === session) {
+        delete window.__localpostDiagnostics;
       }
     },
   };
-  window.__driveStatsDevDiagnostics = session;
+  window.__localpostDiagnostics = session;
   return session;
 }

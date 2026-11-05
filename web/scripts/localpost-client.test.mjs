@@ -1,8 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { sampleDiagnosticsState, startDiagnostics } from './dev-diagnostics-client.mjs';
+import { sampleDiagnosticsState, startDiagnostics } from './localpost-client.mjs';
 
-function fixture(fetchImplementation = async () => ({ ok: true })) {
+function receipt(options) {
+  return new Response(
+    JSON.stringify({
+      filename: 'localpost_019a4567-1234-7abc-8def-0123456789ab.dat',
+      bytes: new TextEncoder().encode(options.body).byteLength,
+    }),
+    { status: 200 },
+  );
+}
+
+function fixture(fetchImplementation = async (_url, options) => receipt(options)) {
   const elements = new Map();
   const frames = new Map();
   const timers = new Map();
@@ -92,7 +102,12 @@ function fixture(fetchImplementation = async () => ({ ok: true })) {
   inspection.options = [{}, {}];
   page.append(inspection);
   const window = new Element();
+  const storage = new Map();
   Object.assign(window, {
+    sessionStorage: {
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => storage.set(key, value),
+    },
     document,
     crypto: { randomUUID: () => 'f737b3e8-f66b-4196-ac22-b7ce959e4e87' },
     getComputedStyle: (element) => ({
@@ -149,8 +164,8 @@ function fixture(fetchImplementation = async () => ({ ok: true })) {
       return startDiagnostics(
         {
           runId: '52bcbf1f-e744-4f8d-a038-7f51bdf6024f',
-          token: 'private-token',
-          endpoint: '/__dev-diagnostics',
+          endpoint:
+            'http://127.0.0.1:53147/registrations/52bcbf1f-e744-4f8d-a038-7f51bdf6024f/messages',
           password: 'must-not-leak',
         },
         window,
@@ -202,7 +217,7 @@ test('serializes only the fixed projection and acknowledges ready and explicit f
   const f = fixture();
   f.start();
   await settle();
-  assert.match(f.elements.get('dev-diagnostics-message').textContent, /ready acknowledged/);
+  assert.match(f.elements.get('localpost-message').textContent, /ready acknowledged/);
   assert.deepEqual(Object.keys(f.requests[0].body), [
     'schemaVersion',
     'runId',
@@ -228,12 +243,12 @@ test('serializes only the fixed projection and acknowledges ready and explicit f
   ]);
   assert.equal(JSON.stringify(f.requests[0].body).includes('private-token'), false);
   assert.equal(JSON.stringify(f.requests[0].body).includes('must-not-leak'), false);
-  f.elements.get('dev-diagnostics-finish').trigger('click');
+  f.elements.get('localpost-finish').trigger('click');
   await settle();
   assert.equal(f.requests.at(-1).body.event, 'end');
   assert.equal(f.requests.at(-1).body.source, 'finish');
-  assert.match(f.elements.get('dev-diagnostics-message').textContent, /end acknowledged/);
-  assert.equal(f.elements.get('dev-diagnostics-finish').disabled, true);
+  assert.match(f.elements.get('localpost-message').textContent, /end acknowledged/);
+  assert.equal(f.elements.get('localpost-finish').disabled, true);
 });
 
 test('settles DOM changes, deduplicates motion, preserves action source and same-state checks', async () => {
@@ -265,7 +280,7 @@ test('settles DOM changes, deduplicates motion, preserves action source and same
   await settle();
   assert.equal(f.requests.at(-1).body.source, 'pointer');
   assert.equal(f.requests.at(-1).body.event, 'check');
-  f.mutate(f.elements.get('dev-diagnostics-message'));
+  f.mutate(f.elements.get('localpost-message'));
   assert.equal(f.frames.size, 0);
 });
 
@@ -278,6 +293,7 @@ test('bounded queue and a single flight; end survives saturation and errors carr
       }),
   );
   f.start();
+  await settle();
   for (let i = 0; i < 80; i += 1) {
     f.window.trigger('error', f.window, {
       message: 'password secret',
@@ -285,10 +301,10 @@ test('bounded queue and a single flight; end survives saturation and errors carr
     });
   }
   assert.equal(f.requests.length, 1);
-  assert.match(f.elements.get('dev-diagnostics-message').textContent, /dropped 17/);
-  f.elements.get('dev-diagnostics-finish').trigger('click');
+  assert.match(f.elements.get('localpost-message').textContent, /dropped 17/);
+  f.elements.get('localpost-finish').trigger('click');
   for (let i = 0; i < 64; i += 1) {
-    release({ ok: true });
+    release(receipt(f.requests.at(-1).options));
     await settle();
   }
   assert.equal(f.requests.length, 64);
@@ -296,7 +312,7 @@ test('bounded queue and a single flight; end survives saturation and errors carr
   assert.equal(f.requests.at(-1).body.sequence, 82);
   assert.equal(JSON.stringify(f.requests).includes('password secret'), false);
   assert.equal(JSON.stringify(f.requests).includes('private.example'), false);
-  assert.match(f.elements.get('dev-diagnostics-message').textContent, /end acknowledged/);
+  assert.match(f.elements.get('localpost-message').textContent, /end acknowledged/);
 });
 
 test('transport rejection/timeout are isolated without retries or recursive error reports', async () => {
@@ -306,7 +322,7 @@ test('transport rejection/timeout are isolated without retries or recursive erro
   const api = f.start();
   await settle();
   assert.equal(f.requests.length, 1);
-  assert.match(f.elements.get('dev-diagnostics-message').textContent, /failed 1/);
+  assert.match(f.elements.get('localpost-message').textContent, /failed 1/);
   api.teardown();
   await settle();
   assert.equal(f.requests.length, 2);
@@ -321,7 +337,7 @@ test('transport rejection/timeout are isolated without retries or recursive erro
   [...timed.timers.values()].find((timer) => timer.delay === 2000).callback();
   await settle();
   assert.equal(timed.requests.length, 1);
-  assert.match(timed.elements.get('dev-diagnostics-message').textContent, /failed 1/);
+  assert.match(timed.elements.get('localpost-message').textContent, /failed 1/);
 });
 
 test('pagehide sends one best-effort end and teardown removes observers/listeners/scheduled samples', async () => {
@@ -353,17 +369,58 @@ test('repeated injection ends the prior session and retains one status bar', asy
   const f = fixture();
   f.start();
   await settle();
-  const original = f.elements.get('dev-diagnostics-status');
+  const original = f.elements.get('localpost-status');
   const api = f.start();
   await settle();
   assert.equal(original.isConnected, false);
-  assert.equal(
-    f.document.body.children.filter((node) => node.id === 'dev-diagnostics-status').length,
-    1,
-  );
+  assert.equal(f.document.body.children.filter((node) => node.id === 'localpost-status').length, 1);
   assert.equal(f.requests.filter((request) => request.body.event === 'end').length, 1);
   api.teardown();
   await settle();
-  assert.match(f.elements.get('dev-diagnostics-message').textContent, /Stopped; reload to resume/);
-  assert.equal(f.window.__driveStatsDevDiagnostics, undefined);
+  assert.match(f.elements.get('localpost-message').textContent, /Stopped; reload to resume/);
+  assert.equal(f.window.__localpostDiagnostics, undefined);
+});
+
+test('only exact valid publication receipts acknowledge a message', async () => {
+  for (const result of [
+    { filename: '../private', bytes: 1 },
+    { filename: 'localpost_019a4567-1234-7abc-8def-0123456789ab.dat', bytes: 1 },
+    { extra: true },
+    'x'.repeat(600),
+  ]) {
+    const f = fixture(async () => new Response(JSON.stringify(result), { status: 200 }));
+    f.start();
+    await settle();
+    assert.match(f.elements.get('localpost-message').textContent, /ready pending/);
+    assert.match(f.elements.get('localpost-message').textContent, /failed 1/);
+  }
+});
+
+test('run budget persists across injection and storage failure fails diagnostics closed', async () => {
+  const f = fixture();
+  const key = 'localpost-budget-52bcbf1f-e744-4f8d-a038-7f51bdf6024f';
+  f.window.sessionStorage.setItem(key, JSON.stringify({ attempts: 4095, bytes: 0 }));
+  f.start();
+  await settle();
+  assert.equal(f.requests.length, 1);
+  f.start();
+  await settle();
+  assert.equal(f.requests.length, 1);
+  const unavailable = fixture();
+  unavailable.window.sessionStorage.getItem = () => {
+    throw new Error('unavailable');
+  };
+  assert.doesNotThrow(() => unavailable.start());
+  await settle();
+  assert.equal(unavailable.requests.length, 0);
+  assert.match(unavailable.elements.get('localpost-message').textContent, /failed 1/);
+});
+
+test('sender rejects invalid projected state before transport', async () => {
+  const f = fixture();
+  f.elements.get('afr-inspect-model').options = { length: 1.5 };
+  f.start();
+  await settle();
+  assert.equal(f.requests.length, 0);
+  assert.match(f.elements.get('localpost-message').textContent, /dropped 1/);
 });
