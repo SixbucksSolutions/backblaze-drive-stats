@@ -2,8 +2,8 @@
 
 Agents must use the shared [localpost service](https://github.com/SixbucksSolutions/localpost)
 for web-client development, testing and debugging wherever practical. Its
-[published release](https://github.com/SixbucksSolutions/localpost/releases/tag/v0.2.0)
-and [canonical API](https://github.com/SixbucksSolutions/localpost/blob/v0.2.0/openapi.json)
+[published release](https://github.com/SixbucksSolutions/localpost/releases/tag/v0.2.1)
+and [canonical API](https://github.com/SixbucksSolutions/localpost/blob/v0.2.1/openapi.json)
 define transport behavior. Localpost delivers opaque bytes; the project sender
 and reader validate the diagnostic schema. Do not create a project listener,
 collector, relay or duplicate disk writer. Remove superseded project collection
@@ -37,7 +37,8 @@ code, launch wiring, tests, dependencies and current references; preserve Git hi
    useful when Windows terminal control signals are not forwarded. Stop only
    the owned development process. The launcher retires only its
    registration with `DELETE /api/2026-11-05/registrations/{id}` and preserves files and daemon.
-   Verify cleanup output; retain necessary private evidence under normal retention.
+   Verify cleanup output. Copy needed message files and validated summaries into
+   private project evidence storage outside the mailbox root, and verify the copies.
 
 The default API base is `http://127.0.0.1:53147/api/2026-11-05`. Set `LOCALPOST_URL`
 to that dated base with another port on `127.0.0.1` if the shared owner configured one. No
@@ -53,11 +54,18 @@ the same UID. Windows inherits the root ACLs provisioned for service and agent a
 An agent filesystem sandbox may still restrict the returned path. Use the
 required scoped access approval for the client command and retain its printed
 registration ID when diagnosing access failures.
-Service restart invalidates
-registration IDs while retaining existing mailbox files. After an upgrade or
-restart, launch a fresh session and use its returned mailbox. Retention cleanup
-applies only to this project's owned, retired mailboxes, after preserving relevant
-evidence. An unsupported API version returns HTTP 404 with `unsupported_api_version`.
+Every v0.2.1 startup warns about stale contents and clears the mailbox root before
+serving HTTP, including startup after orderly shutdown. Archive needed evidence
+outside that root before a restart or upgrade. Registration IDs expire on restart.
+Launch a fresh session afterward and use its returned mailbox. Retention cleanup
+applies only to this project's owned, retired mailboxes. An unsupported API version
+returns HTTP 404 with `unsupported_api_version`.
+
+The host operator owns instance coordination and must ensure one instance per
+mailbox root, including across different ports. The daemon reserves its requested
+port before cleanup. Its filesystem output is limited to active-message `.dat`
+files, hidden `.dat` staging and required mailbox directories. External operator
+launchers may capture console output.
 
 Localpost publishes one `localpost_[UUIDv7].dat` file per message. Read only these
 completed regular files, never temporary files or symlinks. Filenames and filesystem

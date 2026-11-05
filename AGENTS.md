@@ -28,8 +28,8 @@ repository-specific guidance; it does not authorize data downloads or deployment
 Agents MUST use the single shared [localpost service](https://github.com/SixbucksSolutions/localpost)
 for as much web-client development, testing and debugging as practical. Follow
 [the project workflow](docs/browser-diagnostics.md), the
-[canonical API](https://github.com/SixbucksSolutions/localpost/blob/v0.2.0/openapi.json)
-and [published release](https://github.com/SixbucksSolutions/localpost/releases/tag/v0.2.0).
+[canonical API](https://github.com/SixbucksSolutions/localpost/blob/v0.2.1/openapi.json)
+and [published release](https://github.com/SixbucksSolutions/localpost/releases/tag/v0.2.1).
 This transport delivers opaque bytes; project senders and consumers validate the
 schema. Do not implement a project listener, collector, relay or duplicate disk
 writer. Remove superseded collection code, launch wiring, tests, dependencies and
@@ -66,9 +66,15 @@ current references while preserving Git history.
   cleanup output, preserve relevant private evidence and leave the shared daemon
   running. The localpost development chat owns service operation/recovery. Report
   unavailable service to its owner or Terry; do not start a replacement collector.
-- Service restart invalidates registration IDs while retaining mailbox files.
-  Start a fresh session after an upgrade or restart. Preserve relevant evidence
-  and apply retention cleanup only to this project's owned, retired mailboxes.
+- Before a daemon restart or upgrade, retire owned registrations and copy needed
+  evidence outside its mailbox root. Verify the copies. Every v0.2.1 startup
+  clears all mailbox-root contents before serving, including orderly restarts.
+  Start a fresh session afterward. Apply retention cleanup only to this project's
+  owned, retired mailboxes.
+- The host operator owns instance coordination. The daemon reserves its TCP port
+  before startup cleanup. The operator must ensure a single instance per root,
+  including across different ports. Daemon writes are limited to active-message
+  `.dat` files, hidden `.dat` staging files and required mailbox directories.
 - Send only bounded safe operation/phase, fixed code/status and correlation fields.
   Exclude passwords, OTPs, cookies, tokens, authorization headers, user/card prose,
   raw provider objects and raw error messages/stacks/URLs. Delivery is best effort:
