@@ -28,18 +28,23 @@ repository-specific guidance; it does not authorize data downloads or deployment
 Agents MUST use the single shared [localpost service](https://github.com/SixbucksSolutions/localpost)
 for as much web-client development, testing and debugging as practical. Follow
 [the project workflow](docs/browser-diagnostics.md), the
-[canonical API](https://github.com/SixbucksSolutions/localpost/blob/main/openapi.json)
-and [published release](https://github.com/SixbucksSolutions/localpost/releases/tag/v0.1.0).
+[canonical API](https://github.com/SixbucksSolutions/localpost/blob/v0.2.0/openapi.json)
+and [published release](https://github.com/SixbucksSolutions/localpost/releases/tag/v0.2.0).
 This transport delivers opaque bytes; project senders and consumers validate the
 schema. Do not implement a project listener, collector, relay or duplicate disk
 writer. Remove superseded collection code, launch wiring, tests, dependencies and
 current references while preserving Git history.
 
-- Run `npm run dev:localpost` from `web/`. The launcher creates a private per-run
-  `data/localpost/<runId>/` inbox outside served/public source and registers it
-  with the existing service through `POST /registrations`. Ensure the service can
-  write there. The default plain HTTP service is `http://127.0.0.1:53147`;
-  `LOCALPOST_URL` may select a configured port on 127.0.0.1. No authentication and
+- Run `npm run dev:localpost` from `web/`. The launcher sends an empty JSON object
+  to `POST /api/2026-11-05/registrations` and validates the returned `{id,directory}`.
+  The service creates a private UUIDv4 mailbox under its configured `--mailbox-root`.
+  The service owner provisions mailbox-root access for both service and agent.
+  POSIX uses the same UID, and Windows uses the root's inherited ACLs.
+  If the agent sandbox restricts the returned path, obtain the required scoped
+  access for the client command and retain the printed registration ID.
+  Read the returned absolute directory for this run. The default plain HTTP API
+  base is `http://127.0.0.1:53147/api/2026-11-05`; `LOCALPOST_URL` may select a
+  configured port on 127.0.0.1 with that same dated path. No authentication and
   wildcard CORS are intentional trusted-loopback behavior, not permission to
   weaken product CSP, authentication or browser boundaries.
   Agent command tools must keep stdin open (`tty: true`) so the explicit shutdown
@@ -57,10 +62,13 @@ current references while preserving Git history.
   errors and session issues; also verify browser dropped/failed counters.
 - Finish explicitly and verify end acknowledgement. Send `stop\n` to the owned
   launcher's stdin for graceful shutdown (Ctrl+C is also supported). Stop only the owned server;
-  retire only the owned registration with `DELETE /registrations/{id}`, check
+  retire only the owned registration with `DELETE /api/2026-11-05/registrations/{id}`, check
   cleanup output, preserve relevant private evidence and leave the shared daemon
   running. The localpost development chat owns service operation/recovery. Report
   unavailable service to its owner or Terry; do not start a replacement collector.
+- Service restart invalidates registration IDs while retaining mailbox files.
+  Start a fresh session after an upgrade or restart. Preserve relevant evidence
+  and apply retention cleanup only to this project's owned, retired mailboxes.
 - Send only bounded safe operation/phase, fixed code/status and correlation fields.
   Exclude passwords, OTPs, cookies, tokens, authorization headers, user/card prose,
   raw provider objects and raw error messages/stacks/URLs. Delivery is best effort:

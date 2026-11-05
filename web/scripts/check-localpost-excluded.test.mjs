@@ -15,7 +15,7 @@ test('production exclusion rejects diagnostic code in nested assets', async () =
     assert.equal(await checkLocalpostExcluded(directory), 2);
     await writeFile(
       script,
-      'fetch("http://127.0.0.1:53147/registrations/localpost-test/messages");',
+      'fetch("http://127.0.0.1:53147/api/2026-11-05/registrations/localpost-test/messages");',
     );
     await assert.rejects(checkLocalpostExcluded(directory), /Localpost development marker/);
   } finally {

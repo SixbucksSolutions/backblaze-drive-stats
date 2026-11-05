@@ -25,13 +25,16 @@ export function localpostPlugin(environment = process.env) {
       const url = new URL(endpoint);
       if (
         !uuid.test(runId ?? '') ||
+        endpoint !== url.href ||
         url.protocol !== 'http:' ||
         url.hostname !== '127.0.0.1' ||
+        Number(url.port) < 1024 ||
+        Number(url.port) > 65535 ||
         url.username ||
         url.password ||
         url.search ||
         url.hash ||
-        !/^\/registrations\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/messages$/i.test(
+        !/^\/api\/2026-11-05\/registrations\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/messages$/.test(
           url.pathname,
         )
       ) {
@@ -52,7 +55,6 @@ export function localpostPlugin(environment = process.env) {
               '.npmrc',
               '.yarnrc.yml',
               '**/.git/**',
-              '**/data/localpost/**',
             ],
           },
         },

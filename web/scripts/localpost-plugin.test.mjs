@@ -7,7 +7,7 @@ const environment = {
   DRIVE_STATS_LOCALPOST: '1',
   LOCALPOST_RUN_ID: '52bcbf1f-e744-4f8d-a038-7f51bdf6024f',
   LOCALPOST_MESSAGE_URL:
-    'http://127.0.0.1:53147/registrations/f737b3e8-f66b-4196-ac22-b7ce959e4e87/messages',
+    'http://127.0.0.1:53147/api/2026-11-05/registrations/f737b3e8-f66b-4196-ac22-b7ce959e4e87/messages',
 };
 
 test('ordinary dev, build and preview do not inject or initialize transport', async () => {
@@ -42,7 +42,13 @@ test('dedicated development plugin embeds validated sender and confines fs to we
 
 test('invalid registration routes cannot be embedded', () => {
   for (const endpoint of [
-    'https://127.0.0.1:53147/registrations/x/messages',
+    environment.LOCALPOST_MESSAGE_URL.replace('/api/2026-11-05', ''),
+    environment.LOCALPOST_MESSAGE_URL.replace('2026-11-05', '2026-11-04'),
+    environment.LOCALPOST_MESSAGE_URL.replace(':53147', ':80'),
+    environment.LOCALPOST_MESSAGE_URL.replace('127.0.0.1', 'localhost'),
+    environment.LOCALPOST_MESSAGE_URL.replace('127.0.0.1', '127.1'),
+    environment.LOCALPOST_MESSAGE_URL.replace('/api/', '/other/../api/'),
+    'https://127.0.0.1:53147/api/2026-11-05/registrations/x/messages',
     'http://example.com/registrations/x/messages',
     `${environment.LOCALPOST_MESSAGE_URL}?secret=x`,
   ]) {

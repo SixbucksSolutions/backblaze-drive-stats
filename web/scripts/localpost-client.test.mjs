@@ -165,7 +165,7 @@ function fixture(fetchImplementation = async (_url, options) => receipt(options)
         {
           runId: '52bcbf1f-e744-4f8d-a038-7f51bdf6024f',
           endpoint:
-            'http://127.0.0.1:53147/registrations/52bcbf1f-e744-4f8d-a038-7f51bdf6024f/messages',
+            'http://127.0.0.1:53147/api/2026-11-05/registrations/52bcbf1f-e744-4f8d-a038-7f51bdf6024f/messages',
           password: 'must-not-leak',
         },
         window,

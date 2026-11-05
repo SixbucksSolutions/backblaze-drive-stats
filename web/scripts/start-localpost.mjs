@@ -1,14 +1,19 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, realpath } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { lstat, realpath } from 'node:fs/promises';
+import { basename, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const webRoot = fileURLToPath(new URL('../', import.meta.url));
-const uuid4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const uuid4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-export function serviceUrl(value = 'http://127.0.0.1:53147') {
-  if (typeof value !== 'string' || !/^http:\/\/127\.0\.0\.1:\d{4,5}\/?$/.test(value)) {
-    throw new Error('LOCALPOST_URL must be plain HTTP on 127.0.0.1 with only a service port.');
+export function serviceUrl(value = 'http://127.0.0.1:53147/api/2026-11-05') {
+  if (
+    typeof value !== 'string' ||
+    !/^http:\/\/127\.0\.0\.1:\d{4,5}\/api\/2026-11-05\/?$/.test(value)
+  ) {
+    throw new Error(
+      'LOCALPOST_URL must be plain HTTP on 127.0.0.1 with a service port and /api/2026-11-05 base path.',
+    );
   }
   const url = new URL(value);
   const port = Number(url.port || 80);
@@ -17,18 +22,20 @@ export function serviceUrl(value = 'http://127.0.0.1:53147') {
     url.hostname !== '127.0.0.1' ||
     url.username ||
     url.password ||
-    url.pathname !== '/' ||
+    !['/api/2026-11-05', '/api/2026-11-05/'].includes(url.pathname) ||
     url.search ||
     url.hash ||
     port < 1024 ||
     port > 65535
   ) {
-    throw new Error('LOCALPOST_URL must be plain HTTP on 127.0.0.1 with only a service port.');
+    throw new Error(
+      'LOCALPOST_URL must be plain HTTP on 127.0.0.1 with a service port and /api/2026-11-05 base path.',
+    );
   }
-  return url.origin;
+  return `${url.origin}/api/2026-11-05`;
 }
 
-async function boundedJson(response) {
+export async function boundedJson(response) {
   const reader = response.body.getReader();
   const chunks = [];
   let size = 0;
@@ -38,13 +45,19 @@ async function boundedJson(response) {
       break;
     }
     size += value.byteLength;
-    if (size > 1024) {
+    if (size > 128 * 1024) {
       await reader.cancel();
       throw new Error('Invalid localpost response.');
     }
-    chunks.push(...value);
+    chunks.push(value);
   }
-  return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(chunks)));
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
 }
 
 // Read only a bounded command line; never interpret input as code or a path.
@@ -95,16 +108,7 @@ export async function startLocalpost({
 } = {}) {
   const base = serviceUrl(environment.LOCALPOST_URL);
   const runId = randomUUID();
-  const parent = resolve(root, '../data/localpost');
-  await mkdir(parent, { recursive: true, mode: 0o700 });
-  if ((await realpath(parent)).toLowerCase() !== parent.toLowerCase()) {
-    throw new Error('localpost inbox parent must not be redirected.');
-  }
-  const directory = resolve(parent, runId);
-  await mkdir(directory, { mode: 0o700 });
-  if ((await realpath(directory)).toLowerCase() !== directory.toLowerCase()) {
-    throw new Error('localpost inbox must not be redirected.');
-  }
+  let directory;
   let id;
   let server;
   let stopping;
@@ -124,7 +128,21 @@ export async function startLocalpost({
             credentials: 'omit',
             redirect: 'error',
           });
-          if (response.status !== 200) {
+          if (response.status === 404) {
+            const result = await boundedJson(response);
+            if (
+              !result ||
+              Object.keys(result).length !== 1 ||
+              !result.error ||
+              Object.keys(result.error).length !== 2 ||
+              result.error.code !== 'registration_not_found' ||
+              typeof result.error.message !== 'string'
+            ) {
+              failed = true;
+            } else {
+              log('localpost registration already inactive; no cleanup receipt was returned.');
+            }
+          } else if (response.status !== 200) {
             await response.body?.cancel();
             failed = true;
           } else {
@@ -155,7 +173,7 @@ export async function startLocalpost({
       const response = await fetcher(`${base}/registrations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ directory }),
+        body: '{}',
         signal: AbortSignal.timeout(5000),
         credentials: 'omit',
         redirect: 'error',
@@ -167,16 +185,39 @@ export async function startLocalpost({
       registration = await boundedJson(response);
     } catch {
       throw new Error(
-        `localpost registration failed or response uncertain; no retry. Ask the shared-service owner to inspect it. Inbox: ${directory}`,
+        'localpost registration failed or response uncertain; no retry. Ask the shared-service owner to inspect it.',
       );
     }
     if (typeof registration?.id === 'string' && uuid4.test(registration.id)) {
       id = registration.id;
     }
-    if (!id || Object.keys(registration).length !== 1) {
+    if (!id || Object.keys(registration).length !== 2) {
       throw new Error(
         'Invalid localpost registration response; ask the shared-service owner to inspect it.',
       );
+    }
+    log(`localpost allocation run: ${runId}\nRegistration: ${id}\nChecking mailbox access`);
+    directory = registration.directory;
+    if (
+      typeof directory !== 'string' ||
+      !isAbsolute(directory) ||
+      resolve(directory) !== directory ||
+      basename(directory) !== id
+    ) {
+      throw new Error('Invalid localpost mailbox directory.');
+    }
+    const metadata = await lstat(directory);
+    const canonicalDirectory = await realpath(directory);
+    const canonicalRoot = await realpath(root);
+    const relativeDirectory = relative(canonicalRoot, canonicalDirectory);
+    if (
+      !metadata.isDirectory() ||
+      canonicalDirectory !== directory ||
+      (!isAbsolute(relativeDirectory) &&
+        relativeDirectory !== '..' &&
+        !relativeDirectory.startsWith(`..${sep}`))
+    ) {
+      throw new Error('localpost mailbox must be a real canonical directory outside the web root.');
     }
     log(`localpost run: ${runId}\nInbox: ${directory}\nRegistration: ${id}`);
     if (shouldStop()) {

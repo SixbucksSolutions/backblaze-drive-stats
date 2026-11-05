@@ -2,8 +2,8 @@
 
 Agents must use the shared [localpost service](https://github.com/SixbucksSolutions/localpost)
 for web-client development, testing and debugging wherever practical. Its
-[published release](https://github.com/SixbucksSolutions/localpost/releases/tag/v0.1.0)
-and [canonical API](https://github.com/SixbucksSolutions/localpost/blob/main/openapi.json)
+[published release](https://github.com/SixbucksSolutions/localpost/releases/tag/v0.2.0)
+and [canonical API](https://github.com/SixbucksSolutions/localpost/blob/v0.2.0/openapi.json)
 define transport behavior. Localpost delivers opaque bytes; the project sender
 and reader validate the diagnostic schema. Do not create a project listener,
 collector, relay or duplicate disk writer. Remove superseded project collection
@@ -11,10 +11,11 @@ code, launch wiring, tests, dependencies and current references; preserve Git hi
 
 ## Run the browser-to-file loop
 
-1. From `web/`, run `npm run dev:localpost`. The launcher creates a fresh private
-   `data/localpost/<runId>/` inbox outside served source and registers its absolute
-   path with `POST /registrations`. The shared service must already be running
-   and able to write to the directory. Retain the printed run ID, inbox path and
+1. From `web/`, run `npm run dev:localpost`. The launcher sends `{}` as JSON to
+   `POST /api/2026-11-05/registrations`. The running shared service creates a UUIDv4
+   mailbox under its configured `--mailbox-root` and returns `{id,directory}`.
+   The launcher validates that the directory is absolute, canonical, outside
+   served source, and named for the returned ID. Retain the printed run ID, inbox path and
    owned registration ID. Do not kill another process to obtain a port.
    When launching through agent command tools, keep stdin open (`tty: true`)
    so the shutdown command can be delivered.
@@ -35,17 +36,28 @@ code, launch wiring, tests, dependencies and current references; preserve Git hi
    for graceful shutdown; Ctrl+C remains supported. The explicit command is
    useful when Windows terminal control signals are not forwarded. Stop only
    the owned development process. The launcher retires only its
-   registration with `DELETE /registrations/{id}` and preserves files and daemon.
+   registration with `DELETE /api/2026-11-05/registrations/{id}` and preserves files and daemon.
    Verify cleanup output; retain necessary private evidence under normal retention.
 
-The default service is plain HTTP at `http://127.0.0.1:53147`. Set `LOCALPOST_URL`
-to another port on `http://127.0.0.1` if the shared owner configured one. No
+The default API base is `http://127.0.0.1:53147/api/2026-11-05`. Set `LOCALPOST_URL`
+to that dated base with another port on `127.0.0.1` if the shared owner configured one. No
 authentication and wildcard CORS (`Access-Control-Allow-Origin: *`) are deliberate
 trusted-loopback behavior. Registration IDs are addresses, not credentials. The
-browser sends JSON directly to `POST /registrations/{id}/messages` with credentials
+browser sends JSON directly to `POST /api/2026-11-05/registrations/{id}/messages` with credentials
 omitted. This does not authorize weakening application CSP, authentication or
 other browser boundaries. If unavailable, report the service to its owning
 development chat or Terry; do not start a substitute service.
+
+The shared-service owner provisions the mailbox root. POSIX service and agent use
+the same UID. Windows inherits the root ACLs provisioned for service and agent access.
+An agent filesystem sandbox may still restrict the returned path. Use the
+required scoped access approval for the client command and retain its printed
+registration ID when diagnosing access failures.
+Service restart invalidates
+registration IDs while retaining existing mailbox files. After an upgrade or
+restart, launch a fresh session and use its returned mailbox. Retention cleanup
+applies only to this project's owned, retired mailboxes, after preserving relevant
+evidence. An unsupported API version returns HTTP 404 with `unsupported_api_version`.
 
 Localpost publishes one `localpost_[UUIDv7].dat` file per message. Read only these
 completed regular files, never temporary files or symlinks. Filenames and filesystem
