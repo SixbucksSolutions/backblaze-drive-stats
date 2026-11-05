@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { localpostPlugin } from './localpost-plugin.mjs';
+import { queuePlugin } from './queue-plugin.mjs';
 import { resolveConfig } from 'vite';
 
 const environment = {
-  DRIVE_STATS_LOCALPOST: '1',
-  LOCALPOST_RUN_ID: '52bcbf1f-e744-4f8d-a038-7f51bdf6024f',
-  LOCALPOST_MESSAGE_URL:
-    'http://127.0.0.1:53147/api/2026-11-05/registrations/f737b3e8-f66b-4196-ac22-b7ce959e4e87/messages',
+  DRIVE_STATS_QUEUE: '1',
+  MESSAGE_QUEUE_RUN_ID: '52bcbf1f-e744-4f8d-a038-7f51bdf6024f',
+  MESSAGE_QUEUE_URL: 'http://127.0.0.1:53170',
+  MESSAGE_QUEUE_ID: 'f737b3e8-f66b-4196-ac22-b7ce959e4e87',
 };
 
 test('ordinary dev, build and preview do not inject or initialize transport', async () => {
@@ -16,7 +16,7 @@ test('ordinary dev, build and preview do not inject or initialize transport', as
     [environment, 'build', false],
     [environment, 'serve', true],
   ]) {
-    const plugin = localpostPlugin(env);
+    const plugin = queuePlugin(env);
     assert.equal(plugin.apply({}, { command, isPreview }), false);
     assert.equal(plugin.config(), undefined);
     assert.equal(await plugin.transformIndexHtml(), undefined);
@@ -25,7 +25,7 @@ test('ordinary dev, build and preview do not inject or initialize transport', as
 });
 
 test('dedicated development plugin embeds validated sender and confines fs to web root', async () => {
-  const plugin = localpostPlugin(environment);
+  const plugin = queuePlugin(environment);
   assert.equal(plugin.apply({}, { command: 'serve', isPreview: false }), true);
   const config = plugin.config();
   assert.equal(config.server.fs.strict, true);
@@ -36,30 +36,28 @@ test('dedicated development plugin embeds validated sender and confines fs to we
   assert.match(tags[0].children, /validDiagnosticEvent/);
   assert.match(tags[0].children, /vite:beforeUpdate/);
   assert.match(tags[0].children, /credentials: 'omit'/);
-  assert.equal(tags[0].children.includes("from './localpost-protocol.mjs'"), false);
+  assert.equal(tags[0].children.includes("from './diagnostic-protocol.mjs'"), false);
   assert.throws(() => plugin.configResolved({ server: { ...config.server, host: '0.0.0.0' } }));
 });
 
-test('invalid registration routes cannot be embedded', () => {
-  for (const endpoint of [
-    environment.LOCALPOST_MESSAGE_URL.replace('/api/2026-11-05', ''),
-    environment.LOCALPOST_MESSAGE_URL.replace('2026-11-05', '2026-11-04'),
-    environment.LOCALPOST_MESSAGE_URL.replace(':53147', ':80'),
-    environment.LOCALPOST_MESSAGE_URL.replace('127.0.0.1', 'localhost'),
-    environment.LOCALPOST_MESSAGE_URL.replace('127.0.0.1', '127.1'),
-    environment.LOCALPOST_MESSAGE_URL.replace('/api/', '/other/../api/'),
-    'https://127.0.0.1:53147/api/2026-11-05/registrations/x/messages',
-    'http://example.com/registrations/x/messages',
-    `${environment.LOCALPOST_MESSAGE_URL}?secret=x`,
+test('invalid queue configuration cannot be embedded', () => {
+  for (const configuration of [
+    { MESSAGE_QUEUE_URL: 'https://127.0.0.1:53170' },
+    { MESSAGE_QUEUE_URL: 'http://localhost:53170' },
+    { MESSAGE_QUEUE_URL: 'http://127.0.0.1:53170/api/2026-11-05' },
+    { MESSAGE_QUEUE_URL: 'http://127.0.0.1:53170/?secret=x' },
+    { MESSAGE_QUEUE_ID: environment.MESSAGE_QUEUE_ID.toUpperCase() },
+    { MESSAGE_QUEUE_ID: '../other' },
+    { MESSAGE_QUEUE_RUN_ID: 'invalid' },
   ]) {
-    const plugin = localpostPlugin({ ...environment, LOCALPOST_MESSAGE_URL: endpoint });
+    const plugin = queuePlugin({ ...environment, ...configuration });
     plugin.apply({}, { command: 'serve', isPreview: false });
     assert.throws(() => plugin.config());
   }
 });
 
 test('actual Vite config resolution preserves the confined development setup', async () => {
-  const config = await resolveConfig({ plugins: [localpostPlugin(environment)] }, 'serve');
+  const config = await resolveConfig({ plugins: [queuePlugin(environment)] }, 'serve');
   assert.equal(config.server.host, '127.0.0.1');
   assert.equal(config.server.fs.allow.length, 1);
 });

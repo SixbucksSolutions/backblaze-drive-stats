@@ -1,15 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { sampleDiagnosticsState, startDiagnostics } from './localpost-client.mjs';
+import { encodeQueueBytes, sampleDiagnosticsState, startDiagnostics } from './queue-client.mjs';
 
-function receipt(options) {
-  return new Response(
-    JSON.stringify({
-      filename: 'localpost_019a4567-1234-7abc-8def-0123456789ab.dat',
-      bytes: new TextEncoder().encode(options.body).byteLength,
-    }),
-    { status: 200 },
-  );
+function receipt() {
+  return new Response(JSON.stringify({ XADD: '1793898000000-0' }), { status: 200 });
 }
 
 function fixture(fetchImplementation = async (_url, options) => receipt(options)) {
@@ -128,7 +122,11 @@ function fixture(fetchImplementation = async (_url, options) => receipt(options)
     },
     clearTimeout: (id) => timers.delete(id),
     fetch: (url, options) => {
-      requests.push({ url, options, body: JSON.parse(options.body) });
+      requests.push({
+        url,
+        options,
+        body: JSON.parse(Buffer.from(options.body.slice(4), 'base64').toString('utf8')),
+      });
       return fetchImplementation(url, options);
     },
     MutationObserver: class {
@@ -165,7 +163,7 @@ function fixture(fetchImplementation = async (_url, options) => receipt(options)
         {
           runId: '52bcbf1f-e744-4f8d-a038-7f51bdf6024f',
           endpoint:
-            'http://127.0.0.1:53147/api/2026-11-05/registrations/52bcbf1f-e744-4f8d-a038-7f51bdf6024f/messages',
+            'http://127.0.0.1:53170/XADD/localpost%3Av1%3A52bcbf1f-e744-4f8d-a038-7f51bdf6024f/*/data',
           password: 'must-not-leak',
         },
         window,
@@ -217,7 +215,7 @@ test('serializes only the fixed projection and acknowledges ready and explicit f
   const f = fixture();
   f.start();
   await settle();
-  assert.match(f.elements.get('localpost-message').textContent, /ready acknowledged/);
+  assert.match(f.elements.get('queue-message').textContent, /ready acknowledged/);
   assert.deepEqual(Object.keys(f.requests[0].body), [
     'schemaVersion',
     'runId',
@@ -243,12 +241,12 @@ test('serializes only the fixed projection and acknowledges ready and explicit f
   ]);
   assert.equal(JSON.stringify(f.requests[0].body).includes('private-token'), false);
   assert.equal(JSON.stringify(f.requests[0].body).includes('must-not-leak'), false);
-  f.elements.get('localpost-finish').trigger('click');
+  f.elements.get('queue-finish').trigger('click');
   await settle();
   assert.equal(f.requests.at(-1).body.event, 'end');
   assert.equal(f.requests.at(-1).body.source, 'finish');
-  assert.match(f.elements.get('localpost-message').textContent, /end acknowledged/);
-  assert.equal(f.elements.get('localpost-finish').disabled, true);
+  assert.match(f.elements.get('queue-message').textContent, /end acknowledged/);
+  assert.equal(f.elements.get('queue-finish').disabled, true);
 });
 
 test('settles DOM changes, deduplicates motion, preserves action source and same-state checks', async () => {
@@ -280,7 +278,7 @@ test('settles DOM changes, deduplicates motion, preserves action source and same
   await settle();
   assert.equal(f.requests.at(-1).body.source, 'pointer');
   assert.equal(f.requests.at(-1).body.event, 'check');
-  f.mutate(f.elements.get('localpost-message'));
+  f.mutate(f.elements.get('queue-message'));
   assert.equal(f.frames.size, 0);
 });
 
@@ -301,8 +299,8 @@ test('bounded queue and a single flight; end survives saturation and errors carr
     });
   }
   assert.equal(f.requests.length, 1);
-  assert.match(f.elements.get('localpost-message').textContent, /dropped 17/);
-  f.elements.get('localpost-finish').trigger('click');
+  assert.match(f.elements.get('queue-message').textContent, /dropped 17/);
+  f.elements.get('queue-finish').trigger('click');
   for (let i = 0; i < 64; i += 1) {
     release(receipt(f.requests.at(-1).options));
     await settle();
@@ -312,7 +310,7 @@ test('bounded queue and a single flight; end survives saturation and errors carr
   assert.equal(f.requests.at(-1).body.sequence, 82);
   assert.equal(JSON.stringify(f.requests).includes('password secret'), false);
   assert.equal(JSON.stringify(f.requests).includes('private.example'), false);
-  assert.match(f.elements.get('localpost-message').textContent, /end acknowledged/);
+  assert.match(f.elements.get('queue-message').textContent, /end acknowledged/);
 });
 
 test('transport rejection/timeout are isolated without retries or recursive error reports', async () => {
@@ -322,7 +320,7 @@ test('transport rejection/timeout are isolated without retries or recursive erro
   const api = f.start();
   await settle();
   assert.equal(f.requests.length, 1);
-  assert.match(f.elements.get('localpost-message').textContent, /failed 1/);
+  assert.match(f.elements.get('queue-message').textContent, /failed 1/);
   api.teardown();
   await settle();
   assert.equal(f.requests.length, 2);
@@ -337,7 +335,7 @@ test('transport rejection/timeout are isolated without retries or recursive erro
   [...timed.timers.values()].find((timer) => timer.delay === 2000).callback();
   await settle();
   assert.equal(timed.requests.length, 1);
-  assert.match(timed.elements.get('localpost-message').textContent, /failed 1/);
+  assert.match(timed.elements.get('queue-message').textContent, /failed 1/);
 });
 
 test('pagehide sends one best-effort end and teardown removes observers/listeners/scheduled samples', async () => {
@@ -369,36 +367,39 @@ test('repeated injection ends the prior session and retains one status bar', asy
   const f = fixture();
   f.start();
   await settle();
-  const original = f.elements.get('localpost-status');
+  const original = f.elements.get('queue-status');
   const api = f.start();
   await settle();
   assert.equal(original.isConnected, false);
-  assert.equal(f.document.body.children.filter((node) => node.id === 'localpost-status').length, 1);
+  assert.equal(f.document.body.children.filter((node) => node.id === 'queue-status').length, 1);
   assert.equal(f.requests.filter((request) => request.body.event === 'end').length, 1);
   api.teardown();
   await settle();
-  assert.match(f.elements.get('localpost-message').textContent, /Stopped; reload to resume/);
-  assert.equal(f.window.__localpostDiagnostics, undefined);
+  assert.match(f.elements.get('queue-message').textContent, /Stopped; reload to resume/);
+  assert.equal(f.window.__queueDiagnostics, undefined);
 });
 
 test('only exact valid publication receipts acknowledge a message', async () => {
   for (const result of [
-    { filename: '../private', bytes: 1 },
-    { filename: 'localpost_019a4567-1234-7abc-8def-0123456789ab.dat', bytes: 1 },
+    { XADD: [false, 'OOM private backend details'] },
+    { XADD: [false, 'ERR private backend details'] },
+    { XADD: '18446744073709551616-0' },
+    { XADD: '01-0' },
+    { XADD: '1-0', extra: true },
     { extra: true },
     'x'.repeat(600),
   ]) {
     const f = fixture(async () => new Response(JSON.stringify(result), { status: 200 }));
     f.start();
     await settle();
-    assert.match(f.elements.get('localpost-message').textContent, /ready pending/);
-    assert.match(f.elements.get('localpost-message').textContent, /failed 1/);
+    assert.match(f.elements.get('queue-message').textContent, /ready pending/);
+    assert.match(f.elements.get('queue-message').textContent, /failed 1/);
   }
 });
 
 test('run budget persists across injection and storage failure fails diagnostics closed', async () => {
   const f = fixture();
-  const key = 'localpost-budget-52bcbf1f-e744-4f8d-a038-7f51bdf6024f';
+  const key = 'queue-budget-52bcbf1f-e744-4f8d-a038-7f51bdf6024f';
   f.window.sessionStorage.setItem(key, JSON.stringify({ attempts: 4095, bytes: 0 }));
   f.start();
   await settle();
@@ -413,7 +414,7 @@ test('run budget persists across injection and storage failure fails diagnostics
   assert.doesNotThrow(() => unavailable.start());
   await settle();
   assert.equal(unavailable.requests.length, 0);
-  assert.match(unavailable.elements.get('localpost-message').textContent, /failed 1/);
+  assert.match(unavailable.elements.get('queue-message').textContent, /failed 1/);
 });
 
 test('sender rejects invalid projected state before transport', async () => {
@@ -422,5 +423,57 @@ test('sender rejects invalid projected state before transport', async () => {
   f.start();
   await settle();
   assert.equal(f.requests.length, 0);
-  assert.match(f.elements.get('localpost-message').textContent, /dropped 1/);
+  assert.match(f.elements.get('queue-message').textContent, /dropped 1/);
+});
+
+test('queue encoding preserves empty, binary and Unicode bytes', () => {
+  for (const bytes of [
+    new Uint8Array(),
+    new Uint8Array([0, 255, 13, 10]),
+    new TextEncoder().encode('é 🧪'),
+  ]) {
+    const body = encodeQueueBytes(bytes);
+    assert.equal(body, `b64:${Buffer.from(bytes).toString('base64')}`);
+  }
+  assert.throws(() => encodeQueueBytes(new Uint8Array(4097)));
+});
+
+test('uses native Webdis PUT with credential-free uncached delivery', async () => {
+  const f = fixture();
+  f.start();
+  await settle();
+  const request = f.requests[0];
+  assert.equal(request.options.method, 'PUT');
+  assert.equal(request.options.headers['Content-Type'], 'text/plain;charset=UTF-8');
+  assert.equal(request.options.credentials, 'omit');
+  assert.equal(request.options.redirect, 'error');
+  assert.equal(request.options.cache, 'no-store');
+  assert.ok(request.options.body.startsWith('b64:'));
+});
+
+test('failure categories appear only in bounded UI status without raw details or recursive posts', async () => {
+  const cases = [
+    ['memory_limit', () => new Response(JSON.stringify({ XADD: [false, 'OOM private payload'] }))],
+    ['backend_error', () => new Response(JSON.stringify({ XADD: [false, 'ERR private payload'] }))],
+    ['http_error', () => new Response('private payload', { status: 503 })],
+    ['invalid_response', () => new Response('private payload')],
+    ['invalid_response', () => new Response(JSON.stringify({ XADD: '01-0' }))],
+    ['response_too_large', () => new Response('x'.repeat(513))],
+    [
+      'transport_error',
+      () => {
+        throw new Error('private payload');
+      },
+    ],
+  ];
+  for (const [code, response] of cases) {
+    const f = fixture(async () => response());
+    f.start();
+    await settle();
+    const status = f.elements.get('queue-message').textContent;
+    assert.ok(status.includes(`Last failure ${code}.`));
+    assert.equal(status.includes('private payload'), false);
+    assert.equal(f.requests.length, 1);
+    assert.equal(JSON.stringify(f.requests[0].body).includes(code), false);
+  }
 });

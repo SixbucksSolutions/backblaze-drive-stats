@@ -11,6 +11,29 @@ const SOURCES = new Set([
   'runtime',
 ]);
 const FIELDS = ['schemaVersion', 'runId', 'pageId', 'sequence', 'event', 'source', 'state'];
+const STREAM_ID = /^(0|[1-9][0-9]{0,19})-(0|[1-9][0-9]{0,19})$/;
+const UINT64_MAX = '18446744073709551615';
+
+export function validStreamId(value) {
+  if (typeof value !== 'string' || !STREAM_ID.test(value)) {
+    return false;
+  }
+  return value.split('-').every((part) => part.length < 20 || part <= UINT64_MAX);
+}
+
+export function compareStreamIds(a, b) {
+  if (!validStreamId(a) || !validStreamId(b)) {
+    throw new Error('Invalid stream ID.');
+  }
+  const left = a.split('-').map(BigInt);
+  const right = b.split('-').map(BigInt);
+  for (let index = 0; index < 2; index += 1) {
+    if (left[index] !== right[index]) {
+      return left[index] < right[index] ? -1 : 1;
+    }
+  }
+  return 0;
+}
 const STATE_FIELDS = [
   'view',
   'mode',

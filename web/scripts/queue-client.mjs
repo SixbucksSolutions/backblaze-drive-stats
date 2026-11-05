@@ -1,4 +1,11 @@
-import { validDiagnosticEvent } from './localpost-protocol.mjs';
+import { validDiagnosticEvent, validStreamId } from './diagnostic-protocol.mjs';
+
+export function encodeQueueBytes(bytes) {
+  if (bytes.byteLength > 4096) {
+    throw new Error('message-size');
+  }
+  return `b64:${btoa(String.fromCharCode(...bytes))}`;
+}
 
 // Embedded by the opt-in development plugin; never import into application source.
 export function sampleDiagnosticsState(window) {
@@ -65,8 +72,8 @@ export function sampleDiagnosticsState(window) {
 }
 
 export function startDiagnostics(config, window) {
-  window.__localpostDiagnostics?.teardown();
-  window.document.getElementById('localpost-status')?.remove();
+  window.__queueDiagnostics?.teardown();
+  window.document.getElementById('queue-status')?.remove();
   const document = window.document;
   const pageId = window.crypto.randomUUID();
   const queue = [];
@@ -76,6 +83,7 @@ export function startDiagnostics(config, window) {
   let attemptedBytes = 0;
   let dropped = 0;
   let failures = 0;
+  let lastFailure = null;
   let readyAck = false;
   let endAck = false;
   let ended = false;
@@ -86,24 +94,24 @@ export function startDiagnostics(config, window) {
   let pendingCheck = false;
   let previous = '';
   const bar = document.createElement('div');
-  bar.id = 'localpost-status';
+  bar.id = 'queue-status';
   bar.style.cssText =
     'position:fixed;bottom:0;right:0;z-index:2147483647;background:#102838;color:white;padding:8px;font:12px sans-serif';
   const status = document.createElement('span');
-  status.id = 'localpost-message';
+  status.id = 'queue-message';
   status.setAttribute('role', 'status');
   const finish = document.createElement('button');
-  finish.id = 'localpost-finish';
+  finish.id = 'queue-finish';
   finish.type = 'button';
   finish.textContent = 'Finish diagnostics';
   bar.append(status, finish);
   document.body.append(bar);
   const updateStatus = () => {
-    status.textContent = `Diagnostics: ready ${readyAck ? 'acknowledged' : 'pending'}; end ${endAck ? 'acknowledged' : ended ? 'pending' : 'open'}; dropped ${dropped}; failed ${failures}.${ended ? ' Stopped; reload to resume.' : ''} `;
+    status.textContent = `Diagnostics: ready ${readyAck ? 'acknowledged' : 'pending'}; end ${endAck ? 'acknowledged' : ended ? 'pending' : 'open'}; dropped ${dropped}; failed ${failures}.${lastFailure ? ` Last failure ${lastFailure}.` : ''}${ended ? ' Stopped; reload to resume.' : ''} `;
   };
   updateStatus();
   const reserveBudget = (bytes) => {
-    const key = `localpost-budget-${config.runId}`;
+    const key = `queue-budget-${config.runId}`;
     const stored = window.sessionStorage.getItem(key);
     const budget = stored === null ? { attempts: 0, bytes: 0 } : JSON.parse(stored);
     if (
@@ -131,19 +139,28 @@ export function startDiagnostics(config, window) {
     attemptedBytes += bytes;
     const controller = new window.AbortController();
     const timer = window.setTimeout(() => controller.abort(), 2000);
+    let failureCode = 'invalid_response';
     try {
       reserveBudget(bytes);
+      failureCode = 'transport_error';
       const response = await window.fetch(config.endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
+        method: 'PUT',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: encodeQueueBytes(new TextEncoder().encode(body)),
+        cache: 'no-store',
         signal: controller.signal,
         keepalive: record.source === 'pagehide',
         credentials: 'omit',
         redirect: 'error',
       });
       if (response.status !== 200) {
+        failureCode = 'http_error';
+        await response.body?.cancel();
         throw new Error('transport');
+      }
+      if (!response.body) {
+        failureCode = 'invalid_response';
+        throw new Error('receipt');
       }
       const reader = response.body.getReader();
       let receiptBytes = 0;
@@ -155,23 +172,28 @@ export function startDiagnostics(config, window) {
         }
         receiptBytes += value.byteLength;
         if (receiptBytes > 512) {
+          failureCode = 'response_too_large';
           await reader.cancel();
           throw new Error('receipt-size');
         }
         chunks.push(...value);
       }
+      failureCode = 'invalid_response';
       const receipt = JSON.parse(
         new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(chunks)),
       );
       if (
-        !receipt ||
-        Object.keys(receipt).length !== 2 ||
-        typeof receipt.filename !== 'string' ||
-        !/^localpost_[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.dat$/i.test(
-          receipt.filename,
-        ) ||
-        receipt.bytes !== bytes
+        receipt &&
+        Object.keys(receipt).length === 1 &&
+        Array.isArray(receipt.XADD) &&
+        receipt.XADD.length === 2 &&
+        receipt.XADD[0] === false &&
+        typeof receipt.XADD[1] === 'string'
       ) {
+        failureCode = receipt.XADD[1].startsWith('OOM') ? 'memory_limit' : 'backend_error';
+        throw new Error('backend');
+      }
+      if (!receipt || Object.keys(receipt).length !== 1 || !validStreamId(receipt.XADD)) {
         throw new Error('receipt');
       }
       if (record.event === 'ready') {
@@ -181,6 +203,7 @@ export function startDiagnostics(config, window) {
         endAck = true;
       }
     } catch {
+      lastFailure = failureCode;
       failures += 1;
       dropped += 1;
     } finally {
@@ -339,11 +362,11 @@ export function startDiagnostics(config, window) {
   const session = {
     teardown: () => {
       stop('runtime');
-      if (window.__localpostDiagnostics === session) {
-        delete window.__localpostDiagnostics;
+      if (window.__queueDiagnostics === session) {
+        delete window.__queueDiagnostics;
       }
     },
   };
-  window.__localpostDiagnostics = session;
+  window.__queueDiagnostics = session;
   return session;
 }

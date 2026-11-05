@@ -1,8 +1,34 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseDiagnosticBytes, validDiagnosticEvent } from './localpost-protocol.mjs';
+import {
+  compareStreamIds,
+  parseDiagnosticBytes,
+  validDiagnosticEvent,
+  validStreamId,
+} from './diagnostic-protocol.mjs';
 
 export const runId = '11111111-1111-4111-8111-111111111111';
+test('stream IDs preserve canonical uint64 components and numeric ordering', () => {
+  for (const id of ['0-0', '9-10', '18446744073709551615-18446744073709551615']) {
+    assert.equal(validStreamId(id), true);
+  }
+  for (const id of [
+    '01-0',
+    '1-00',
+    '-1-0',
+    '1',
+    '1-0\n',
+    1,
+    '18446744073709551616-0',
+    '0-18446744073709551616',
+  ]) {
+    assert.equal(validStreamId(id), false);
+  }
+  assert.equal(compareStreamIds('9-10', '10-0'), -1);
+  assert.equal(compareStreamIds('10-9', '10-2'), 1);
+  assert.equal(compareStreamIds('10-2', '10-2'), 0);
+  assert.throws(() => compareStreamIds('invalid', '1-0'), /Invalid stream ID/);
+});
 export function event(overrides = {}) {
   return {
     schemaVersion: 1,
