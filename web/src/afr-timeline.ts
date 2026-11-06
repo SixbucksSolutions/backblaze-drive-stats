@@ -60,7 +60,7 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
   let inspected = '';
   let pointIndex = 0;
   let timeRange: TimeRange | null = null;
-  let yRange: YRange = 3;
+  let yRange: YRange = 2;
   let cancelDrag = () => {};
   let dragging = false;
   let inspectionVisible = false;
@@ -277,7 +277,7 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
       offscaleRuns(model, mode, metric, geometry).map((run) => ({ ...run, model })),
     );
     const aboveCount = runs.reduce((sum, run) => sum + run.count, 0);
-    return `${aboveCount ? `<p class="afr-offscale-note" role="status">${aboveCount} recorded values exceed ${geometry.yMaximum}% in this time range. Triangle markers identify off-scale runs; inspect them for actual values or choose Full range.</p>` : ''}${noRates ? '<p class="afr-unavailable" role="status">Selected models have no available AFR in this time range. Use All time, inspect recorded coverage below, or choose other models.</p>' : ''}<div class="afr-legend" aria-label="Selected model lines">${showing
+    return `${aboveCount ? `<p class="afr-offscale-note" role="status">${aboveCount} recorded values exceed ${geometry.yMaximum}% in this time range. Inspect the triangle markers for actual values or choose Max to show every value.</p>` : ''}${noRates ? '<p class="afr-unavailable" role="status">Selected models have no available AFR in this time range. Use All time, inspect recorded coverage below, or choose other models.</p>' : ''}<div class="afr-legend" aria-label="Selected model lines">${showing
       .map((model) => {
         const style = seriesStyle(model.id);
         return `<button type="button" id="afr-legend-${esc(encodeURIComponent(model.id))}" data-inspect="${esc(model.id)}"><svg width="36" height="12" viewBox="0 0 36 12" aria-hidden="true"><path d="M0,6H36" stroke="${style.color}" stroke-width="3" stroke-dasharray="${style.dash}"/></svg><span>${esc(manufacturerModelLabel(model))}</span></button>`;
@@ -310,7 +310,7 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
         const position = domain.minimum + index;
         return `<option value="${position}" ${position === selectedPosition ? 'selected' : ''}>${mode === 'relative' ? relativeLabel(position) : quarterLabel(position)}</option>`;
       }).join('');
-    return `<div class="afr-axis-controls" role="group" aria-label="Chart ranges"><label>From ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-from">${options(range.minimum)}</select></label><label>To ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-to">${options(range.maximum)}</select></label><button id="afr-zoom-out" type="button" ${all ? 'disabled' : ''}>Zoom out</button><button id="afr-all-time" type="button" ${all ? 'disabled' : ''}>All time</button><label>Y range<select id="afr-y-range">${([1, 2, 3, 5, 'auto'] as const).map((value) => `<option value="${value}" ${value === yRange ? 'selected' : ''}>${value === 'auto' ? 'Full range (auto)' : `0-${value}%`}</option>`).join('')}</select></label></div><p class="afr-range-help">Drag across the plot to zoom to quarters. Use From and To with keyboard or touch. Escape cancels a drag.</p>`;
+    return `<div class="afr-axis-controls" role="group" aria-label="Chart ranges"><label>From ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-from">${options(range.minimum)}</select></label><label>To ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-to">${options(range.maximum)}</select></label><button id="afr-zoom-out" type="button" ${all ? 'disabled' : ''}>Zoom out</button><button id="afr-all-time" type="button" ${all ? 'disabled' : ''}>All time</button><label>Max AFR<select id="afr-y-range">${(['auto', 5, 3, 2, 1] as const).map((value) => `<option value="${value}" ${value === yRange ? 'selected' : ''}>${value === 'auto' ? 'Max' : `${value}%`}</option>`).join('')}</select></label></div><p class="afr-range-help">Drag across the plot to zoom to quarters. Use From and To with keyboard or touch. Escape cancels a drag.</p>`;
   }
   function bindAxes() {
     const setRange = (range: TimeRange | null) => {

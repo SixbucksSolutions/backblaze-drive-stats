@@ -18,10 +18,9 @@ quarter. This view does not replace or remove the matrix.
 - Drag across the plot to zoom into a time window, or use the From/To controls.
   Zoom out expands the window; All time restores the full timeline. Time ranges
   reset when switching between calendar and relative time or changing snapshots.
-- The AFR scale starts at 0–3% to make ordinary reliability differences readable.
-  Off-scale indicators identify values above the displayed range. Choose Full
-  range to include every value in the selected time window, or another fixed
-  range for a closer comparison.
+- Max AFR defaults to 2%. The choices are Max, 5%, 3%, 2%, and 1%.
+  Choose Max to include every value in the selected time window. Triangle markers
+  identify values above a fixed ceiling and let you inspect the actual rates.
 - Hover a line to read its manufacturer, model and point AFR to three decimals.
   A dashed vertical guide identifies the exact quarter. Keyboard inspection
   provides the same point values. Chart labels use WD, Seagate and Toshiba,
