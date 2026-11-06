@@ -137,14 +137,19 @@ key. Diagnostic use of Wrangler's existing BLAKE3 dependency added no installati
 or browser dependency. Detailed evidence is retained in `data/staging/0112/` and
 `data/staging/0112-preview/`.
 
-## Publish and verify an explicitly requested release
+## Publish and verify a production release
+
+[Project guidance](../AGENTS.md#live-site-before-ready-for-review) grants standing
+authorization to publish in-scope website changes for authorized tickets. Complete
+the following procedure and verify the ticket on the public hostname before
+moving it to Ready for Review.
 
 The owner supplies `CLOUDFLARE_ACCOUNT_ID` and a Pages Write token for the intended
 account. Load the token only into the deployment process; keep it out of command
 arguments, Git, build files, cards and logs. The local operator-specific runner
 and sanitized receipts are private evidence under `data/staging/0007/`.
 
-1. Recheck the card lane and owner-requested release scope before work. Use
+1. Recheck the card lane and authorized release scope before work. Use
    read-only Pages API lookup to confirm account access and project settings.
    An existing project/source integration must be preserved. First-time Direct
    Upload creation selects this exact project name and `main` production branch;
@@ -200,7 +205,7 @@ and sanitized receipts are private evidence under `data/staging/0007/`.
    check all six views, historical links, fonts, attribution and narrow/keyboard
    behavior in the browser. Record the deployment ID, hostname and results.
 
-The equivalent publication command, after the owner-requested release and
+The equivalent publication command, after the authorized scope and
 credential/environment checks, is:
 
 ```console

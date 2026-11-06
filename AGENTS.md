@@ -1,7 +1,25 @@
 # Project development guidance
 
 Follow the owner's current instructions and localswim workflow. This file adds
-repository-specific guidance; it does not authorize data downloads or deployment.
+repository-specific guidance. Data downloads require separate authorization.
+
+## Live site before Ready for Review
+
+Terry tests website changes on the
+[live Cloudflare Pages site](https://backblaze-drive-stats-analysis.pages.dev/).
+He grants standing authorization to publish in-scope website changes for
+authorized tickets to this production site. Follow the
+[Cloudflare Pages release procedure](docs/cloudflare-hosting.md) and its quality,
+artifact, cache compatibility, and production verification gates.
+
+- Keep a website-change card **In Progress** through publication. Verify the exact
+  deployment and the card's acceptance criteria on the public hostname.
+- Move the card to **Ready for Review** only after live verification passes.
+  Include the live view URL, deployed revision or deployment ID, and verification
+  results in the handoff.
+- If publication or verification cannot finish, record the concrete blocker and
+  use the applicable localswim lane. Use the normal handoff process for work
+  that produces no change to the served site.
 
 ## Environments and quality gates
 
