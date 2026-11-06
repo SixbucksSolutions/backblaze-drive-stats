@@ -309,7 +309,7 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
       Array.from({ length: maximum - minimum + 1 }, (_, index) => {
         const position = minimum + index;
         const label = mode === 'relative' ? relativeLabel(position) : quarterLabel(position);
-        return `<option value="${position}" ${position === selectedPosition ? 'selected' : ''}>${label}${position === minimum ? ' (min)' : ''}${position === maximum ? ' (max)' : ''}</option>`;
+        return `<option value="${position}" ${position === selectedPosition ? 'selected' : ''}>${label}${position === domain.minimum ? ' (earliest)' : ''}${position === domain.maximum ? ' (latest)' : ''}</option>`;
       }).join('');
     return `<div class="afr-axis-controls" role="group" aria-label="Chart ranges"><label>From ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-from">${options(domain.minimum, range.maximum, range.minimum)}</select></label><label>To ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-to">${options(range.minimum, domain.maximum, range.maximum)}</select></label><button id="afr-zoom-out" type="button" ${all ? 'disabled' : ''}>Zoom out</button><button id="afr-all-time" type="button" ${all ? 'disabled' : ''}>All time</button><label>Max AFR<select id="afr-y-range">${(['auto', 5, 3, 2, 1] as const).map((value) => `<option value="${value}" ${value === yRange ? 'selected' : ''}>${value === 'auto' ? 'Max' : `${value}%`}</option>`).join('')}</select></label></div><p class="afr-range-help">Drag across the plot to zoom to quarters. Use From and To with keyboard or touch. Escape cancels a drag.</p>`;
   }
