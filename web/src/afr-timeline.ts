@@ -305,12 +305,13 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
     const domain = timeDomain(visible(), mode, data.asOfQuarter);
     const range = currentRange();
     const all = range.minimum === domain.minimum && range.maximum === domain.maximum;
-    const options = (selectedPosition: number) =>
-      Array.from({ length: domain.maximum - domain.minimum + 1 }, (_, index) => {
-        const position = domain.minimum + index;
-        return `<option value="${position}" ${position === selectedPosition ? 'selected' : ''}>${mode === 'relative' ? relativeLabel(position) : quarterLabel(position)}</option>`;
+    const options = (minimum: number, maximum: number, selectedPosition: number) =>
+      Array.from({ length: maximum - minimum + 1 }, (_, index) => {
+        const position = minimum + index;
+        const label = mode === 'relative' ? relativeLabel(position) : quarterLabel(position);
+        return `<option value="${position}" ${position === selectedPosition ? 'selected' : ''}>${label}${position === minimum ? ' (min)' : ''}${position === maximum ? ' (max)' : ''}</option>`;
       }).join('');
-    return `<div class="afr-axis-controls" role="group" aria-label="Chart ranges"><label>From ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-from">${options(range.minimum)}</select></label><label>To ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-to">${options(range.maximum)}</select></label><button id="afr-zoom-out" type="button" ${all ? 'disabled' : ''}>Zoom out</button><button id="afr-all-time" type="button" ${all ? 'disabled' : ''}>All time</button><label>Max AFR<select id="afr-y-range">${(['auto', 5, 3, 2, 1] as const).map((value) => `<option value="${value}" ${value === yRange ? 'selected' : ''}>${value === 'auto' ? 'Max' : `${value}%`}</option>`).join('')}</select></label></div><p class="afr-range-help">Drag across the plot to zoom to quarters. Use From and To with keyboard or touch. Escape cancels a drag.</p>`;
+    return `<div class="afr-axis-controls" role="group" aria-label="Chart ranges"><label>From ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-from">${options(domain.minimum, range.maximum, range.minimum)}</select></label><label>To ${mode === 'relative' ? 'relative quarter' : 'calendar quarter'}<select id="afr-to">${options(range.minimum, domain.maximum, range.maximum)}</select></label><button id="afr-zoom-out" type="button" ${all ? 'disabled' : ''}>Zoom out</button><button id="afr-all-time" type="button" ${all ? 'disabled' : ''}>All time</button><label>Max AFR<select id="afr-y-range">${(['auto', 5, 3, 2, 1] as const).map((value) => `<option value="${value}" ${value === yRange ? 'selected' : ''}>${value === 'auto' ? 'Max' : `${value}%`}</option>`).join('')}</select></label></div><p class="afr-range-help">Drag across the plot to zoom to quarters. Use From and To with keyboard or touch. Escape cancels a drag.</p>`;
   }
   function bindAxes() {
     const setRange = (range: TimeRange | null) => {
@@ -319,16 +320,13 @@ export async function initAfrTimeline(routeSignal?: AbortSignal): Promise<void> 
     };
     const from = app.querySelector<HTMLSelectElement>('#afr-from')!;
     const to = app.querySelector<HTMLSelectElement>('#afr-to')!;
-    from.onchange = () =>
+    const updateRange = () =>
       setRange({
         minimum: Number(from.value),
-        maximum: Math.max(Number(from.value), Number(to.value)),
-      });
-    to.onchange = () =>
-      setRange({
-        minimum: Math.min(Number(from.value), Number(to.value)),
         maximum: Number(to.value),
       });
+    from.onchange = updateRange;
+    to.onchange = updateRange;
     app.querySelector<HTMLButtonElement>('#afr-all-time')!.onclick = () => setRange(null);
     app.querySelector<HTMLButtonElement>('#afr-zoom-out')!.onclick = () =>
       setRange(zoomOutTimeRange(currentRange(), timeDomain(visible(), mode, data.asOfQuarter)));
