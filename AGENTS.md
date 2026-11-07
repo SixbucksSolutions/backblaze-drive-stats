@@ -21,6 +21,51 @@ artifact, cache compatibility, and production verification gates.
   use the applicable localswim lane. Use the normal handoff process for work
   that produces no change to the served site.
 
+## Board notifications
+
+Use the board service's built-in owner notifications from the shared Localswim
+package at `C:\Projects\localswim`. Terry explicitly authorizes connecting this
+board to its verified owning chat when he asks to start or connect notifications.
+The board snapshot is
+`C:\Projects\localswim-state-store\backblaze-drive-stats\backblaze-drive-stats-v001.json`.
+
+Verify the owning chat ID through Codex chat metadata before setting the target.
+From this project, use the shared runner with the absolute board path.
+
+```powershell
+$env:UV_CACHE_DIR = 'D:\Projects\Backblaze Drive Stats\data\toolchains\uv-cache'
+$board = 'C:\Projects\localswim-state-store\backblaze-drive-stats\backblaze-drive-stats-v001.json'
+$owningChatId = '<verified-owning-chat-uuid>'
+uv run --project C:\Projects\localswim --frozen --offline localswim-cli $board notifications status --json
+uv run --project C:\Projects\localswim --frozen --offline localswim-cli $board notifications target $owningChatId
+uv run --project C:\Projects\localswim --frozen --offline localswim-cli $board notifications enable
+uv run --project C:\Projects\localswim --frozen --offline localswim-cli $board notifications status --json
+```
+
+- Reuse the healthy live board service. Target changes preserve the enabled state.
+  Explicit `enable` activates delivery. At an authorized chat handoff, set the new
+  verified target and confirm status. Honor explicit shutdown with `notifications disable`.
+- Settings persist in the live service account's OS profile, outside board JSON.
+  Use the CLI for configuration. Starting or restarting a board leaves notification
+  activation under Terry's explicit control.
+- Human edits produce a notice after 15 seconds of quiet. Notices contain board
+  identity, an edit interval and bounded ticket numbers. Bot edits are suppressed.
+  Delivery is best effort, with one attempt and no durable catch-up or retry.
+- The live service account must have native `codex.exe` on its PATH. Verify the
+  actual recipient and enabled state through the CLI after configuration. If a
+  write has an uncertain outcome, inspect status before deciding whether to retry.
+- Use this path for the one-board/one-owning-chat workflow. Legacy watchers and
+  monitor pools must not run alongside it for this board. Preserve their target,
+  cursor, pending-alert and lock files. Use supported cooperative shutdown when
+  retiring a live legacy watcher under the owner's authorization. For a supported
+  owner, use its exact existing paths in a manifest with the shared
+  `localswim-monitor-pool --manifest FILE --stop` cooperative drain and verify that
+  owner exited. An older owner without UUID identity needs its documented lifecycle.
+- Inspect sanitized activity metadata first when a notice arrives. A complete,
+  nonempty Bot-only interval needs no further action. Inspect focused cards for
+  human or uncertain activity and retain the usual ticket entry and approval gates.
+- The Valkey/Webdis browser diagnostics queue has its own workflow below.
+
 ## Environments and quality gates
 
 - Use **uv** for Python installation, dependency resolution, environments and runs.
